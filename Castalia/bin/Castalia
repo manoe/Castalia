@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # ****************************************************************************
 # *  Copyright: National ICT Australia,  2009 - 2010                         *
 # *  Developed at the ATP lab, Networked Systems research theme              *
@@ -17,18 +17,22 @@ from optparse import OptionParser
 
 #initialise important paths
 pathToBin = sys.path[0]
-pathToCastalia = os.path.abspath(pathToBin + "/../")
+pathToCastalia = os.path.abspath(pathToBin + "/../src")
 pathToCastaliaBin = pathToCastalia + "/CastaliaBin";
-pathToExtract = pathToBin + "/extractOmnetppINI"
+pathToCastaliaBinExe = pathToCastaliaBin + ".exe";
+pathToExtract = "python2 "+pathToBin + "/extractOmnetppINI"
 
 if len(sys.argv) == 1:
 	has_header = 0
 	for file in os.listdir('./'):
 		if not os.path.isfile(file): continue
 		if not re.search(r"\.ini$",file): continue
-		lines = commands.getoutput(pathToExtract + " " + file).split("\n")
+		print (pathToExtract)
+		#lines = commands.getoutput(pathToExtract + " " + file).split("\n")
+		lines = subprocess.check_output(pathToExtract + " " + file, shell=True).split("\n")
 		if len(lines) < 2: continue
 		has_general = 0;
+		print ("\n File \n"+ file + " Lines ")
 		list = []
 		for line in lines:
 			m = re.match(r"\[General\]", line)
@@ -41,12 +45,12 @@ if len(sys.argv) == 1:
 		if has_general:
 			if not has_header:
 				has_header = 1
-				print "\nList of available input files and configurations:"
-			print "\n* "+file
-			print "\t"+"\n\t".join(list)
+				print ("\nList of available input files and configurations:")
+			print ("\n* "+file)
+			print ("\t"+"\n\t".join(list))
 	if not has_header:
-		print "\nNo castalia input files found in this directory\n"
-	else: print ""
+		print ("\nNo castalia input files found in this directory\n")
+	else: print ("")
 	quit()
 	
 parser = OptionParser(usage="usage: %prog [options]")
@@ -55,6 +59,7 @@ parser.add_option("-i","--input", dest="input", type="string", default="omnetpp.
 parser.add_option("-d","--debug", dest="debug", default=False, action="store_true", help="Debug mode, will display results from each CastaliaBin execution")
 parser.add_option("-o","--output", dest="output", type="string", metavar="FILE", help="Select output file for writing results, generated from current date by default") 
 parser.add_option("-r","--repeat", dest="repeat", type="int", metavar="N", default=1, help="Number of repetitions for each unique scenario")
+parser.add_option("-u","--userinterface", dest="interface", type="string", default="Cmdenv", help="Select the interface type, values Cmdenv, Qtenv and Tkenv, default Cmdenv")
 (options,args) = parser.parse_args()
 
 if len(args):
@@ -126,16 +131,27 @@ def detectCPUs():
 			return ncpus
 	return 1 # Default
 
-ini = commands.getoutput(pathToExtract + " " + options.input).split("\n")
+ini = subprocess.check_output(pathToExtract + " " + options.input, shell=True).split("\n")
+#ini = commands.getoutput(pathToExtract + " " + options.input).split("\n")
 if len(ini) < 2: quit("\nERROR: Unable to read configuration")
+
+isExec = 0
 if not os.path.exists(pathToCastaliaBin) or not os.path.isfile(pathToCastaliaBin):
-	quit("\nERROR: CastaliaBin not found (need to run make?)")
+	if not os.path.exists(pathToCastaliaBinExe) or not os.path.isfile(pathToCastaliaBinExe): # check exect
+		quit("\nERROR: CastaliaBin not found (need to run make?)")
+	else:
+		isExec = 1
 
 section = ""
 configDictionary = {}
 configIterations = {}
 
+ind = 0
+
 for line in ini:
+	ind = ind+1
+	if "\r" in line:
+		line = line[:-1]
 	if (line == "[General]"):
 		section = "General"
 		continue
@@ -146,8 +162,12 @@ for line in ini:
 		continue
 
 	k = re.split("\s=\s",line,1)
+	if (len(k) != 2 and len(ini) == ind):
+		continue
 	if (len(k) != 2):
+		print ("Line " + str(ind))
 		quit("\nERROR: Unexpected line in configuration file:\n" + line)
+		
 		
 	currentConfig = {}
 	if (configDictionary.has_key(section)):
@@ -291,12 +311,22 @@ if options.output: fr = open(options.output,"w")
 else: fr = open(datetime.now().strftime("%y%m%d-%H%M%S")+".txt","w")
 fr.write("Castalia| what:" + options.config + " (" + str(options.repeat) + ")\n")
 fr.write("Castalia| when:" + datetime.now().strftime("%Y-%m-%d %H:%M") + "\n")
+if(options.config == "General"):
+	fr.write("Castalia| label:General\n") # If missing 
 
-r_castalia = re.compile("^Castalia\|\s+(.+)$")
+r_castalia = re.compile('^((?!Castalia\|).)*$') #re.compile("^Castalia\|\s+(.+)$")
 r_scenario = re.compile("Scenario:\s(.*)\$repetition=(\d+)$")
-r_progress = re.compile("^\*\* Event \#\d+\s+T=(\S+)\s+Elapsed: (\S+)s.+\s(\d+)\% completed")
+r_progress = re.compile("^\*\* Event \#\d+\s+t=(\S+)\s+Elapsed: (\S+)s.+\s(\d+)\% completed") #re.compile("^\*\* Event \#\d+\s+T=(\S+)\s+Elapsed: (\S+)s.+\s(\d+)\% completed")
 r_newrun = re.compile("Preparing for running configuration General, run #(\d+)")
 r_totalrun = re.compile("Number of runs: (\d+)")
+
+
+interface = "Cmdenv"
+if options.interface:
+	if options.interface == "Qtenv":
+		interface = "Qtenv"
+	elif options.interface == "Tkenv":
+		interface = "Tkenv"
 
 for ini in iniList:
 	ini_num += 1
@@ -308,34 +338,44 @@ for ini in iniList:
 		f.write(k + " = " + ini[k] + "\n")
 	f.close();
 	has_output = 0
+
 	if sys.version_info > (2,7):
-		data = subprocess.check_output([pathToCastaliaBin, '-f', 'omnetpp.tmp', '-x', 'General']).split("\n")
+		if not isExec:
+			data = subprocess.check_output([pathToCastaliaBin,'-f', 'omnetpp.tmp', '-c', 'General','-q', 'runs']).split("\n")
+		else:
+			data = subprocess.check_output([pathToCastaliaBinExe, '-f','omnetpp.tmp', '-c', 'General','-q', 'runs']).split("\n")
 	else:
-		data = subprocess.Popen([pathToCastaliaBin, '-f', 'omnetpp.tmp', '-x', 'General'], stdout=subprocess.PIPE).communicate()[0].split("\n")
+		if not isExec:
+			data = subprocess.Popen([pathToCastaliaBin,'-f', 'omnetpp.tmp','-c', 'General','-q', 'runs'], stdout=subprocess.PIPE).communicate()[0].split("\n")
+		else:
+			data = subprocess.Popen([pathToCastaliaBinExe,'-f', 'omnetpp.tmp','-c', 'General','-q', 'runs'], stdout=subprocess.PIPE).communicate()[0].split("\n")
 	
-	if len(data) > 6: data = data[6]
+	if len(data) > 7: data = data[7]
 	else: data = ""
 
 	m = r_totalrun.match(data)
 	if (m):
 		runs = "/" + m.group(1)
 	else:
-		print "WARNING: unable to determine total simulation runs"
+		print ("WARNING: unable to determine total simulation runs")
 		runs = ""
-	
-	CastaliaProcess = subprocess.Popen([pathToCastaliaBin, '-f', 'omnetpp.tmp'], stdout = subprocess.PIPE)
+	if not isExec:
+		CastaliaProcess = subprocess.Popen([pathToCastaliaBin,'-u', interface, '-f', 'omnetpp.tmp'], stdout = subprocess.PIPE)
+	else:
+		CastaliaProcess = subprocess.Popen([pathToCastaliaBinExe,'-u', interface, '-f', 'omnetpp.tmp'], stdout = subprocess.PIPE)
 	raw_output = []
+	
 	while 1:
 		line = CastaliaProcess.stdout.readline()
 		if not line: break
 		
 		m = r_castalia.match(line)
-		if (m):		#this is an output line, starting with 'Castalia |' prefix
-			fr.write(line)
+		if (not m):		#this is an output line, starting with 'Castalia |' prefix
+			fr.write(line[7:])
 			has_output = 1
 			continue
 		
-		if options.debug: print line,
+		if options.debug: print (line),
 		
 		m = r_progress.match(line)
 		if (m):		#this is simulation progress line
@@ -343,13 +383,13 @@ for ini in iniList:
 			elapsed = float(m.group(2))
 			percent = int(m.group(3))
 			if not options.debug:
-				print "\rRunning Castalia:\tConfiguration", str(ini_num) + "/" + str(len(iniList)),
-				print "\tRun", str(run) + runs,
-				print "\tComplete", str(percent) + "%",
+				print ("\rRunning Castalia:\tConfiguration", str(ini_num) + "/" + str(len(iniList))),
+				print ("\tRun", str(run) + runs),
+				print ("\tComplete", str(percent) + "%"),
 
 			if percent == 100:	#end of this run, record execution time in the results file
 				if not options.debug:
-					print "\tTime taken", str(timedelta(0,elapsed))
+					print ("\tTime taken", str(timedelta(0,elapsed)))
 				fr.write("Castalia|		module:SN.Simulation\n")
 				fr.write("Castalia|			simple output name:Execution time, seconds\n")
 				fr.write("Castalia|				" + str(elapsed) + "\n")
@@ -381,7 +421,7 @@ for ini in iniList:
 
 	if not has_output: 
 		fr.write("\n".join(raw_output))
-		print "\n".join(raw_output)
+		print ("\n".join(raw_output))
 
 if not options.debug: commands.getoutput("rm omnetpp.tmp")
 fr.close()

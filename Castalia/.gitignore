@@ -6,4 +6,5 @@
 src/Makefile
 .cmdenv-log
 .qtenvrc
+.vscode
 Castalia-Trace.txt
