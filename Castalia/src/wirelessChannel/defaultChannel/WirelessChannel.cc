@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "WirelessChannel.h"
+#include "wirelessChannel/defaultChannel/WirelessChannel.h"
 
 Define_Module(WirelessChannel);
 

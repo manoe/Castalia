@@ -14,8 +14,8 @@
 #define _NOMOBILITYMANAGER_H_
 
 #include <omnetpp.h>
-#include "DebugInfoWriter.h"
-#include "VirtualMobilityManager.h"
+#include "helpStructures/DebugInfoWriter.h"
+#include "node/mobilityManager/VirtualMobilityManager.h"
 
 using namespace std;
 

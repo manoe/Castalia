@@ -10,7 +10,7 @@
  *                                                                             *  
  *******************************************************************************/
 
-#include "MultipathRingsRouting.h"
+#include "node/communication/routing/multipathRingsRouting/MultipathRingsRouting.h"
 
 Define_Module(MultipathRingsRouting);
 

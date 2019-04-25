@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "TimerService.h"
+#include "helpStructures/TimerService.h"
 
 void TimerService::setTimerDrift(double new_drift)
 {

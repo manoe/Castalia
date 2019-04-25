@@ -13,7 +13,7 @@
 #ifndef _VALUEPROPAGATION_H_
 #define _VALUEPROPAGATION_H_
 
-#include "VirtualApplication.h"
+#include "node/application/VirtualApplication.h"
 
 using namespace std;
 

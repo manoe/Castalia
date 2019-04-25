@@ -17,13 +17,13 @@
 #include <sstream>
 #include <string>
 #include <omnetpp.h>
-#include "ApplicationPacket_m.h"
-#include "SensorManagerMessage_m.h"
-#include "ResourceManager.h"
-#include "Radio.h"
-#include "VirtualMobilityManager.h"
-#include "CastaliaModule.h"
-#include "TimerService.h"
+#include "node/application/ApplicationPacket_m.h"
+#include "node/sensorManager/SensorManagerMessage_m.h"
+#include "node/resourceManager/ResourceManager.h"
+#include "node/communication/radio/Radio.h"
+#include "node/mobilityManager/VirtualMobilityManager.h"
+#include "helpStructures/CastaliaModule.h"
+#include "helpStructures/TimerService.h"
 
 #define SELF_NETWORK_ADDRESS selfAddress.c_str()
 

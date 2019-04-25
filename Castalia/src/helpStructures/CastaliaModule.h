@@ -19,9 +19,9 @@
 #include <iostream>
 #include <iomanip>
 
-#include "DebugInfoWriter.h"
+#include "helpStructures/DebugInfoWriter.h"
 #include "CastaliaMessages.h"
-#include "ResourceManagerMessage_m.h"
+#include "node/resourceManager/ResourceManagerMessage_m.h"
 
 using namespace std;
 

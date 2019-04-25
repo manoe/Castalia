@@ -17,13 +17,13 @@
 #include <vector>
 #include <omnetpp.h>
 
-#include "CastaliaModule.h"
-#include "TimerService.h"
+#include "helpStructures/CastaliaModule.h"
+#include "helpStructures/TimerService.h"
 #include "CastaliaMessages.h"
-#include "Radio.h"
-#include "ResourceManager.h"
-#include "RoutingPacket_m.h"
-#include "ApplicationPacket_m.h"
+#include "node/communication/radio/Radio.h"
+#include "node/resourceManager/ResourceManager.h"
+#include "node/communication/routing/RoutingPacket_m.h"
+#include "node/application/ApplicationPacket_m.h"
 
 #define SELF_NETWORK_ADDRESS selfAddress.c_str()
 #define ROUTE_DEST_DELIMITER "#"

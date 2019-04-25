@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "BaselineBANMac.h"
+#include "node/communication/mac/baselineBanMac/BaselineBANMac.h"
 
 Define_Module(BaselineBANMac);
 

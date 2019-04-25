@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "BypassMAC.h"
+#include "node/communication/mac/bypassMac/BypassMAC.h"
 
 Define_Module(BypassMAC);
 

@@ -14,9 +14,9 @@
 #define _MULTIPATHRINGSROUTING_H_
 
 #include <map>
-#include "VirtualRouting.h"
-#include "MultipathRingsRoutingPacket_m.h"
-#include "MultipathRingsRoutingControl_m.h"
+#include "node/communication/routing/VirtualRouting.h"
+#include "node/communication/routing/multipathRingsRouting/MultipathRingsRoutingPacket_m.h"
+#include "node/communication/routing/multipathRingsRouting/MultipathRingsRoutingControl_m.h"
 
 #define NO_LEVEL  -110
 #define NO_SINK   -120

@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "Radio.h"
+#include "node/communication/radio/Radio.h"
 
 Define_Module(Radio);
 

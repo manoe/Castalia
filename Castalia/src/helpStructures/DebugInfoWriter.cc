@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "DebugInfoWriter.h"
+#include "helpStructures/DebugInfoWriter.h"
 
 ofstream DebugInfoWriter::theFile;
 string DebugInfoWriter::fileName;

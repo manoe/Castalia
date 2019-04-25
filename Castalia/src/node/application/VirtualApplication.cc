@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "VirtualApplication.h"
+#include "node/application/VirtualApplication.h"
 
 void VirtualApplication::initialize()
 {

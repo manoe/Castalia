@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "ThroughputTest.h"
+#include "node/application/throughputTest/ThroughputTest.h"
 
 Define_Module(ThroughputTest);
 

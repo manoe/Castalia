@@ -11,7 +11,7 @@
  ****************************************************************************/
 
 #include <cmath>
-#include "TMAC.h"
+#include "node/communication/mac/tMac/TMAC.h"
 
 Define_Module(TMAC);
 

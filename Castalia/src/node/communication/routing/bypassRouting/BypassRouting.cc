@@ -10,7 +10,7 @@
  *                                                                             *
  *******************************************************************************/
 
-#include "BypassRouting.h"
+#include "node/communication/routing/bypassRouting/BypassRouting.h"
 
 Define_Module(BypassRouting);
 

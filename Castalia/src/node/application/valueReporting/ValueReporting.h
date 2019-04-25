@@ -13,8 +13,8 @@
 #ifndef _VALUEREPORTING_H_
 #define _VALUEREPORTING_H_
 
-#include "VirtualApplication.h"
-#include "ValueReportingPacket_m.h"
+#include "node/application/VirtualApplication.h"
+#include "node/application/valueReporting/ValueReportingPacket_m.h"
 
 using namespace std;
 

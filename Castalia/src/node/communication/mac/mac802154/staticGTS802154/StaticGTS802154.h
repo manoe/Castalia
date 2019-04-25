@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-#include "Basic802154.h"
-#include "Basic802154Packet_m.h"
+#include "node/communication/mac/mac802154/Basic802154.h"
+#include "node/communication/mac/mac802154/Basic802154Packet_m.h"
 
 class StaticGTS802154: public Basic802154 {
  protected:

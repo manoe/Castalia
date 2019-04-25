@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "VirtualMac.h"
+#include "node/communication/mac/VirtualMac.h"
 
 void VirtualMac::initialize()
 {

@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "CustomizablePhysicalProcess.h"
+#include "physicalProcess/customizablePhysicalProcess/CustomizablePhysicalProcess.h"
 
 Define_Module(CustomizablePhysicalProcess);
 

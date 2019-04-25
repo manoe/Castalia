@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "Basic802154.h"
+#include "node/communication/mac/mac802154/Basic802154.h"
 
 // This module is virtual and can not be used directly
 Define_Module(Basic802154); 

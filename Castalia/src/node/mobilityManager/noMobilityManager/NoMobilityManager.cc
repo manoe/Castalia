@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "NoMobilityManager.h"
+"
 
 Define_Module(NoMobilityManager);
 

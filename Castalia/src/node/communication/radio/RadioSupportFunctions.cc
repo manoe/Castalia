@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "RadioSupportFunctions.h"
+#include "node/communication/radio/RadioSupportFunctions.h"
 
 #define ERFINV_ERROR 100000.0
 

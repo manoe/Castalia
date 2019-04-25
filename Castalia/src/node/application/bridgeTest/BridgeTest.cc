@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "BridgeTest.h"
+#include "node/application/bridgeTest/BridgeTest.h"
 
 Define_Module(BridgeTest);
 

@@ -11,7 +11,7 @@
 //****************************************************************************/
 
 cplusplus {{
-#include "MacPacket_m.h"
+#include "node/communication/mac/MacPacket_m.h"
 }}
 
 class MacPacket;

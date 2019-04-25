@@ -13,8 +13,8 @@
 #ifndef _VIRTUALBILITYMANAGER_H_
 #define _VIRTUALBILITYMANAGER_H_
 
-#include "WirelessChannelMessages_m.h"
-#include "CastaliaModule.h"
+#include "wirelessChannel/WirelessChannelMessages_m.h"
+#include "helpStructures/CastaliaModule.h"
 
 using namespace std;
 

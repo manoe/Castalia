@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "ValueReporting.h"
+#include "node/application/valueReporting/ValueReporting.h"
 
 Define_Module(ValueReporting);
 

@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "CastaliaModule.h"
+#include "helpStructures/CastaliaModule.h"
 
 #define CASTALIA_PREFIX "Castalia|\t"
 

@@ -13,9 +13,9 @@
 #ifndef TUNABLEMACMODULE
 #define TUNABLEMACMODULE
 
-#include "VirtualMac.h"
-#include "TunableMacControl_m.h"
-#include "TunableMacPacket_m.h"
+#include "node/communication/mac/VirtualMac.h"
+#include "node/communication/mac/tunableMac/TunableMacControl_m.h"
+#include "node/communication/mac/tunableMac/TunableMacPacket_m.h"
 
 using namespace std;
 

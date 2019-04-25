@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "TraceChannel.h"
+#include "wirelessChannel/traceChannel/TraceChannel.h"
 
 Define_Module(TraceChannel);
 

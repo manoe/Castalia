@@ -9,7 +9,7 @@
  *      Attention:  License Inquiry.                                       *
  ***************************************************************************/
 
-#include "TunableMAC.h"
+#include "node/communication/mac/tunableMac/TunableMAC.h"
 
 Define_Module(TunableMAC);
 

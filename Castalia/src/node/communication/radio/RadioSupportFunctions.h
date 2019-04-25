@@ -14,7 +14,7 @@
 #define SUPPORTFUNCTIONS_H_
 
 #include <math.h>
-#include "RadioControlMessage_m.h"
+#include "node/communication/radio/RadioControlMessage_m.h"
 #include "CastaliaMessages.h"
 
 float addPower_dBm(float a, float b);

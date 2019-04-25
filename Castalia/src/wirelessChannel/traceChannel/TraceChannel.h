@@ -13,9 +13,9 @@
 #ifndef _TRACECHANNEL_H
 #define _TRACECHANNEL_H
 
-#include "WirelessChannelMessages_m.h"
-#include "CastaliaModule.h"
-#include "WirelessChannelTemporal.h"
+#include "wirelessChannel/WirelessChannelMessages_m.h"
+#include "helpStructures/CastaliaModule.h"
+#include "wirelessChannel/defaultChannel/WirelessChannelTemporal.h"
 
 #include <list>
 #include <vector>

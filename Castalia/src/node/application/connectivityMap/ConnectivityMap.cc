@@ -10,7 +10,7 @@
  *                                                                             *
  *******************************************************************************/
 
-#include "ConnectivityMap.h"
+#include "node/application/connectivityMap/ConnectivityMap.h"
 
 Define_Module(ConnectivityMap);
 

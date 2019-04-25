@@ -13,8 +13,8 @@
 #ifndef _MOBILITYMODULE_H_
 #define _MOBILITYMODULE_H_
 
-#include "MobilityManagerMessage_m.h"
-#include "VirtualMobilityManager.h"
+#include "node/mobilityManager/MobilityManagerMessage_m.h"
+#include "node/mobilityManager/VirtualMobilityManager.h"
 
 using namespace std;
 

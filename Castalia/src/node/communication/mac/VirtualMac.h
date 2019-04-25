@@ -19,14 +19,14 @@
 #include <vector>
 #include <omnetpp.h>
 
-#include "RoutingPacket_m.h"
-#include "MacPacket_m.h"
-#include "RadioControlMessage_m.h"
+#include "node/communication/routing/RoutingPacket_m.h"
+#include "node/communication/mac/MacPacket_m.h"
+#include "node/communication/radio/RadioControlMessage_m.h"
 
-#include "ResourceManager.h"
-#include "Radio.h"
-#include "TimerService.h"
-#include "CastaliaModule.h"
+#include "node/resourceManager/ResourceManager.h"
+#include "node/communication/radio/Radio.h"
+#include "helpStructures/TimerService.h"
+#include "helpStructures/CastaliaModule.h"
 
 using namespace std;
 

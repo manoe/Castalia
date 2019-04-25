@@ -13,8 +13,8 @@
 #ifndef BaselineBAN_MAC_MODULE_H
 #define BaselineBAN_MAC_MODULE_H
 
-#include "VirtualMac.h"
-#include "BaselineMacPacket_m.h"
+#include "node/communication/mac/VirtualMac.h"
+#include "node/communication/mac/baselineBanMac/BaselineMacPacket_m.h"
 
 #define TX_TIME(x) (phyLayerOverhead + x)*1/(1000*phyDataRate/8.0) //x are in BYTES
 #define UNCONNECTED -1

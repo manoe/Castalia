@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "VirtualMobilityManager.h"
+#include "node/mobilityManager/VirtualMobilityManager.h"
 
 Define_Module(VirtualMobilityManager);
 

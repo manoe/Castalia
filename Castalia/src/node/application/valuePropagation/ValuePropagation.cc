@@ -10,7 +10,7 @@
  *                                                                             *
  *******************************************************************************/
 
-#include "ValuePropagation.h"
+#include "node/application/valuePropagation/ValuePropagation.h"
 
 Define_Module(ValuePropagation);
 

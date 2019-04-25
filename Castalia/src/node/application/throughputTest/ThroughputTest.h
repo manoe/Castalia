@@ -13,7 +13,7 @@
 #ifndef _THROUGHPUTTEST_H_
 #define _THROUGHPUTTEST_H_
 
-#include "VirtualApplication.h"
+#include "node/application/VirtualApplication.h"
 #include <map>
 
 using namespace std;

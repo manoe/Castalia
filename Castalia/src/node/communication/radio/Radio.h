@@ -20,12 +20,12 @@
 #include <iostream>
 #include <fstream>
 
-#include "RadioSupportFunctions.h"
-#include "WirelessChannelMessages_m.h"
-#include "RadioControlMessage_m.h"
-#include "MacPacket_m.h"
-#include "ResourceManager.h"
-#include "CastaliaModule.h"
+#include "node/communication/radio/RadioSupportFunctions.h"
+#include "wirelessChannel/WirelessChannelMessages_m.h"
+#include "node/communication/radio/RadioControlMessage_m.h"
+#include "node/communication/mac/MacPacket_m.h"
+#include "node/resourceManager/ResourceManager.h"
+#include "helpStructures/CastaliaModule.h"
 
 #define ALL_ERRORS -1
 #define IDEAL_MODULATION_THRESHOLD 5.0

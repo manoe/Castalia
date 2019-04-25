@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "LineMobilityManager.h"
+#include "node/mobilityManager/lineMobilityManager/LineMobilityManager.h"
 
 Define_Module(LineMobilityManager);
 

@@ -13,7 +13,7 @@
 #ifndef _BridgeTest_H_
 #define _BridgeTest_H_
 
-#include "VirtualApplication.h"
+#include "node/application/VirtualApplication.h"
 
 #define REPROGRAM_PACKET_NAME "Bridge test reprogram packet"
 #define REPORT_PACKET_NAME "Bridge test report packet"

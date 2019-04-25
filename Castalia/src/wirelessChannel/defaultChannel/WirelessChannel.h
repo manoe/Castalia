@@ -13,10 +13,10 @@
 #ifndef _WIRELESSCHANNEL_H
 #define _WIRELESSCHANNEL_H
 
-#include "WirelessChannelMessages_m.h"
-#include "WirelessChannelTemporal.h"
-#include "VirtualMobilityManager.h"
-#include "CastaliaModule.h"
+#include "wirelessChannel/WirelessChannelMessages_m.h"
+#include "wirelessChannel/defaultChannel/WirelessChannelTemporal.h"
+#include "node/mobilityManager/VirtualMobilityManager.h"
+#include "helpStructures/CastaliaModule.h"
 
 #include "time.h"
 #include <list>

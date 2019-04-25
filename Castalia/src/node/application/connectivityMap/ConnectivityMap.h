@@ -13,7 +13,7 @@
 #ifndef _CONNECTIVITYMAP_H_
 #define _CONNECTIVITYMAP_H_
 
-#include "VirtualApplication.h"
+#include "node/application/VirtualApplication.h"
 
 using namespace std;
 

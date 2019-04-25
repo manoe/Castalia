@@ -14,8 +14,8 @@
 #define _RESOURCEMANAGER_H_
 
 #include <map>
-#include "CastaliaModule.h"
-#include "ResourceManagerMessage_m.h"
+#include "helpStructures/CastaliaModule.h"
+#include "node/resourceManager/ResourceManagerMessage_m.h"
 
 using namespace std;
 

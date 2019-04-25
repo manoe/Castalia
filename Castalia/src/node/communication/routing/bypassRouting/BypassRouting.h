@@ -13,8 +13,8 @@
 #ifndef _BYPASSROUTING_H_
 #define _BYPASSROUTING_H_
 
-#include "VirtualRouting.h"
-#include "BypassRoutingPacket_m.h"
+#include "node/communication/routing/VirtualRouting.h"
+#include "node/communication/routing/bypassRouting/BypassRoutingPacket_m.h"
 
 using namespace std;
 

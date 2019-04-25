@@ -10,7 +10,7 @@
  *                                                                          *  
  ****************************************************************************/
 
-#include "SimpleAggregation.h"
+#include "node/application/simpleAggregation/SimpleAggregation.h"
 
 Define_Module(SimpleAggregation);
 

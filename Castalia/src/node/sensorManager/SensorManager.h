@@ -13,11 +13,11 @@
 #ifndef _APPLICATIONMODULESIMPLE_H_
 #define _APPLICATIONMODULESIMPLE_H_
 
-#include "SensorManagerMessage_m.h"
-#include "PhysicalProcessMessage_m.h"
+#include "node/sensorManager/SensorManagerMessage_m.h"
+#include "physicalProcess/PhysicalProcessMessage_m.h"
 
-#include "VirtualMobilityManager.h"
-#include "CastaliaModule.h"
+#include "node/mobilityManager/VirtualMobilityManager.h"
+#include "helpStructures/CastaliaModule.h"
 
 using namespace std;
 

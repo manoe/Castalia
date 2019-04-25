@@ -15,8 +15,8 @@
 
 #define SIMTIME_STEP 0.01
 
-#include "CastaliaModule.h"
-#include "PhysicalProcessMessage_m.h"
+#include "helpStructures/CastaliaModule.h"
+#include "physicalProcess/PhysicalProcessMessage_m.h"
 
 using namespace std;
 

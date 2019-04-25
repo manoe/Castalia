@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "VirtualRouting.h"
+#include "node/communication/routing/VirtualRouting.h"
 void VirtualRouting::initialize()
 {
 	maxNetFrameSize = par("maxNetFrameSize");

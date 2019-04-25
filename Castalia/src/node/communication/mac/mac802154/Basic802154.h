@@ -16,8 +16,8 @@
 #include <map>
 #include <vector>
 
-#include "VirtualMac.h"
-#include "Basic802154Packet_m.h"
+#include "node/communication/mac/VirtualMac.h"
+#include "node/communication/mac/mac802154/Basic802154Packet_m.h"
 
 #define ACK_PKT_SIZE 6
 #define COMMAND_PKT_SIZE 10

@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "CastaliaMessages.h"
-#include "TimerServiceMessage_m.h"
+#include "helpStructures/TimerServiceMessage_m.h"
 
 class TimerService: public virtual cSimpleModule {
  private:

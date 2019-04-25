@@ -10,7 +10,7 @@
  *                                                                             *  
  *******************************************************************************/
 
-#include "ResourceManager.h"
+#include "node/resourceManager/ResourceManager.h"
 
 Define_Module(ResourceManager);
 

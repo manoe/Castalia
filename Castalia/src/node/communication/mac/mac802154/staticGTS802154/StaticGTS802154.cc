@@ -10,7 +10,7 @@
  *                                                                          *
  ****************************************************************************/
 
-#include "StaticGTS802154.h"
+#include "node/communication/mac/mac802154/staticGTS802154/StaticGTS802154.h"
 
 Define_Module(StaticGTS802154);
 

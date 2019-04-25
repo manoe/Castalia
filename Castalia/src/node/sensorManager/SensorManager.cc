@@ -10,7 +10,7 @@
  *                                                                             *  
  *******************************************************************************/
 
-#include "SensorManager.h"
+#include "node/sensorManager/SensorManager.h"
 
 Define_Module(SensorManager);
 

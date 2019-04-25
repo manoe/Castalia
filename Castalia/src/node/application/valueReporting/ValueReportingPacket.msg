@@ -11,7 +11,7 @@
 //***************************************************************************************
 
 cplusplus {{
-#include "ApplicationPacket_m.h"
+#include "node/application/ApplicationPacket_m.h"
 }}
 
 class ApplicationPacket;

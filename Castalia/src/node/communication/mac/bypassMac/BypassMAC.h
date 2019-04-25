@@ -14,7 +14,7 @@
 #define _BYPASSMAC_H_
 
 #include <omnetpp.h>
-#include "VirtualMac.h"
+#include "node/communication/mac/VirtualMac.h"
 
 using namespace std;
 

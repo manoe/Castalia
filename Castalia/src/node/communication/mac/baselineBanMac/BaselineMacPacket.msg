@@ -11,7 +11,7 @@
 //****************************************************************************/
 
 cplusplus {{
-#include "MacPacket_m.h"
+#include "node/communication/mac/MacPacket_m.h"
 
 #define BASELINEBAN_HEADER_SIZE 7
 #define BASELINEBAN_BEACON_SIZE 17 + 7

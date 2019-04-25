@@ -13,8 +13,8 @@
 #ifndef _TMAC_H_
 #define _TMAC_H_
 
-#include "VirtualMac.h"
-#include "TMacPacket_m.h"
+#include "node/communication/mac/VirtualMac.h"
+#include "node/communication/mac/tMac/TMacPacket_m.h"
 
 #define TX_TIME(x)		(phyLayerOverhead + x)*1/(1000*phyDataRate/8.0)	//x are in BYTES
 

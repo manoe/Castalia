@@ -13,7 +13,7 @@
 #ifndef _SIMPLEAGGREGATION_H_
 #define _SIMPLEAGGREGATION_H_
 
-#include "VirtualApplication.h"
+#include "node/application/VirtualApplication.h"
 
 using namespace std;
 

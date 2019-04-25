@@ -1,0 +1,9 @@
+/CastaliaBin
+/CastaliaBin_dbg
+/out
+*_m.h
+*_m.cc
+Makefile
+.cmdenv-log
+.qtenvrc
+Castalia-Trace.txt
