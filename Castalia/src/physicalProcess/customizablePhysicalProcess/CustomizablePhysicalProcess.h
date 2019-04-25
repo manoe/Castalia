@@ -7,7 +7,7 @@
  *                                                                          *
  *      NICTA, Locked Bag 9013, Alexandria, NSW 1435, Australia             *
  *      Attention:  License Inquiry.                                        *
- *                                                                          *  
+ *                                                                          *
  ****************************************************************************/
 
 #ifndef _CUSTOMIZABLEPHYSICALPROCESS_H_
@@ -36,7 +36,6 @@ typedef struct {
 class CustomizablePhysicalProcess: public CastaliaModule {
  private:
 	/*--- The .ned file's parameters ---*/
-	bool printDebugInfo;
 	int numSources;
 	double k;
 	double a;
@@ -46,8 +45,8 @@ class CustomizablePhysicalProcess: public CastaliaModule {
 
 	/*--- Custom class member variables ---*/
 	int numNodes;
-	sourceSnapshot **sources_snapshots;	// N by M array, where N is numSources and, M is the 
-										// maximum number of source snapshots. A source snapshot 
+	sourceSnapshot **sources_snapshots;	// N by M array, where N is numSources and, M is the
+										// maximum number of source snapshots. A source snapshot
 										// is a tuple (time, x, y, value)
 	sourceSnapshot *curr_source_state;
 	int *source_index;

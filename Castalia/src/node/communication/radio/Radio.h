@@ -178,9 +178,6 @@ class Radio: public CastaliaModule {
 	// a history of recent changes in total received power to help calculate RSSI
 	list<TotalPowerReceived_type> totalPowerReceived;
 
-	// a pointer to the object of the Radio Module (used for direct method calls)
-	ResourceManager *resMgrModule;
-
 	int changingToState;	// indicates that the Radio is in the middle of changing from one state (A)
 							// to another (B). It also holds the value for state B
 

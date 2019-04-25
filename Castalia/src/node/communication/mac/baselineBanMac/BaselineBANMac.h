@@ -100,7 +100,6 @@ class BaselineBANMac : public VirtualMac {
 	int scheduledRxAccessStart;
 	int scheduledRxAccessEnd;
 
-	int polledAccessEnd;
 	int postedAccessEnd;
 
 	double pTIFS;

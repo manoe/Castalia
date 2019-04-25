@@ -7,7 +7,7 @@
  *                                                                          *
  *      NICTA, Locked Bag 9013, Alexandria, NSW 1435, Australia             *
  *      Attention:  License Inquiry.                                        *
- *                                                                          *  
+ *                                                                          *
  ****************************************************************************/
 
 #ifndef _TRACECHANNEL_H
@@ -49,8 +49,6 @@ class TraceChannel: public CastaliaModule {
 	int coordinator;
 	double traceStep;
 	double leafLinkProbability;
-	double leafPathloss;
-	double pathlossMapOffset;
 	double signalDeliveryThreshold;
 	const char *pathlossMapFile;
 	const char *temporalModelParametersFile;

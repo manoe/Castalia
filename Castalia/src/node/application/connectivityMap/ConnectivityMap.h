@@ -30,17 +30,12 @@ enum ConnectivityMapTimers {
 class ConnectivityMap: public VirtualApplication {
  private:
 	// parameters and variables
-	int priority;
-	int packetHeaderOverhead;
-	bool printConnMap;
-	int constantDataPayload;
 	double packetSpacing;
 	int packetsPerNode;
 	int packetSize;
 
 	vector<neighborRecord> neighborTable;
 	int packetsSent;
-	int serialNumber;
 	int totalSNnodes;
 	double txInterval_perNode;
 	double txInterval_total;

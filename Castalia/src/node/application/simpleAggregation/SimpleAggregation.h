@@ -25,7 +25,6 @@ enum SimpleAggregationTimers {
 class SimpleAggregation: public VirtualApplication {
  private:
 	double aggregatedValue;
-	int routingLevel;
 	double waitingTimeForLowerLevelData;
 	double lastSensedValue;
 	double sampleInterval;

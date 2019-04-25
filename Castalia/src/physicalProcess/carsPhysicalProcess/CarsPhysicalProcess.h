@@ -28,8 +28,6 @@ typedef struct {
 
 class CarsPhysicalProcess: public CastaliaModule {
  private:
-	bool printDebugInfo;
-
 	int max_num_cars;
 	double car_speed;
 	double car_value;
@@ -44,9 +42,6 @@ class CarsPhysicalProcess: public CastaliaModule {
 										// maximum number of source snapshots. A source 
 										// snapshot is a tuple (time, x, y, value)
 	const char *description;
-
-	double defaultValue;
-	double *valuesTable;
 
  protected:
 	virtual void initialize();

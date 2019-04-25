@@ -28,8 +28,6 @@ class ValueReporting: public VirtualApplication {
 	double maxSampleInterval;
 	double minSampleInterval;
 
-	int routingLevel;
-	double lastSensedValue;
 	int currSentSampleSN;
 
 	double randomBackoffIntervalFraction;

@@ -52,6 +52,7 @@ void CustomizablePhysicalProcess::handleMessage(cMessage * msg)
 			/* 
 			 * TODO: add this functionality in the future
 			 */
+			throw cRuntimeError("TRACE_FILE: Not implemented.");
 			break;
 		}
 	}

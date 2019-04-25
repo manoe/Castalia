@@ -24,7 +24,6 @@ using namespace std;
 class SensorManager: public CastaliaModule {
  private:
 	/*--- The .ned file's parameters ---*/
-	bool printDebugInfo;
 	vector<int> corrPhyProcess;
 	vector<double> pwrConsumptionPerDevice;
 	vector<simtime_t> minSamplingIntervals;
