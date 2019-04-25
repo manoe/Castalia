@@ -1,3 +1,9 @@
+Catalia 3.4: Changes from 3.3
+------------------------------------------
+- Ported to use OMNeT++ 5.4.1. No other functional changes.
+
+
+
 Castalia 3.3: Changes from 3.2
 ------------------------------------------
 - Redesigned 802.15.4 MAC module. Modular to allow expansion.
