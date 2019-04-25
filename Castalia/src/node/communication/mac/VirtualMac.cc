@@ -27,7 +27,7 @@ void VirtualMac::initialize()
 	resMgrModule = check_and_cast <ResourceManager*>(getParentModule()->getParentModule()->getSubmodule("ResourceManager"));
 
 	if (!resMgrModule || !radioModule)
-		opp_error("\n Virtual Mac init: Error in geting a valid reference module(s).");
+		throw cRuntimeError("\n Virtual Mac init: Error in geting a valid reference module(s).");
 
 	setTimerDrift(resMgrModule->getCPUClockDrift());
 	pktHistory.clear();
@@ -147,7 +147,7 @@ void VirtualMac::handleMessage(cMessage * msg)
 		}
 
 		default:{
-			opp_error("MAC module received message of unknown kind %i", msgKind);
+			throw cRuntimeError("MAC module received message of unknown kind %i", msgKind);
 		}
 	}
 

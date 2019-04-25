@@ -288,7 +288,7 @@ double probabilityOfExactly_N_Errors(double BER, int errors, int numOfBits)
 RadioControlCommand *createRadioCommand(RadioControlCommand_type kind, double value)
 {
 	if (kind != SET_TX_OUTPUT && kind != SET_CARRIER_FREQ && kind != SET_CCA_THRESHOLD)
-		opp_error("incorrect usage of createRadioCommand, double argument is only compatible with SET_TX_OUTPUT, SET_CCA_THRESHOLD or SET_CARRIER_FREQ");
+		throw cRuntimeError("incorrect usage of createRadioCommand, double argument is only compatible with SET_TX_OUTPUT, SET_CCA_THRESHOLD or SET_CARRIER_FREQ");
 	RadioControlCommand *cmd = new RadioControlCommand("Radio control command", RADIO_CONTROL_COMMAND);
 	cmd->setRadioControlCommandKind(kind);
 	cmd->setParameter(value);
@@ -298,7 +298,7 @@ RadioControlCommand *createRadioCommand(RadioControlCommand_type kind, double va
 RadioControlCommand *createRadioCommand(RadioControlCommand_type kind,const char *name)
 {
 	if (kind != SET_MODE && kind != SET_SLEEP_LEVEL)
-		opp_error("incorrect usage of createRadioCommand, string argument is only compatible with SET_MODE or SET_SLEEP_LEVEL");
+		throw cRuntimeError("incorrect usage of createRadioCommand, string argument is only compatible with SET_MODE or SET_SLEEP_LEVEL");
 	RadioControlCommand *cmd = new RadioControlCommand("Radio control command", RADIO_CONTROL_COMMAND);
 	cmd->setRadioControlCommandKind(kind);
 	cmd->setName(name);
@@ -308,7 +308,7 @@ RadioControlCommand *createRadioCommand(RadioControlCommand_type kind,const char
 RadioControlCommand *createRadioCommand(RadioControlCommand_type kind, BasicState_type state)
 {
 	if (kind != SET_STATE)
-		opp_error("incorrect usage of createRadioCommand, double argument is only compatible with SET_TX_OUTPUT or SET_CARRIER_FREQ");
+		throw cRuntimeError("incorrect usage of createRadioCommand, double argument is only compatible with SET_TX_OUTPUT or SET_CARRIER_FREQ");
 	RadioControlCommand *cmd = new RadioControlCommand("Radio control command", RADIO_CONTROL_COMMAND);
 	cmd->setRadioControlCommandKind(kind);
 	cmd->setState(state);
@@ -318,7 +318,7 @@ RadioControlCommand *createRadioCommand(RadioControlCommand_type kind, BasicStat
 RadioControlCommand *createRadioCommand(RadioControlCommand_type kind)
 {
 	if (kind != SET_CS_INTERRUPT_ON && kind != SET_CS_INTERRUPT_OFF)
-		opp_error("incorrect usage of createRadioCommand, no argument is only compatible with SET_CS_INTERRUPT_OFF or SET_CS_INTERRUPT_ON");
+		throw cRuntimeError("incorrect usage of createRadioCommand, no argument is only compatible with SET_CS_INTERRUPT_OFF or SET_CS_INTERRUPT_ON");
 	RadioControlCommand *cmd = new RadioControlCommand("Radio control command", RADIO_CONTROL_COMMAND);
 	cmd->setRadioControlCommandKind(kind);
 	return cmd;

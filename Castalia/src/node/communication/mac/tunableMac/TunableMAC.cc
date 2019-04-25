@@ -56,7 +56,7 @@ void TunableMAC::startup()
 			break;
 		}
 		default:{
-			opp_error("\n[TunableMAC]:\n Illegal value of parameter \"backoffType\" in omnetpp.ini.");
+			throw cRuntimeError("\n[TunableMAC]:\n Illegal value of parameter \"backoffType\" in omnetpp.ini.");
 			break;
 		}
 	}
@@ -128,7 +128,7 @@ void TunableMAC::handleCarrierSenseResult(int returnCode)
 			 * bigger than p (=CSMApersistence) then we do not
 			 * transmit but instead we carrier sense yet again.
 			 */
-			if (CSMApersistance > 0 && CSMApersistance < genk_dblrand(1)){
+			if (CSMApersistance > 0 && CSMApersistance < getRNG(1)->doubleRand()){
 				setTimer(START_CARRIER_SENSING, phyDelayForValidCS);
 				break;
 			}
@@ -198,7 +198,7 @@ void TunableMAC::handleCarrierSenseResult(int returnCode)
 				}
 			}
 
-			backoffTimer = genk_dblrand(1) * backoffTimer;
+			backoffTimer = getRNG(1)->doubleRand() * backoffTimer;
 			setTimer(START_CARRIER_SENSING, backoffTimer);
 			trace() << "Channel busy, backing off for " << backoffTimer << " secs";
 
@@ -300,9 +300,9 @@ void TunableMAC::attemptTx()
 
 	macState = MAC_STATE_CONTENDING;
 
-	if (genk_dblrand(0) < probTx) {
+	if (getRNG(0)->doubleRand() < probTx) {
 		// This transmission attempt will happen after random offset
-		setTimer(START_CARRIER_SENSING, genk_dblrand(1) * randomTxOffset);
+		setTimer(START_CARRIER_SENSING, getRNG(1)->doubleRand() * randomTxOffset);
 		trace() << "MAC_STATE_CONTENDING, attempt " << numTx - numTxTries +1 << "/" << numTx << " contending";
 	} else {
 		// Move on to the next attempt after reTxInterval

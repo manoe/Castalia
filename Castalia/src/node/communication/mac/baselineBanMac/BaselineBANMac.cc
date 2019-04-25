@@ -31,7 +31,7 @@ void BaselineBANMac::startup() {
 	} else {
 		connectedHID = UNCONNECTED;
  		connectedNID = UNCONNECTED;
-		unconnectedNID = 1 + genk_intrand(0,14);    //we select random unconnected NID
+		unconnectedNID = 1 + getRNG(0)->intRand(14);    //we select random unconnected NID
 		trace() << "Selected random unconnected NID " << unconnectedNID;
 		scheduledAccessLength = par("scheduledAccessLength");
 		scheduledAccessPeriod = par("scheduledAccessPeriod");
@@ -708,7 +708,7 @@ bool BaselineBANMac::isPacketForMe(BaselineMacPacket *pkt) {
 			BaselineConnectionAssignmentPacket *connAssignment = check_and_cast<BaselineConnectionAssignmentPacket*>(pkt);
 			if (connAssignment->getRecipientAddress() != SELF_MAC_ADDRESS) {
 				// the packet is not for us, but the NID is the same, so we need to choose a new one.
-				unconnectedNID = 1 + genk_intrand(0,14);
+				unconnectedNID = 1 + getRNG(0)->intRand(14);
 				if (packetToBeSent) packetToBeSent->setNID(unconnectedNID);
 				trace() << "Choosing NEW unconnectedNID = " << unconnectedNID;
 				return false;
@@ -722,7 +722,7 @@ bool BaselineBANMac::isPacketForMe(BaselineMacPacket *pkt) {
 			pkt->getFrameSubtype() == B_ACK || pkt->getFrameSubtype() == B_ACK_POLL)) {
 			if (packetToBeSent == NULL || currentPacketTransmissions == 0)	{
 				trace() << "While unconnected: ACK packet received with no packet to ack, renewing NID";
-				unconnectedNID = 1 + genk_intrand(0,14);
+				unconnectedNID = 1 + getRNG(0)->intRand(14);
 				if (packetToBeSent) packetToBeSent->setNID(unconnectedNID);
 				trace() << "Choosing NEW unconnectedNID = " << unconnectedNID;
 				return false;
@@ -774,7 +774,7 @@ void BaselineBANMac::setHeaderFields(BaselineMacPacket * pkt, AcknowledgementPol
  */
 void BaselineBANMac::attemptTxInRAP() {
 	if (backoffCounter == 0) {
-		backoffCounter = 1 + genk_intrand(0,CW);
+		backoffCounter = 1 + getRNG(0)->intRand(CW);
 	}
 	trace() << "Starting to transmit " << packetToBeSent->getName() << " in RAP, backoffCounter " << backoffCounter;
 	attemptingToTX = true;

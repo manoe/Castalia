@@ -24,7 +24,7 @@ void VirtualApplication::initialize()
 	radioModule = check_and_cast <Radio*>(parent->getSubmodule("Communication")->getSubmodule("Radio"));
 	// check that all the pointers are valid
 	if (!resMgrModule || !mobilityModule || !radioModule)
-		opp_error("\n Virtual App init: Error in geting a valid reference module(s).");
+		throw cRuntimeError("\n Virtual App init: Error in geting a valid reference module(s).");
 
 	self = parent->getIndex();
 	// create the routing level address using self
@@ -42,7 +42,7 @@ void VirtualApplication::initialize()
 
 	double startup_delay = parent->par("startupOffset");
 	// Randomize the delay if the startupRandomization is non-zero
-	startup_delay += genk_dblrand(0) * (double)parent->par("startupRandomization");
+	startup_delay += getRNG(0)->doubleRand() * (double)parent->par("startupRandomization");
 
 	/* Send the STARTUP message to 1)Sensor_Manager, 2)Commmunication module,
 	 * 3) Resource Manager, and $)APP (self message) so that the node starts
@@ -146,7 +146,7 @@ void VirtualApplication::handleMessage(cMessage * msg)
 
 		default:
 		{
-			opp_error("Application module received unexpected message");
+			throw cRuntimeError("Application module received unexpected message");
 		}
 	}
 
@@ -185,7 +185,7 @@ void VirtualApplication::requestSensorReading(int index)
 void VirtualApplication::toNetworkLayer(cMessage * msg)
 {
 	if (msg->getKind() == APPLICATION_PACKET)
-		opp_error("toNetworkLayer() function used incorrectly to send APPLICATION_PACKET without destination Network address");
+		throw cRuntimeError("toNetworkLayer() function used incorrectly to send APPLICATION_PACKET without destination Network address");
 	send(msg, "toCommunicationModule");
 }
 

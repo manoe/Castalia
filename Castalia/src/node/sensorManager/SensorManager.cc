@@ -257,7 +257,7 @@ void SensorManager::parseStringParams(void)
 	    || (dSz != totalSensors) || (eSz != totalSensors)
 	    || (fSz != totalSensors) || (mSz != totalSensors)
 	    || (rSz != totalSensors) || (sSz != totalSensors))
-		opp_error("\n[Sensor Device Manager]: The parameters of the sensor device manager are not initialized correctly in omnet.ini file.");
+		throw cRuntimeError("\n[Sensor Device Manager]: The parameters of the sensor device manager are not initialized correctly in omnet.ini file.");
 }
 
 double SensorManager::getSensorDeviceBias(int index)

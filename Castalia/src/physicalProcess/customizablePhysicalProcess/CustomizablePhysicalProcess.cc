@@ -27,7 +27,7 @@ void CustomizablePhysicalProcess::initialize()
 void CustomizablePhysicalProcess::handleMessage(cMessage * msg)
 {
 	if (msg->getKind() != PHYSICAL_PROCESS_SAMPLING)
-		opp_error("Physical Process received message other than PHYSICAL_PROCESS_SAMPLING");
+		throw cRuntimeError("Physical Process received message other than PHYSICAL_PROCESS_SAMPLING");
 
 	PhysicalProcessMessage *receivedMsg = check_and_cast < PhysicalProcessMessage * >(msg);
 	int nodeIndex = receivedMsg->getSrcID();
@@ -98,7 +98,7 @@ void CustomizablePhysicalProcess::readIniFileParameters(void)
 		}
 
 		default: {
-			opp_error("\nError! Illegal value of parameter \"inputType\" of CustomizablePhysicalProcess module.\n");
+			throw cRuntimeError("\nError! Illegal value of parameter \"inputType\" of CustomizablePhysicalProcess module.\n");
 		}
 	}
 
@@ -116,12 +116,12 @@ void CustomizablePhysicalProcess::readIniFileParameters(void)
 				string::size_type posB = token.find(")", 0);
 
 				if ((posA != 0) || (posB == string::npos))
-					opp_error("\nError!(A) Illegal parameter format \"directNodeValueAssignment\" of CustomizablePhysicalProcess module.\n");
+					throw cRuntimeError("\nError!(A) Illegal parameter format \"directNodeValueAssignment\" of CustomizablePhysicalProcess module.\n");
 
 				token = token.substr(1, token.size() - 1);
 
 				if (token.size() < 1)
-					opp_error("\nError!(B) Illegal parameter format \"directNodeValueAssignment\" of CustomizablePhysicalProcess module.\n");
+					throw cRuntimeError("\nError!(B) Illegal parameter format \"directNodeValueAssignment\" of CustomizablePhysicalProcess module.\n");
 
 				defaultValue = atof(token.c_str());
 				valuesTable = new double[numNodes];
@@ -134,7 +134,7 @@ void CustomizablePhysicalProcess::readIniFileParameters(void)
 
 				if (tokenSize >= 3) {
 					if ((posA == string::npos) || (posA == 0) || (posA == tokenSize - 1))
-						opp_error("\nError! Illegal parameter format \"directNodeValueAssignment\" of CustomizablePhysicalProcess module.\n");
+						throw cRuntimeError("\nError! Illegal parameter format \"directNodeValueAssignment\" of CustomizablePhysicalProcess module.\n");
 
 					string tokA;
 					string tokB;
@@ -145,7 +145,7 @@ void CustomizablePhysicalProcess::readIniFileParameters(void)
 					double nodeVal = atof(tokB.c_str());
 
 					if (nodeId < 0 || nodeId > numNodes - 1)
-						opp_error("\nError! Illegal parameter format \"directNodeValueAssignment\" of CustomizablePhysicalProcess module.\n");
+						throw cRuntimeError("\nError! Illegal parameter format \"directNodeValueAssignment\" of CustomizablePhysicalProcess module.\n");
 
 					valuesTable[nodeId] = nodeVal;
 				}
@@ -159,7 +159,7 @@ void CustomizablePhysicalProcess::readIniFileParameters(void)
 		description = par("description");
 		numSources = par("numSources");
 		if (numSources > 5)
-			opp_error("Physical Process parameter \"numSources\" has been initialized with invalid value \"%d\"",
+			throw cRuntimeError("Physical Process parameter \"numSources\" has been initialized with invalid value \"%d\"",
 numSources);
 
 		/* 
@@ -202,25 +202,25 @@ void CustomizablePhysicalProcess::readScenariosFromIniFile(void)
 			if (valuesTokenizer.hasMoreTokens()) {	//get each one of the snapshot parameters
 				sources_snapshots[i][j].time = (simtime_t) atof(valuesTokenizer.nextToken());
 				if (!valuesTokenizer.hasMoreTokens())
-					opp_error("\nPhysical Process parameter error. Malformed  parameter : source_%d\n", i);
+					throw cRuntimeError("\nPhysical Process parameter error. Malformed  parameter : source_%d\n", i);
 
 				sources_snapshots[i][j].x = atof(valuesTokenizer.nextToken());
 				if (!valuesTokenizer.hasMoreTokens())
-					opp_error("\nPhysical Process parameter error. Malformed  parameter : source_%d\n", i);
+					throw cRuntimeError("\nPhysical Process parameter error. Malformed  parameter : source_%d\n", i);
 
 				sources_snapshots[i][j].y = atof(valuesTokenizer.nextToken());
 				if (!valuesTokenizer.hasMoreTokens())
-					opp_error("\nPhysical Process parameter error. Malformed  parameter : source_%d\n", i);
+					throw cRuntimeError("\nPhysical Process parameter error. Malformed  parameter : source_%d\n", i);
 
 				sources_snapshots[i][j].value = atof(valuesTokenizer.nextToken());
 				if (valuesTokenizer.hasMoreTokens())
-					opp_error("\nPhysical Process parameter error. Malformed  parameter : source_%d\n", i);
+					throw cRuntimeError("\nPhysical Process parameter error. Malformed  parameter : source_%d\n", i);
 			}
 
 			j++;
 		}
 		if (j > max_num_snapshots)
-			opp_error("\nPhysical Process intialization ERROR! You tried to pass more snapshots than the parameter \"max_num_snapshots\" specifies.");
+			throw cRuntimeError("\nPhysical Process intialization ERROR! You tried to pass more snapshots than the parameter \"max_num_snapshots\" specifies.");
 	}
 }
 

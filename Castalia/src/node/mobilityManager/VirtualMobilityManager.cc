@@ -22,10 +22,10 @@ void VirtualMobilityManager::initialize()
 	wchannel = network->getSubmodule("wirelessChannel");
 	
 	if (!network)
-		opp_error("Unable to obtain SN pointer for deployment parameter");
+		throw cRuntimeError("Unable to obtain SN pointer for deployment parameter");
 		
 	if (!wchannel)
-		opp_error("Unable to obtain wchannel pointer");
+		throw cRuntimeError("Unable to obtain wchannel pointer");
 	
 	parseDeployment();	
 	trace() << "initial location(x:y:z) is " << nodeLocation.x << ":" << 
@@ -53,17 +53,17 @@ void VirtualMobilityManager::parseDeployment() {
 		if (c[0] && c[0] == '[') {
 			c++;
 			if (!c[0] || c[0] < '0' || c[0] > '9')
-				opp_error("Bad syntax of SN.deployment parameter: expecing a digit at\n%s", c);
+				throw cRuntimeError("Bad syntax of SN.deployment parameter: expecing a digit at\n%s", c);
 			start_range = strtol(c, &c, 10);
 			if (!c[0] || (c[0] != ']' && c[0] != '.'))
-				opp_error("Bad syntax of SN.deployment parameter: expecing a ']' or '.' at\n%s", c);
+				throw cRuntimeError("Bad syntax of SN.deployment parameter: expecing a ']' or '.' at\n%s", c);
 			if (c[0] == ']' && start_range != index) {
 				ct = t.nextToken();
 				continue;
 			} else if (c[0] == '.' && c[1] && c[1] == '.') {
 				c += 2;
 				if (c[0] < '0' || c[0] > '9')
-					opp_error("Bad syntax of SN.deployment parameter: expecing a digit at\n%s", c);
+					throw cRuntimeError("Bad syntax of SN.deployment parameter: expecing a digit at\n%s", c);
 				end_range = strtol(c, &c, 10);
 				if (index > end_range || index < start_range) {
 					ct = t.nextToken();
@@ -71,10 +71,10 @@ void VirtualMobilityManager::parseDeployment() {
 				}
 			}
 			if (!c[0] || c[0] != ']')
-				opp_error("Bad syntax of SN.deployment parameter: expecing a ']' at\n%s", c);
+				throw cRuntimeError("Bad syntax of SN.deployment parameter: expecing a ']' at\n%s", c);
 			c++;
 			if (c[0] != '-' || !c[1] || c[1] != '>')
-				opp_error("Bad syntax of SN.deployment parameter: expecing a '->' at\n%s", c);
+				throw cRuntimeError("Bad syntax of SN.deployment parameter: expecing a '->' at\n%s", c);
 			c += 2;
 		} else {
 			start_range = 0;
@@ -99,15 +99,15 @@ void VirtualMobilityManager::parseDeployment() {
 		int gridx, gridy, gridz, gridi;
 		gridi = index - start_range;
 		if (c[0] < '0' || c[0] > '9')
-			opp_error("Bad syntax of SN.deployment parameter: expecing 'uniform', 'center', 'NxN[xN]' or 'randomized_NxN[xN]' at\n%s", c);
+			throw cRuntimeError("Bad syntax of SN.deployment parameter: expecing 'uniform', 'center', 'NxN[xN]' or 'randomized_NxN[xN]' at\n%s", c);
 		gridx = strtol(c, &c, 10);
 		if (c[0] != 'x' || !c[1] || c[1] < '0' || c[1] > '9')
-			opp_error("Bad syntax of SN.deployment parameter: expecing 'x' followed by a digit at\n%s", c);
+			throw cRuntimeError("Bad syntax of SN.deployment parameter: expecing 'x' followed by a digit at\n%s", c);
 		c++;
 		gridy = strtol(c, &c, 10);
 		if (c[0]) {
 			if (c[0] != 'x' || !c[1] || c[1] < '0' || c[1] > '9') {
-				opp_error("Bad syntax of SN.deployment parameter: expecing 'x' followed by a digit at\n%s", c);
+				throw cRuntimeError("Bad syntax of SN.deployment parameter: expecing 'x' followed by a digit at\n%s", c);
 			} else {
 				c++;
 				gridz = strtol(c, &c, 10);

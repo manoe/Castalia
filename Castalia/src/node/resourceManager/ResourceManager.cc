@@ -37,7 +37,7 @@ void ResourceManager::initialize()
 	periodicEnergyCalculationInterval = (double)par("periodicEnergyCalculationInterval") / 1000;
 
 	if (baselineNodePower < 0 || periodicEnergyCalculationInterval < 0)
-		opp_error("Illegal values for baselineNodePower and/or periodicEnergyCalculationInterval in resource manager module");
+		throw cRuntimeError("Illegal values for baselineNodePower and/or periodicEnergyCalculationInterval in resource manager module");
 
 	currentNodePower = baselineNodePower;
 	remainingEnergy = initialEnergy;
@@ -96,7 +96,7 @@ void ResourceManager::handleMessage(cMessage * msg)
 		}
 
 		default:{
-			opp_error("ERROR: Unexpected message received by resource manager: %s", msg->getKind());
+			throw cRuntimeError("ERROR: Unexpected message received by resource manager: %s", msg->getKind());
 		}
 	}
 	delete msg;

@@ -27,9 +27,9 @@ void ConnectivityMap::startup()
 	txInterval_perNode = packetsPerNode * packetSpacing;
 	txInterval_total = (txInterval_perNode * totalSNnodes);
 
-	if (strtod(ev.getConfig()->getConfigValue("sim-time-limit"), NULL) < txInterval_total) {
+	if (strtod(cSimulation::getActiveEnvir()->getConfig()->getConfigValue("sim-time-limit"), NULL) < txInterval_total) {
 		trace() << "ERROR: Total sim time should be at least = " << txInterval_total;
-		opp_error("\nError: simulation time not large enough for the conectivity map application\n");
+		throw cRuntimeError("\nError: simulation time not large enough for the conectivity map application\n");
 	}
 
 	double startTxTime = txInterval_perNode * self;

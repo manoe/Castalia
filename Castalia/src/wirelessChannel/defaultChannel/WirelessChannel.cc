@@ -94,11 +94,11 @@ void WirelessChannel::initialize(int stage)
 	 **************************************************************/
 	nodeLocation = new NodeLocation_type[numOfNodes];
 	if (nodeLocation == NULL)
-		opp_error("Could not allocate array nodeLocation\n");
+		throw cRuntimeError("Could not allocate array nodeLocation\n");
 
 	cellOccupation = new list<int>[numOfSpaceCells];
 	if (cellOccupation == NULL)
-		opp_error("Could not allocate array cellOccupation\n");
+		throw cRuntimeError("Could not allocate array cellOccupation\n");
 
 	cTopology *topo;	// temp variable to access initial location of the nodes
 	topo = new cTopology("topo");
@@ -151,7 +151,7 @@ void WirelessChannel::initialize(int stage)
 
 			int cell = zIndex * zIndexIncrement + yIndex * yIndexIncrement + xIndex * xIndexIncrement;
 			if (cell < 0 || cell >= numOfSpaceCells) {
-				opp_error("Cell out of bounds for node %i, please check your mobility module settings\n", i);
+				throw cRuntimeError("Cell out of bounds for node %i, please check your mobility module settings\n", i);
 			}
 
 			nodeLocation[i].cell = cell;
@@ -171,7 +171,7 @@ void WirelessChannel::initialize(int stage)
 	 **********************************************/
 	pathLoss = new list<PathLossElement*>[numOfSpaceCells];
 	if (pathLoss == NULL)
-		opp_error("Could not allocate array pathLoss\n");
+		throw cRuntimeError("Could not allocate array pathLoss\n");
 
 	int elementSize = sizeof(PathLossElement) + 3 * sizeof(PathLossElement *);
 	int totalElements = 0;	//keep track of pathLoss size for reporting purposes
@@ -270,7 +270,7 @@ void WirelessChannel::initialize(int stage)
 	 *********************************************************************/
 	nodesAffectedByTransmitter = new list<int>[numOfNodes];
 	if (nodesAffectedByTransmitter == NULL)
-		opp_error("Could not allocate array nodesAffectedByTransmitter\n");
+		throw cRuntimeError("Could not allocate array nodesAffectedByTransmitter\n");
 
 	/************************************************************
 	 * If direct assignment of link qualities is given at the
@@ -281,7 +281,7 @@ void WirelessChannel::initialize(int stage)
 
 	/* Create temporal model object from parameters file (if given) */
 	if (strlen(temporalModelParametersFile) > 0) {
-		temporalModel = new channelTemporalModel(temporalModelParametersFile, 2);
+		temporalModel = new channelTemporalModel(temporalModelParametersFile, getRNG(2));
 		temporalModelDefined = true;
 	} else {
 		temporalModelDefined = false;
@@ -314,7 +314,7 @@ void WirelessChannel::handleMessage(cMessage * msg)
 	     *****************************************************/
 
 			if (onlyStaticNodes)
-				opp_error("Error: Rerceived WS_NODE_MOVEMENT msg, while onlyStaticNodes is TRUE");
+				throw cRuntimeError("Error: Rerceived WS_NODE_MOVEMENT msg, while onlyStaticNodes is TRUE");
 
 			int oldCell = nodeLocation[srcAddr].cell;
 			nodeLocation[srcAddr].x = mobilityMsg->getX();
@@ -325,7 +325,7 @@ void WirelessChannel::handleMessage(cMessage * msg)
 			if ((nodeLocation[srcAddr].x < 0.0) ||
 				(nodeLocation[srcAddr].y < 0.0) ||
 				(nodeLocation[srcAddr].z < 0.0))
-					opp_error("Wireless channel received faulty WC_NODE_MOVEMENT msg. We cannot have negative node coordinates");
+					throw cRuntimeError("Wireless channel received faulty WC_NODE_MOVEMENT msg. We cannot have negative node coordinates");
 
 			int xIndex = (int)floor(nodeLocation[srcAddr].x / xFieldSize * numOfXCells);
 			if (((xIndex - 1) * xCellSize) >= nodeLocation[srcAddr].x)
@@ -454,7 +454,7 @@ void WirelessChannel::handleMessage(cMessage * msg)
 		}
 
 	default:{
-			opp_error("ERROR: Wireless Channel received unknown message kind=%i", msg->getKind());
+			throw cRuntimeError("ERROR: Wireless Channel received unknown message kind=%i", msg->getKind());
 			break;
 		}
 	}
@@ -532,7 +532,7 @@ void WirelessChannel::parsePathLossMap(void)
 		return;
 	ifstream f(pathLossMapFile);
 	if (!f.is_open())
-		opp_error("\n[Wireless Channel]:\n Error reading from pathLossMapFile %s\n", pathLossMapFile);
+		throw cRuntimeError("\n[Wireless Channel]:\n Error reading from pathLossMapFile %s\n", pathLossMapFile);
 
 	string s;
 	const char *ct;
@@ -551,19 +551,19 @@ void WirelessChannel::parsePathLossMap(void)
 		if (!ct[0] || ct[0] == '#')
 			continue;	// skip comments
 		if (parseInt(ct, &source))
-			opp_error("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting source identifier\n");
+			throw cRuntimeError("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting source identifier\n");
 		while (ct[0] && ct[0] != '>')
 			ct++;	//skip untill '>' character
 		if (!ct[0])
-			opp_error("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting comma separated list of values\n");
+			throw cRuntimeError("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting comma separated list of values\n");
 		cStringTokenizer t(++ct, ",");	//divide the rest of the strig with comma delimiter
 		while ((ct = t.nextToken())) {
 			if (parseInt(ct, &destination))
-				opp_error("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting target identifier\n");
+				throw cRuntimeError("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting target identifier\n");
 			while (ct[0] && ct[0] != ':')
 				ct++;	//skip untill ':' character
 			if (parseFloat(++ct, &pathloss_db))
-				opp_error("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting dB value for path loss\n");
+				throw cRuntimeError("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting dB value for path loss\n");
 			updatePathLossElement(source, destination, pathloss_db);
 		}
 	}

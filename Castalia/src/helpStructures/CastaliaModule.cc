@@ -98,7 +98,7 @@ void CastaliaModule::declareOutput(const char *descr)
 void CastaliaModule::collectOutput(const char *descr, int index)
 {
 	if (index < 0)
-		opp_error("Negative output index not permitted");
+		throw cRuntimeError("Negative output index not permitted");
 	collectOutputNocheck(descr, index, "", 1);
 }
 
@@ -106,7 +106,7 @@ void CastaliaModule::collectOutput(const char *descr, int index,
 						const char *label, double amt)
 {
 	if (index < 0)
-		opp_error("Negative output index not permitted");
+		throw cRuntimeError("Negative output index not permitted");
 	collectOutputNocheck(descr, index, label, amt);
 }
 
@@ -122,7 +122,7 @@ void CastaliaModule::collectOutputNocheck(const char *descr, int index,
 void CastaliaModule::collectOutput(const char *descr, int index, const char *label)
 {
 	if (index < 0)
-		opp_error("Negative output index not permitted");
+		throw cRuntimeError("Negative output index not permitted");
 	collectOutputNocheck(descr, index, label, 1);
 }
 
@@ -130,7 +130,7 @@ void CastaliaModule::declareHistogram(const char *descr, double min,
 					double max, int buckets)
 {
 	if (min >= max || buckets < 1)
-		opp_error("ERROR: declareHistogram failed, bad parameters");
+		throw cRuntimeError("ERROR: declareHistogram failed, bad parameters");
 
 	histogramOutputByIndex hist;
 	hist.min = min;
@@ -144,7 +144,7 @@ void CastaliaModule::declareHistogram(const char *descr, double min,
 void CastaliaModule::collectHistogram(const char *descr, int index, double value)
 {
 	if (index < 0)
-		opp_error("Negative output index not permitted");
+		throw cRuntimeError("Negative output index not permitted");
 	collectHistogramNocheck(descr, index, value);
 }
 
@@ -181,9 +181,9 @@ void CastaliaModule::powerDrawn(double power)
 		else if (name.compare("SensorManager") == 0)
 			classPointers.resourceManager = getParentModule()->getSubmodule("ResourceManager");
 		else
-			opp_error("%s module has no rights to call drawPower() function", getFullPath().c_str());
+			throw cRuntimeError("%s module has no rights to call drawPower() function", getFullPath().c_str());
         if (!classPointers.resourceManager) 
-        	opp_error("Unable to find pointer to resource manager module");
+        	throw cRuntimeError("Unable to find pointer to resource manager module");
     }
 
 	ResourceManagerMessage *drawPowerMsg =

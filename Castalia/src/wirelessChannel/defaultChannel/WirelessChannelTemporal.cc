@@ -14,11 +14,11 @@
 
 //Constructor for channelTemporalModel, the key parameter here is the input file to read the 
 //model data from. Whole parsing of the file is done here
-channelTemporalModel::channelTemporalModel(const char *file, int rng)
+channelTemporalModel::channelTemporalModel(const char *file, cRNG *rng)
 {
 	correlationTime = NULL;
 	coherencePDF = NULL;
-	rngNum = rng;
+	rngGen = rng;
 
 	std::string s;
 	std::ifstream f(file);
@@ -312,7 +312,7 @@ float channelTemporalModel::drawFromPDF(PDFType * pdf)
 							//avoid infinite recursion if a PDF has been defined carelessly
 		guard++;
 		layer = &pdf->layers[currentLayer];
-		index = genk_intrand(rngNum, layer->numOfTotalElements);
+		index = rngGen->intRand( layer->numOfTotalElements);
 		if (index < layer->numOfValues) {
 			return layer->values[index];
 		} else {

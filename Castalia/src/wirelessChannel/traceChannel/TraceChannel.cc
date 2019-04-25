@@ -23,18 +23,18 @@ void TraceChannel::initialize()
 	coordinator = par("coordinator");
 
 	if (coordinator >= numNodes || coordinator < 0) 
-		opp_error("Invalid value of coordinator parameter in TraceChannel module\n");
+		throw cRuntimeError("Invalid value of coordinator parameter in TraceChannel module\n");
 
 	nodesAffectedByTransmitter = new list<int>[numNodes];
 	if (nodesAffectedByTransmitter == NULL)
-		opp_error("Could not allocate nodesAffectedByTransmitter array\n");
+		throw cRuntimeError("Could not allocate nodesAffectedByTransmitter array\n");
 		
 	traceStep = (double)par("traceStep")/1000.0;
 		
 	nextLine = 0;
 	traceFile.open((const char *)par("traceFile"));
 	if (!traceFile.is_open())
-		opp_error("Could not open trace file for reading\n");
+		throw cRuntimeError("Could not open trace file for reading\n");
 	
 	signalDeliveryThreshold = par("signalDeliveryThreshold");
 	pathlossMapFile = par("pathlossMapFile");
@@ -46,7 +46,7 @@ void TraceChannel::initialize()
 		parsePathLossMap(par("pathlossMapOffset"));
 		/* Create temporal model object from parameters file (if given) */
 		if (strlen(temporalModelParametersFile) > 0) {
-			temporalModel = new channelTemporalModel(temporalModelParametersFile, 2);
+			temporalModel = new channelTemporalModel(temporalModelParametersFile, getRNG(2));
 		}
 	} else {
 		for (int i = 0; i < numNodes; i++) {
@@ -69,7 +69,7 @@ void TraceChannel::parsePathLossMap(double offset)
 
 	ifstream f(pathlossMapFile);
 	if (!f.is_open())
-		opp_error("\n[Wireless Channel]:\n Error reading from pathLossMapFile %s\n", pathlossMapFile);
+		throw cRuntimeError("\n[Wireless Channel]:\n Error reading from pathLossMapFile %s\n", pathlossMapFile);
 
 	string s;
 	const char *ct;
@@ -88,19 +88,19 @@ void TraceChannel::parsePathLossMap(double offset)
 		if (!ct[0] || ct[0] == '#')
 			continue;	// skip comments
 		if (parseInt(ct, &source))
-			opp_error("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting source identifier\n");
+			throw cRuntimeError("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting source identifier\n");
 		while (ct[0] && ct[0] != '>')
 			ct++;	//skip untill '>' character
 		if (!ct[0])
-			opp_error("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting comma separated list of values\n");
+			throw cRuntimeError("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting comma separated list of values\n");
 		cStringTokenizer t(++ct, ",");	//divide the rest of the strig with comma delimiter
 		while ((ct = t.nextToken())) {
 			if (parseInt(ct, &destination))
-				opp_error("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting target identifier\n");
+				throw cRuntimeError("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting target identifier\n");
 			while (ct[0] && ct[0] != ':')
 				ct++;	//skip untill ':' character
 			if (parseFloat(++ct, &pathloss_db))
-				opp_error("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting dB value for path loss\n");
+				throw cRuntimeError("\n[Wireless Channel]:\n Bad syntax in pathLossMapFile, expecting dB value for path loss\n");
 			pathlossMap[source][destination] = new PathLossElement(pathloss_db + offset);
 		}
 	}
@@ -115,7 +115,7 @@ void TraceChannel::handleMessage(cMessage * msg)
 	switch (msg->getKind()) {
 
 	case WC_NODE_MOVEMENT:{
-		opp_error("Error: Trace channel does not support WC_NODE_MOVEMENT message");
+		throw cRuntimeError("Error: Trace channel does not support WC_NODE_MOVEMENT message");
 		break;
 	}
 
@@ -194,7 +194,7 @@ void TraceChannel::handleMessage(cMessage * msg)
 	}
 
 	default:{
-		opp_error("ERROR: Wireless Channel received unknown message kind=%i", msg->getKind());
+		throw cRuntimeError("ERROR: Wireless Channel received unknown message kind=%i", msg->getKind());
 		break;
 	}
 	
@@ -228,7 +228,7 @@ float TraceChannel::currentPathloss(int nodeId) {
 	
 	if (nodeId > coordinator) nodeId--;
 	if (nodeId >= (int)traceValues.size()) {
-		opp_error("trace file does not provide information for node %i (%i columns)",
+		throw cRuntimeError("trace file does not provide information for node %i (%i columns)",
 				nodeId,(int)traceValues.size());
 	} 
 	return traceValues[nodeId] > 0 ? traceValues[nodeId] : -traceValues[nodeId];
@@ -242,7 +242,7 @@ float TraceChannel::parseFloat(const char *str)
 		float result = strtof(str, &tmp);
 		if (str != tmp) return result;
 	}
-	opp_error("ERROR: TraceChannel unable to parse traceFile at '%s'",str);
+	throw cRuntimeError("ERROR: TraceChannel unable to parse traceFile at '%s'",str);
 }
 
 //wrapper function for atoi(...) call. returns 1 on error, 0 on success

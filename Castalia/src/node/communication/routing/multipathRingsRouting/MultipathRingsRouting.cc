@@ -24,7 +24,7 @@ void MultipathRingsRouting::startup()
 	if (appModule->hasPar("isSink"))
 		isSink = appModule->par("isSink");
 	else
-		opp_error("\nMultiPathRings routing has to be used with an application that defines the parameter isSink");
+		throw cRuntimeError("\nMultiPathRings routing has to be used with an application that defines the parameter isSink");
 
 	currentLevel = tmpLevel = isSink ? 0 : NO_LEVEL;
 	currentSinkID = tmpSinkID = isSink ? self : NO_SINK;

@@ -14,7 +14,6 @@
 #define __CHANNELMODEL_H
 
 #include <omnetpp.h>
-#include "random.h"
 
 #include <iostream>
 #include <fstream>
@@ -58,7 +57,7 @@ class channelTemporalModel {
 	int numOfSignalVariationValues;	//this value is calculated based on 'Signal Variability' parameter
 	int numOfCorrelationTimes;		//this is taken directly from 'Correlation times' parameter
 
-	int rngNum;						//random number generator to use
+	cRNG* rngGen;						//random number generator to use
 
 	double coherenceTime;			//value of time that needs to be exceeded in order to draw from coherencePDF
 
@@ -74,7 +73,7 @@ class channelTemporalModel {
 	int isValidLayer(const char *);
 
  public:
-	 channelTemporalModel(const char *, int);
+	 channelTemporalModel(const char *, cRNG * );
 	~channelTemporalModel();
 	double runTemporalModel(double, float *);
 };

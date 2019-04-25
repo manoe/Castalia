@@ -99,7 +99,7 @@ void TMAC::timerFiredCallback(int timer)
 			 * within the duration of 1 frame
 			 */
 			if (macState == MAC_STATE_SETUP)
-				setTimer(SYNC_CREATE, genk_dblrand(1) * frameTime);
+				setTimer(SYNC_CREATE, getRNG(1)->doubleRand() * frameTime);
 			break;
 		}
 
@@ -326,7 +326,7 @@ void TMAC::resetDefaultState(const char *descr)
 			performCarrierSense(MAC_CARRIER_SENSE_BEFORE_SLEEP);
 		}
 	} else if (primaryWakeup) {
-		simtime_t randomContentionInterval = genk_dblrand(1) * contentionPeriod;
+		simtime_t randomContentionInterval = getRNG(1)->doubleRand() * contentionPeriod;
 		if (needResync) {
 			if (syncPacket)
 				cancelAndDelete(syncPacket);

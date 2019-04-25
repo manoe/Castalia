@@ -24,7 +24,7 @@ void VirtualRouting::initialize()
 	resMgrModule = check_and_cast <ResourceManager*>(getParentModule()->getParentModule()->getSubmodule("ResourceManager"));
 
 	if (!resMgrModule || !radioModule)
-		opp_error("\n Virtual Routing init: Error in geting a valid reference module(s).");
+		throw cRuntimeError("\n Virtual Routing init: Error in geting a valid reference module(s).");
 
 	self = getParentModule()->getParentModule()->getIndex();
 	// create the routing level address using self
@@ -44,7 +44,7 @@ void VirtualRouting::initialize()
 void VirtualRouting::toMacLayer(cMessage * msg)
 {
 	if (msg->getKind() == NETWORK_LAYER_PACKET)
-		opp_error("toMacLayer() function used incorrectly to send NETWORK_LAYER_PACKET without destination MAC address");
+		throw cRuntimeError("toMacLayer() function used incorrectly to send NETWORK_LAYER_PACKET without destination MAC address");
 	send(msg, "toMacModule");
 }
 
@@ -181,7 +181,7 @@ void VirtualRouting::handleMessage(cMessage * msg)
 		}
 
 		default:{
-			opp_error("Network module recieved unexpected message: [%s]", msg->getName());
+			throw cRuntimeError("Network module recieved unexpected message: [%s]", msg->getName());
 		}
 	}
 

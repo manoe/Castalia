@@ -34,7 +34,7 @@ void CarsPhysicalProcess::initialize()
 		}
 	}
 
-	double arrival = genk_dblrand(0) * car_interarrival + car_interarrival / 2;
+	double arrival = getRNG(0)->doubleRand() * car_interarrival + car_interarrival / 2;
 	trace() << "First car arrival at " << arrival;
 	scheduleAt(arrival,	new cMessage("New car arrival message", TIMER_SERVICE));
 
@@ -66,7 +66,7 @@ void CarsPhysicalProcess::handleMessage(cMessage * msg)
 
 			if (pos != -1) {
 				trace() << "New car arrives on the bridge, index " << pos;
-				if (genk_dblrand(0) > 0.5) {
+				if (getRNG(0)->doubleRand() > 0.5) {
 					sources_snapshots[pos][0].x = point1_x_coord;
 					sources_snapshots[pos][0].y = point1_y_coord;
 					sources_snapshots[pos][1].x = point2_x_coord;
@@ -82,13 +82,13 @@ void CarsPhysicalProcess::handleMessage(cMessage * msg)
 				collectOutput("Cars generated on the road");
 			}
 
-			double arrival = genk_dblrand(0) * car_interarrival + car_interarrival / 2;
+			double arrival = getRNG(0)->doubleRand() * car_interarrival + car_interarrival / 2;
 			scheduleAt(simTime() + arrival,	msg);
 			return;
 		}
 
 		default: {
-			opp_error(":\n Physical Process received message other than PHYSICAL_PROCESS_SAMPLING");
+			throw cRuntimeError(":\n Physical Process received message other than PHYSICAL_PROCESS_SAMPLING");
 		}
 	}
 }

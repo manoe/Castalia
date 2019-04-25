@@ -19,7 +19,7 @@ void ValueReporting::startup()
 	maxSampleInterval = ((double)par("maxSampleInterval")) / 1000.0;
 	minSampleInterval = ((double)par("minSampleInterval")) / 1000.0;
 	currSentSampleSN = 0;
-	randomBackoffIntervalFraction = genk_dblrand(0);
+	randomBackoffIntervalFraction = getRNG(0)->doubleRand();
 	sentOnce = false;
 	setTimer(REQUEST_SAMPLE, maxSampleInterval * randomBackoffIntervalFraction);
 }

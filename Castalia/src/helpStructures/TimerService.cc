@@ -24,9 +24,9 @@ void TimerService::timerFiredCallback(int timerIndex)
 void TimerService::cancelTimer(int timerIndex)
 {
 	if (timerIndex < 0)
-		opp_error("cancelTimer(): timerIndex=%i negative index is not allowed",timerIndex);
+		throw cRuntimeError("cancelTimer(): timerIndex=%i negative index is not allowed",timerIndex);
 	if (timerIndex >= TIMER_MAX_SIZE)
-		opp_error("cancelTimer(): timerIndex=%i is too large",timerIndex);
+		throw cRuntimeError("cancelTimer(): timerIndex=%i is too large",timerIndex);
 	if (timerIndex >= timerMessages.size())
 		return;
 	TimerServiceMessage* tmp = timerMessages[timerIndex];
@@ -38,9 +38,9 @@ void TimerService::cancelTimer(int timerIndex)
 void TimerService::setTimer(int timerIndex, simtime_t time)
 {
 	if (timerIndex < 0)
-		opp_error("setTimer(): timerIndex=%i negative index is not allowed",timerIndex);
+		throw cRuntimeError("setTimer(): timerIndex=%i negative index is not allowed",timerIndex);
 	if (timerIndex >= TIMER_MAX_SIZE)
-		opp_error("setTimer(): timerIndex=%i is too large",timerIndex);
+		throw cRuntimeError("setTimer(): timerIndex=%i is too large",timerIndex);
 	cancelTimer(timerIndex);
 	if (timerIndex >= timerMessages.size()) {
 		int newSize = timerMessages.size() + TIMER_MIN_SIZE;
@@ -73,9 +73,9 @@ void TimerService::handleTimerMessage(cMessage * msg)
 simtime_t TimerService::getTimer(int timerIndex) 
 {
 	if (timerIndex < 0)
-		opp_error("getTimer(): timerIndex=%i negative index is not allowed",timerIndex);
+		throw cRuntimeError("getTimer(): timerIndex=%i negative index is not allowed",timerIndex);
 	if (timerIndex >= TIMER_MAX_SIZE)
-		opp_error("getTimer(): timerIndex=%i is too large",timerIndex);
+		throw cRuntimeError("getTimer(): timerIndex=%i is too large",timerIndex);
 	if (timerIndex >= timerMessages.size())
 		return -1;
 	if (timerMessages[timerIndex] == NULL)
