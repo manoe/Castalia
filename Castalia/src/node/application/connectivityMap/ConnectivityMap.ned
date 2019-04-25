@@ -23,7 +23,7 @@ simple ConnectivityMap like node.application.iApplication {
 	int priority = default (1);
 	int constantDataPayload = default (8);
 
-	int packetSpacing = default (100);	// in ms
+	double packetSpacing = default (100);	// in ms
 	int packetsPerNode = default (100);
 	int packetSize = default (32);	// in bytes
 

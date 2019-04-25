@@ -31,11 +31,11 @@ simple TunableMAC like node.communication.mac.iMac {
 	int numTx = default (1);		// when we have something to Tx, how many times we try
 	double randomTxOffset = default (0.0);	// Tx after time chosen randomly from interval [0..randomTxOffset]
 	double reTxInterval = default (0.0);	// Interval between retransmissions in ms, (numTx-1) retransmissions
-	double backoffType = default (1);	// 0-->(backoff = sleepinterval), 
+	int backoffType = default (1);	// 0-->(backoff = sleepinterval), 
 						// 1-->(backoff = constant value), 
 						// 2-->(backoff = multiplying value - e.g. 1*a, 2*a, 3*a, 4*a ...), 
 						// 3-->(backoff = exponential value - e.g. 2, 4, 8, 16, 32...)
-	int backoffBaseValue = default (16);	// the backoff base value in ms
+	double backoffBaseValue = default (16);	// the backoff base value in ms
 	double CSMApersistance = default (0); 	// value in [0..1], is CSMA non-persistent, p-persistent, or 1-persistent?
 	bool txAllPacketsInFreeChannel = default (true); // if you find the channel free, tx all packets in buffer? 
 	bool sleepDuringBackoff = default (false);	// for no dutyCycle case: sleep when backing off?

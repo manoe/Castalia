@@ -22,7 +22,7 @@ simple SimpleAggregation like node.application.iApplication {
 	int priority = default (1);
 	int packetHeaderOverhead = default (8);	// in bytes
 	int constantDataPayload = default (2);	// in bytes
-	int sampleInterval = default (1000);	// in ms
+	double sampleInterval = default (1000);	// in ms
 	bool isSink = default (false);
 
  gates:

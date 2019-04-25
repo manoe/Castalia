@@ -17,9 +17,9 @@ import node;
 network SN {
 	
  parameters:
-	int field_x = default (30);			// the length of the deployment field
-	int field_y = default (30);			// the width of the deployment field
-	int field_z = default (0);			// the height of the deployment field (2-D field by default)
+	double field_x = default (30);			// the length of the deployment field
+	double field_y = default (30);			// the width of the deployment field
+	double field_z = default (0);			// the height of the deployment field (2-D field by default)
 
 	int numNodes;						// the number of nodes
 

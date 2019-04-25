@@ -35,9 +35,9 @@ void VirtualMobilityManager::initialize()
 void VirtualMobilityManager::parseDeployment() {
 	const char *ct;
 	char *c; 
-	int xlen = network->par("field_x");
-	int ylen = network->par("field_y");
-	int zlen = network->par("field_z");
+	double xlen = network->par("field_x");
+	double ylen = network->par("field_y");
+	double zlen = network->par("field_z");
 	nodeLocation.phi = node->par("phi");
 	nodeLocation.theta = node->par("theta");
 

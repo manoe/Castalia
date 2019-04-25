@@ -32,8 +32,8 @@ simple BridgeTest like node.application.iApplication {
 	double reportTreshold = default (10);
 	double sampleInterval = default (100);	// in ms
 	int sampleSize = default (12);	// in bytes
-	int reprogramInterval = default (86400);	// in seconds
-	int reprogramPacketDelay = default (500);	// in ms
+	double reprogramInterval = default (86400);	// in seconds
+	double reprogramPacketDelay = default (500);	// in ms
 	int reprogramPayload = default (5120);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes
 

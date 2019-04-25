@@ -40,7 +40,7 @@ enum BridgeTestTimers {
 
 class BridgeTest:public VirtualApplication {
  private:
-	int reportTreshold;
+	double reportTreshold;
 	double sampleInterval;
 	simtime_t reprogramInterval;
 	simtime_t reprogramPacketDelay;

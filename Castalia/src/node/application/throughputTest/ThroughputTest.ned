@@ -33,7 +33,7 @@ simple ThroughputTest like node.application.iApplication {
 	double packet_rate = default (0);	// packets per second, by default we transmit no packets
 	double startupDelay = default (0);	// delay in seconds before the app stars producing packets
 
-	double latencyHistogramMax = default (200);
+	double latencyHistogramMax = default (200.0);
 	int latencyHistogramBuckets = default (10);
 
  gates:

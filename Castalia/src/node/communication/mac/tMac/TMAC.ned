@@ -38,7 +38,7 @@ simple TMAC like node.communication.mac.iMac {
 	bool conservativeTA = default (true);	//conservative activation timeout - will always stay awake for 
 											//atleast 15 ms after any activity on the radio
 
-	double resyncTime = default (6);		// timer for re-sending SYNC msg, in seconds
+	int resyncTime = default (6);		// timer for re-sending SYNC msg, in seconds
 	double contentionPeriod = default (10);	// 10 ms
 	double listenTimeout = default (15);	// 15 ms, is the timeout TA (Activation event)
 	double waitTimeout = default (5);		// timeout for expecting a reply to DATA or RTS packet

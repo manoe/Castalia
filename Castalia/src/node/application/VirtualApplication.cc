@@ -61,7 +61,7 @@ void VirtualApplication::initialize()
 	 * following two parameters. If they are not defined then the
 	 * declareHistogram and collectHistogram statement are not called.
 	 */
-	latencyMax = hasPar("latencyHistogramMax") ? par("latencyHistogramMax") : 0;
+	latencyMax = hasPar("latencyHistogramMax") ? par("latencyHistogramMax") : 0.0;
 	latencyBuckets = hasPar("latencyHistogramBuckets") ? par("latencyHistogramBuckets") : 0;
 	if (latencyMax > 0 && latencyBuckets > 0)
 		declareHistogram("Application level latency, in ms", 0, latencyMax, latencyBuckets);

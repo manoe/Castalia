@@ -21,9 +21,9 @@ simple WirelessChannel like wirelessChannel.iWirelessChannel {
 	bool collectTraceInfo = default (false);
 	bool onlyStaticNodes = default (true);		// if NO mobility, set it to true for greater efficiency 
 
-	int xCellSize = default (5);		// if we define cells (to handle mobility)
-	int yCellSize = default (5);		// how big are the cells in each dimension
-	int zCellSize = default (1);
+	double xCellSize = default (5);		// if we define cells (to handle mobility)
+	double yCellSize = default (5);		// how big are the cells in each dimension
+	double zCellSize = default (1);
 
 	double pathLossExponent = default (2.4);	// how fast is the signal strength fading
 	double PLd0 = default (55);					// path loss at reference distance d0 (in dBm)

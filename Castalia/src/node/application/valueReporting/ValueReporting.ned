@@ -22,8 +22,8 @@ simple ValueReporting like node.application.iApplication {
 	int priority = default (1);
 	int packetHeaderOverhead = default (8);	// in bytes
 	int constantDataPayload = default (12);	// in bytes
-	int maxSampleInterval = default (60000);// in msec
-	int minSampleInterval = default (1000);	// in msec
+	double maxSampleInterval = default (60000);// in msec
+	double minSampleInterval = default (1000);	// in msec
 	bool isSink = default (false);
 
  gates:
