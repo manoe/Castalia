@@ -17,7 +17,5 @@ cplusplus {{
 class RoutingPacket;
 
 packet BypassRoutingPacket extends RoutingPacket {
-	string source;
-	string destination;
 }
 

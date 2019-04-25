@@ -43,5 +43,4 @@ message RadioControlCommand {
 	int radioControlCommandKind enum (RadioControlCommand_type);
 	int state enum (BasicState_type) = RX;	//to be used with SET_STATE
 	double parameter = 0.0;	//to be used with SET_TX_OUTPUT, SET_CARRIER_FREQ, SET_CCA_THRESHOLD
-	string name = "";	//to be used with SET_MODE, SET_SLEEP_LEVEL and SET_ENCODING
 }

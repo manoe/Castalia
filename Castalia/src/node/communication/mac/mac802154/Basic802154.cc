@@ -272,7 +272,7 @@ void Basic802154::fromNetworkLayer(cPacket * pkt, int dstMacAddress)
 	macPacket->setDstID(dstMacAddress);
 	macPacket->setMac802154PacketType(MAC_802154_DATA_PACKET);
 	macPacket->setSeqNum(seqNum++);
-	if (seqNum > 255) seqNum == 0;
+	if (seqNum > 255) seqNum = 0;
 	if (!acceptNewPacket(macPacket)) packetoverflow++;
 }
 
