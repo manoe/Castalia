@@ -22,6 +22,8 @@ In the Root directory there are the following contents :
 
 bin           --> Dir containing the Castalia and CastaliaResults scripts
 
+doc           --> Directory containing installation manual and user guide.
+
 out           --> Dir produced by the build process. Contains all interediate
                   built files, as well as the Castalia executable.
 
