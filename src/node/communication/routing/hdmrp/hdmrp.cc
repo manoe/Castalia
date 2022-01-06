@@ -26,6 +26,7 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination)
 	hdmrpPacket *netPacket = new hdmrpPacket("HDMRP packet", NETWORK_LAYER_PACKET);
 	netPacket->setSource(SELF_NETWORK_ADDRESS);
 	netPacket->setDestination(destination);
+	std::cout<<"Destination "<<destination<<std::endl;
 	encapsulatePacket(netPacket, pkt);
 	toMacLayer(netPacket, resolveNetworkAddress(destination));
 }
@@ -38,10 +39,12 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination)
  */
 void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi)
 {
-	std::cout<<"Packet received"<<std::endl;
+	std::cout<<this->selfAddress<<" "<<this->self<<" Packet received"<<" RSSI: "<<rssi<<std::endl;
 	RoutingPacket *netPacket = dynamic_cast <RoutingPacket*>(pkt);
+
 	if (netPacket) {
 		string destination(netPacket->getDestination());
+		std::cout<<srcMacAddress<<std::endl;
 		if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
 		    destination.compare(BROADCAST_NETWORK_ADDRESS) == 0)
 			toApplicationLayer(decapsulatePacket(pkt));
