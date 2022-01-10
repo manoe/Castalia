@@ -44,10 +44,12 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
 	if (netPacket) {
 		string destination(netPacket->getDestination());
-		std::cout<<srcMacAddress<<std::endl;
+		std::cout<<"Source address: "<<srcMacAddress<<std::endl;
 		if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
-		    destination.compare(BROADCAST_NETWORK_ADDRESS) == 0)
+		    destination.compare(BROADCAST_NETWORK_ADDRESS) == 0) {
 			toApplicationLayer(decapsulatePacket(pkt));
+			std::cout<<"packet to application layer"<<std::endl;
+		}
 	}
 }
 
