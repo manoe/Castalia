@@ -16,6 +16,32 @@ cplusplus {{
 
 class RoutingPacket;
 
+enum hdmrpPacketDef {
+    DATA_PACKET         = 1;
+    SINK_RREQ_PACKET    = 2;
+    RREQ_PACKET         = 3;
+}
+
+enum hdmrpRoleDef {
+    SINK        = 1;
+    ROOT        = 2;
+    SUB_ROOT    = 3;
+    NON_ROOT    = 4;
+}
+
+enum hdmrpStateDef {
+    WORK    = 1;
+    INIT    = 2;
+    LEARN   = 3;
+    RELAY   = 4;
+}
+
+// RREQ = { R, S, P, len, nmas }
 packet hdmrpPacket extends RoutingPacket {
+    int hdmrpPacketKind enum (hdmrpPacketDef); // 1 byte
+    int round;      // 2 byte
+    int path_id;    // 2 byte
+    int len;        // 1 byte?
+    int nmas;       // 1 byte?
 }
 

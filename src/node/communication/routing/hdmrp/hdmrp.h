@@ -10,18 +10,26 @@
  *                                                                             *
  *******************************************************************************/
 
-#ifndef _BYPASSROUTING_H_
-#define _BYPASSROUTING_H_
+#ifndef _HDMRP_H_
+#define _HDMRP_H_
 
 #include "node/communication/routing/VirtualRouting.h"
 #include "node/communication/routing/hdmrp/hdmrp_m.h"
 
-using namespace std;
-
 class hdmrp: public VirtualRouting {
+ private:
+     bool isSink;
+     int round;
+     int t_l;
+     hdmrpStateDef state;
+     hdmrpRoleDef role;
+
  protected:
-	void fromApplicationLayer(cPacket *, const char *);
-	void fromMacLayer(cPacket *, int, double, double);
+     void startup();
+     void fromApplicationLayer(cPacket *, const char *);
+     void fromMacLayer(cPacket *, int, double, double);
+     void sendRREQ();
+     void storeRREQ(hdmrpPacket *);
 };
 
-#endif				//BYPASSROUTINGMODULE
+#endif //HDMRP

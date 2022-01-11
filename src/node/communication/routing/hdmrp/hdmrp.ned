@@ -36,6 +36,7 @@ simple hdmrp like node.communication.routing.iRouting
 	int maxNetFrameSize = default (0);	// bytes
 	int netDataFrameOverhead = default (10);	// bytes
 	int netBufferSize = default (32);	// number of messages
+    int t_l = default (1); // Tl timer, default 1 sec
 
  gates:
 	output toCommunicationModule;

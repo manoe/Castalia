@@ -14,6 +14,46 @@
 
 Define_Module(hdmrp);
 
+void hdmrp::startup() {
+    cModule *appModule = getParentModule()->getParentModule()->getSubmodule("Application");
+    if(appModule->hasPar("isSink")) {
+        role = appModule->par("isSink") ? hdmrpRoleDef::SINK : hdmrpRoleDef::NON_ROOT;
+    } else {
+        throw cRuntimeError("\nHDMRP nodes require the parameter isSink");
+    }
+
+    t_l=par("t_l");
+
+    // Set round to 0
+    round=0;
+    state=hdmrpStateDef::WORK;
+
+    if(isSink) {
+        sendRREQ();
+        //Trigger 1st RREQ, timer should be also here
+    }
+}
+
+void hdmrp::sendRREQ() {
+    if(isSink) {
+        hdmrpPacket *RREQPkt=new hdmrpPacket("HDMRP RREQ packet", NETWORK_LAYER_PACKET);
+        RREQPkt->setHdmrpPacketKind(hdmrpPacketDef::RREQ_PACKET);
+        RREQPkt->setSource(SELF_NETWORK_ADDRESS);
+        RREQPkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+
+        // Per HDMRP, increment round number to trigger new RREQ round
+        round+=1;
+
+        RREQPkt->setRound(round);
+        toMacLayer(RREQPkt, BROADCAST_MAC_ADDRESS);
+    }
+}
+
+void hdmrp::storeRREQ(hdmrpPacket *pkt) {
+    return;
+}
+
+
 /* Application layer sends a packet together with a dest network layer address.
  * Network layer is responsible to route that packet by selecting an appropriate
  * MAC address. With BypassRouting we do not perform any routing function. We
@@ -23,12 +63,12 @@ Define_Module(hdmrp);
  */
 void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination)
 {
-	hdmrpPacket *netPacket = new hdmrpPacket("HDMRP packet", NETWORK_LAYER_PACKET);
-	netPacket->setSource(SELF_NETWORK_ADDRESS);
-	netPacket->setDestination(destination);
-	std::cout<<"Destination "<<destination<<std::endl;
-	encapsulatePacket(netPacket, pkt);
-	toMacLayer(netPacket, resolveNetworkAddress(destination));
+    hdmrpPacket *netPacket = new hdmrpPacket("HDMRP packet", NETWORK_LAYER_PACKET);
+    netPacket->setSource(SELF_NETWORK_ADDRESS);
+    netPacket->setDestination(destination);
+    std::cout<<"Destination "<<destination<<std::endl;
+    encapsulatePacket(netPacket, pkt);
+    toMacLayer(netPacket, resolveNetworkAddress(destination));
 }
 
 /* MAC layer sends a packet together with the source MAC address and other info.
@@ -39,17 +79,44 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination)
  */
 void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi)
 {
-	std::cout<<this->selfAddress<<" "<<this->self<<" Packet received"<<" RSSI: "<<rssi<<std::endl;
-	RoutingPacket *netPacket = dynamic_cast <RoutingPacket*>(pkt);
+    trace()<<this->selfAddress<<" "<<this->self<<" Packet received"<<" RSSI: "<<rssi;
+    hdmrpPacket *netPacket = dynamic_cast <hdmrpPacket*>(pkt);
 
-	if (netPacket) {
-		string destination(netPacket->getDestination());
-		std::cout<<"Source address: "<<srcMacAddress<<std::endl;
-		if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
-		    destination.compare(BROADCAST_NETWORK_ADDRESS) == 0) {
-			toApplicationLayer(decapsulatePacket(pkt));
-			std::cout<<"packet to application layer"<<std::endl;
-		}
-	}
+    if (!netPacket) {
+        trace()<<"dynamic_cast of packet failed";
+        return;
+    }
+
+    switch(netPacket->getHdmrpPacketKind()) {
+        case hdmrpPacketDef::DATA_PACKET: {
+            // process or route somewhere
+            break;
+        }
+        case hdmrpPacketDef::RREQ_PACKET: {
+            if(role == hdmrpRoleDef::SINK) {
+                trace()<<"RREQ discarded by sink";
+            }
+           // else if(
+            else {
+                if(hdmrpStateDef::WORK == state) {
+                    // New round
+                    if(netPacket->getRound() > round) {
+                        storeRREQ(netPacket);
+                        state=hdmrpStateDef::LEARN;
+                        //startTIMER
+                    }
+                }
+            }
+            break;
+        }
+
+    }
+
+        // route or process
+        string destination(netPacket->getDestination());
+        if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
+            destination.compare(BROADCAST_NETWORK_ADDRESS) == 0) {
+            toApplicationLayer(decapsulatePacket(pkt));
+    }
 }
 
