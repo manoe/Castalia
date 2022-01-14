@@ -16,10 +16,28 @@ Define_Module(hdmrp);
 
 void hdmrp::startup() {
     cModule *appModule = getParentModule()->getParentModule()->getSubmodule("Application");
-    if(appModule->hasPar("isSink")) {
-        role = appModule->par("isSink") ? hdmrpRoleDef::SINK : hdmrpRoleDef::NON_ROOT;
+    // Define role
+    if(appModule->hasPar("role")) {
+        std::string role_str=appModule->par("role");
+        if(0==role_str.compare("NON_ROOT")) {
+            role=hdmrpRoleDef::NON_ROOT;
+        }
+        else if(0==role_str.compare("ROOT")) {
+            role=hdmrpRoleDef::ROOT;
+        }
+        else if(0==role_str.compare("SINK")) {
+            role=hdmrpRoleDef::SINK;
+        }
+        else if(0==role_str.compare("SUB_ROOT")) {
+            role=hdmrpRoleDef::SUB_ROOT;
+        }
+        else {
+            trace()<<"Invalid role parameter value, fallback to NON_ROOT";
+            role=hdmrpRoleDef::NON_ROOT;
+        }
     } else {
-        throw cRuntimeError("\nHDMRP nodes require the parameter isSink");
+        role=hdmrpRoleDef::NON_ROOT;
+//        throw cRuntimeError("\nHDMRP nodes require the parameter role");
     }
 
     t_l=par("t_l");
@@ -28,16 +46,30 @@ void hdmrp::startup() {
     round=0;
     state=hdmrpStateDef::WORK;
 
-    if(isSink) {
-        sendRREQ();
+    if(isSink()) {
+        setTimer(hdmrpTimerDef::SINK_START,1);
         //Trigger 1st RREQ, timer should be also here
     }
 }
 
+void hdmrp::timerFiredCallback(int index) {
+    if(hdmrpTimerDef::SINK_START == index) {
+        trace()<<"SINK_START timer expired";
+        sendRREQ();
+    }
+    setTimer(hdmrpTimerDef::SINK_START,2);
+}
+
+bool hdmrp::isSink() const {
+    return hdmrpRoleDef::SINK==role;
+}
+
+
 void hdmrp::sendRREQ() {
-    if(isSink) {
+    trace()<<"sendRRQ() called";
+    if(isSink()) {
         hdmrpPacket *RREQPkt=new hdmrpPacket("HDMRP RREQ packet", NETWORK_LAYER_PACKET);
-        RREQPkt->setHdmrpPacketKind(hdmrpPacketDef::RREQ_PACKET);
+        RREQPkt->setHdmrpPacketKind(hdmrpPacketDef::SINK_RREQ_PACKET);
         RREQPkt->setSource(SELF_NETWORK_ADDRESS);
         RREQPkt->setDestination(BROADCAST_NETWORK_ADDRESS);
 
@@ -45,6 +77,10 @@ void hdmrp::sendRREQ() {
         round+=1;
 
         RREQPkt->setRound(round);
+        RREQPkt->setPath_id(0);
+        RREQPkt->setNmas(0);
+        RREQPkt->setLen(0);
+
         toMacLayer(RREQPkt, BROADCAST_MAC_ADDRESS);
     }
 }
@@ -79,14 +115,13 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination)
  */
 void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi)
 {
-    trace()<<this->selfAddress<<" "<<this->self<<" Packet received"<<" RSSI: "<<rssi;
     hdmrpPacket *netPacket = dynamic_cast <hdmrpPacket*>(pkt);
-
+  
     if (!netPacket) {
         trace()<<"dynamic_cast of packet failed";
         return;
     }
-
+  
     switch(netPacket->getHdmrpPacketKind()) {
         case hdmrpPacketDef::DATA_PACKET: {
             // process or route somewhere
@@ -96,7 +131,14 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             if(role == hdmrpRoleDef::SINK) {
                 trace()<<"RREQ discarded by sink";
             }
-           // else if(
+            else if(role == hdmrpRoleDef::ROOT) {
+                trace()<<"Root node received RREQ";
+                if(netPacket->getRound() > round) {
+                    trace()<<"Root node received RREQ with higher round number.";
+                    if(0 == netPacket->getPath_id()) {
+                    }
+                }
+            }
             else {
                 if(hdmrpStateDef::WORK == state) {
                     // New round
@@ -109,14 +151,14 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
             break;
         }
-
+  
     }
-
+  
         // route or process
-        string destination(netPacket->getDestination());
-        if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
-            destination.compare(BROADCAST_NETWORK_ADDRESS) == 0) {
-            toApplicationLayer(decapsulatePacket(pkt));
-    }
+//        string destination(netPacket->getDestination());
+//        if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
+//            destination.compare(BROADCAST_NETWORK_ADDRESS) == 0) {
+//            toApplicationLayer(decapsulatePacket(pkt));
+//    }
 }
 

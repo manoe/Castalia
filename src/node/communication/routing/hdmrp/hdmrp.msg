@@ -18,8 +18,8 @@ class RoutingPacket;
 
 enum hdmrpPacketDef {
     DATA_PACKET         = 1;
-    SINK_RREQ_PACKET    = 2;
-    RREQ_PACKET         = 3;
+    RREQ_PACKET         = 2;
+    SINK_RREQ_PACKET    = 4;
 }
 
 enum hdmrpRoleDef {
@@ -34,6 +34,10 @@ enum hdmrpStateDef {
     INIT    = 2;
     LEARN   = 3;
     RELAY   = 4;
+}
+
+enum hdmrpTimerDef {
+    SINK_START = 1;
 }
 
 // RREQ = { R, S, P, len, nmas }

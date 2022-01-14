@@ -18,7 +18,6 @@
 
 class hdmrp: public VirtualRouting {
  private:
-     bool isSink;
      int round;
      int t_l;
      hdmrpStateDef state;
@@ -29,6 +28,8 @@ class hdmrp: public VirtualRouting {
      void fromApplicationLayer(cPacket *, const char *);
      void fromMacLayer(cPacket *, int, double, double);
      void sendRREQ();
+     bool isSink() const;
+     void timerFiredCallback(int);
      void storeRREQ(hdmrpPacket *);
 };
 
