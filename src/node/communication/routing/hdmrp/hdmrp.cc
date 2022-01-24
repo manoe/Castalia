@@ -16,34 +16,20 @@ Define_Module(hdmrp);
 
 void hdmrp::startup() {
     cModule *appModule = getParentModule()->getParentModule()->getSubmodule("Application");
+
     // Define role
-    if(appModule->hasPar("role")) {
-        std::string role_str=appModule->par("role");
-        if(0==role_str.compare("NON_ROOT")) {
-            role=hdmrpRoleDef::NON_ROOT;
-        }
-        else if(0==role_str.compare("ROOT")) {
-            role=hdmrpRoleDef::ROOT;
-        }
-        else if(0==role_str.compare("SINK")) {
-            role=hdmrpRoleDef::SINK;
-        }
-        else if(0==role_str.compare("SUB_ROOT")) {
-            role=hdmrpRoleDef::SUB_ROOT;
-        }
-        else {
-            trace()<<"Invalid role parameter value, fallback to NON_ROOT";
-            role=hdmrpRoleDef::NON_ROOT;
-        }
-    } else {
+    if(appModule->hasPar("isSink")) {
+        appModule->par("isSink")?setRole(hdmrpRoleDef::SINK):setRole(hdmrpRoleDef::NON_ROOT);
+   } else {
         role=hdmrpRoleDef::NON_ROOT;
-//        throw cRuntimeError("\nHDMRP nodes require the parameter role");
+        throw cRuntimeError("\nHDMRP nodes require the parameter role");
     }
 
+    // T_l timer
     t_l=par("t_l");
 
     // Set round to 0
-    round=0;
+    initRound();
     state=hdmrpStateDef::WORK;
 
     if(isSink()) {
@@ -52,36 +38,66 @@ void hdmrp::startup() {
     }
 }
 
+// Timer handling
 void hdmrp::timerFiredCallback(int index) {
-    if(hdmrpTimerDef::SINK_START == index) {
-        trace()<<"SINK_START timer expired";
-        sendRREQ();
+    switch (index) {
+        case hdmrpTimerDef::SINK_START: {
+            trace()<<"SINK_START timer expired";
+            sendRREQ();
+            setTimer(hdmrpTimerDef::SINK_START,2);
+            break;
+        }
     }
-    setTimer(hdmrpTimerDef::SINK_START,2);
 }
 
 bool hdmrp::isSink() const {
     return hdmrpRoleDef::SINK==role;
 }
 
+bool hdmrp::isRoot() const {
+    return hdmrpRoleDef::ROOT==role;
+}
+
+bool hdmrp::isSubRoot() const {
+    return hdmrpRoleDef::SUB_ROOT==role;
+}
+
+
+void hdmrp::setRole(hdmrpRoleDef new_role) {
+    role=new_role;
+}
+
+void hdmrp::initRound() {
+    round = 0;
+}
+
+void hdmrp::newRound() {
+    ++round;
+}
+
+int hdmrp::getRound() const {
+    return round;
+}
 
 void hdmrp::sendRREQ() {
     trace()<<"sendRRQ() called";
     if(isSink()) {
-        hdmrpPacket *RREQPkt=new hdmrpPacket("HDMRP RREQ packet", NETWORK_LAYER_PACKET);
+        hdmrpPacket *RREQPkt=new hdmrpPacket("HDMRP Sink RREQ packet", NETWORK_LAYER_PACKET);
         RREQPkt->setHdmrpPacketKind(hdmrpPacketDef::SINK_RREQ_PACKET);
         RREQPkt->setSource(SELF_NETWORK_ADDRESS);
         RREQPkt->setDestination(BROADCAST_NETWORK_ADDRESS);
 
         // Per HDMRP, increment round number to trigger new RREQ round
-        round+=1;
+        newRound();
 
-        RREQPkt->setRound(round);
+        RREQPkt->setRound(getRound());
         RREQPkt->setPath_id(0);
         RREQPkt->setNmas(0);
         RREQPkt->setLen(0);
 
         toMacLayer(RREQPkt, BROADCAST_MAC_ADDRESS);
+
+        trace()<<"Round #: "<<getRound();
     }
 }
 
@@ -121,44 +137,56 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         trace()<<"dynamic_cast of packet failed";
         return;
     }
-  
+
     switch(netPacket->getHdmrpPacketKind()) {
         case hdmrpPacketDef::DATA_PACKET: {
             // process or route somewhere
             break;
         }
         case hdmrpPacketDef::RREQ_PACKET: {
-            if(role == hdmrpRoleDef::SINK) {
+            if(isSink()) {
                 trace()<<"RREQ discarded by sink";
             }
-            else if(role == hdmrpRoleDef::ROOT) {
-                trace()<<"Root node received RREQ";
-                if(netPacket->getRound() > round) {
-                    trace()<<"Root node received RREQ with higher round number.";
-                    if(0 == netPacket->getPath_id()) {
-                    }
-                }
+            else if(isRoot()) {
+                trace()<<"RREQ discarded by root";
             }
-            else {
-                if(hdmrpStateDef::WORK == state) {
-                    // New round
-                    if(netPacket->getRound() > round) {
-                        storeRREQ(netPacket);
-                        state=hdmrpStateDef::LEARN;
-                        //startTIMER
-                    }
+            else if(isSubRoot()) {
+                trace()<<"RREQ received by sub-root";
+                if(0 != netPacket->getPath_id()) {
+                    trace()<<"RREQ with valid Path_id discarded by sub-root";
+                } else {
+                    
                 }
+                    
             }
-            break;
         }
-  
     }
-  
-        // route or process
-//        string destination(netPacket->getDestination());
-//        if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
-//            destination.compare(BROADCAST_NETWORK_ADDRESS) == 0) {
-//            toApplicationLayer(decapsulatePacket(pkt));
-//    }
 }
+
+ //
+ //
+ //               }
+ //           }
+ //           else {
+ //               if(hdmrpStateDef::WORK == state) {
+ //                   // New round
+ //                   if(netPacket->getRound() > round) {
+ //                       storeRREQ(netPacket);
+ //                       state=hdmrpStateDef::LEARN;
+ //                       //startTIMER
+ //                   }
+ //               }
+ //           }
+ //           break;
+ //       }
+ // 
+ //   }
+ // 
+ //       // route or process
+////        string destination(netPacket->getDestination());
+////        if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
+////            destination.compare(BROADCAST_NETWORK_ADDRESS) == 0) {
+////            toApplicationLayer(decapsulatePacket(pkt));
+////    }
+//}
 

@@ -23,7 +23,7 @@ simple ForestFire like node.application.iApplication {
 	int packetHeaderOverhead = default (8);		// in bytes
 	int constantDataPayload = default (0);
 
-    string role = default ("NON_ROOT");
+    bool isSink = default(false);
     
 
 //      bool broadcastReports = default(false);

@@ -37,7 +37,8 @@ enum hdmrpStateDef {
 }
 
 enum hdmrpTimerDef {
-    SINK_START = 1;
+    SINK_START  = 1;
+    T_L         = 2;
 }
 
 // RREQ = { R, S, P, len, nmas }

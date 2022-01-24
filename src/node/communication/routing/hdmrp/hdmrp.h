@@ -29,6 +29,12 @@ class hdmrp: public VirtualRouting {
      void fromMacLayer(cPacket *, int, double, double);
      void sendRREQ();
      bool isSink() const;
+     bool isRoot() const;
+     bool isSubRoot() const;
+     void setRole(hdmrpRoleDef);
+     void initRound();
+     void newRound();
+     int  getRound() const;
      void timerFiredCallback(int);
      void storeRREQ(hdmrpPacket *);
 };
