@@ -30,7 +30,7 @@ void hdmrp::startup() {
 
     // Set round to 0
     initRound();
-    state=hdmrpStateDef::WORK;
+    setState(hdmrpStateDef::WORK);
 
     if(isSink()) {
         setTimer(hdmrpTimerDef::SINK_START,1);
@@ -43,8 +43,11 @@ void hdmrp::timerFiredCallback(int index) {
     switch (index) {
         case hdmrpTimerDef::SINK_START: {
             trace()<<"SINK_START timer expired";
-            sendRREQ();
+            sendSRREQ();
             setTimer(hdmrpTimerDef::SINK_START,2);
+            break;
+        }
+        case hdmrpTimerDef::T_L: {
             break;
         }
     }
@@ -62,9 +65,24 @@ bool hdmrp::isSubRoot() const {
     return hdmrpRoleDef::SUB_ROOT==role;
 }
 
+bool hdmrp::isNonRoot() const {
+    return hdmrpRoleDef::NON_ROOT==role;
+}
 
 void hdmrp::setRole(hdmrpRoleDef new_role) {
     role=new_role;
+}
+
+bool hdmrp::isWorkingState() const {
+    return hdmrpStateDef::WORK==state;
+}
+
+bool hdmrp::isLearningState() const {
+    return hdmrpStateDef::LEARN==state;
+}
+
+void hdmrp::setState(hdmrpStateDef new_state) {
+    state=new_state;
 }
 
 void hdmrp::initRound() {
@@ -79,26 +97,54 @@ int hdmrp::getRound() const {
     return round;
 }
 
+void hdmrp::setRound(int new_round) {
+    round=new_round;
+}
+
 void hdmrp::sendRREQ() {
-    trace()<<"sendRRQ() called";
-    if(isSink()) {
-        hdmrpPacket *RREQPkt=new hdmrpPacket("HDMRP Sink RREQ packet", NETWORK_LAYER_PACKET);
-        RREQPkt->setHdmrpPacketKind(hdmrpPacketDef::SINK_RREQ_PACKET);
-        RREQPkt->setSource(SELF_NETWORK_ADDRESS);
-        RREQPkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+    sendRREQ(getRound(),0,0,0);
+}
 
-        // Per HDMRP, increment round number to trigger new RREQ round
-        newRound();
+void hdmrp::sendRREQ(int round, int path_id) {
+    sendRREQ(round,path_id,0,0);
+}
 
-        RREQPkt->setRound(getRound());
-        RREQPkt->setPath_id(0);
-        RREQPkt->setNmas(0);
-        RREQPkt->setLen(0);
+void hdmrp::sendRREQ(int round, int path_id, int nmas, int len) {
+    trace()<<"sendRREQ() called";
+    hdmrpPacket *RREQPkt=new hdmrpPacket("HDMRP RREQ packet", NETWORK_LAYER_PACKET);
+    RREQPkt->setHdmrpPacketKind(hdmrpPacketDef::RREQ_PACKET);
+    RREQPkt->setSource(SELF_NETWORK_ADDRESS);
+    RREQPkt->setDestination(BROADCAST_NETWORK_ADDRESS);
 
-        toMacLayer(RREQPkt, BROADCAST_MAC_ADDRESS);
+    RREQPkt->setRound(round);
+    RREQPkt->setPath_id(path_id);
+    RREQPkt->setNmas(nmas);
+    RREQPkt->setLen(len);
 
-        trace()<<"Round #: "<<getRound();
-    }
+    toMacLayer(RREQPkt, BROADCAST_MAC_ADDRESS);
+
+    trace()<<"Round #: "<<getRound();
+
+}
+
+void hdmrp::sendSRREQ() {
+    trace()<<"sendSRRQ() called";
+    hdmrpPacket *SRREQPkt=new hdmrpPacket("HDMRP Sink RREQ packet", NETWORK_LAYER_PACKET);
+    SRREQPkt->setHdmrpPacketKind(hdmrpPacketDef::SINK_RREQ_PACKET);
+    SRREQPkt->setSource(SELF_NETWORK_ADDRESS);
+    SRREQPkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+
+    // Per HDMRP, increment round number to trigger new RREQ round
+    newRound();
+
+    SRREQPkt->setRound(getRound());
+    SRREQPkt->setPath_id(0);
+    SRREQPkt->setNmas(0);
+    SRREQPkt->setLen(0);
+
+    toMacLayer(SRREQPkt, BROADCAST_MAC_ADDRESS);
+
+    trace()<<"Round #: "<<getRound();
 }
 
 void hdmrp::storeRREQ(hdmrpPacket *pkt) {
@@ -152,13 +198,78 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
             else if(isSubRoot()) {
                 trace()<<"RREQ received by sub-root";
-                if(0 != netPacket->getPath_id()) {
-                    trace()<<"RREQ with valid Path_id discarded by sub-root";
+                if(0 == netPacket->getPath_id()) {
+                    trace()<<"RREQ with 0 Path_id";
+                    // start guard timer, send message with RREQ, learn next hop?
+                    if(netPacket->getRound() > getRound()) {
+                       trace()<<"New Round";
+                       setRound(netPacket->getRound());
+                       sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                    } else {
+                        trace()<<"Old round";
+                    }
                 } else {
-                    
+                    trace()<<"RREQ with valid Path_id discarded by sub-root";
                 }
-                    
+                
             }
+            else if(isNonRoot()) {
+                trace()<<"RREQ received by non-root";
+                if(isWorkingState()) {
+                    if(0 != netPacket->getPath_id()) {
+                        setState(hdmrpStateDef::LEARN);
+                        setTimer(hdmrpTimerDef::T_L,t_l);
+                        
+
+                        // timer, state transition
+                        // save RREQ
+                    } else {
+                        // once switched to sub-root, some guard timer is needed??
+                        trace()<<"RREQ with 0 Path_id received";
+                        trace()<<"State transition to sub-root";
+                        setRole(hdmrpRoleDef::SUB_ROOT);
+                        if(netPacket->getRound() > getRound()) {
+                           trace()<<"New Round";
+                           setRound(netPacket->getRound());
+                           sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                        } else {
+                            trace()<<"Old round";
+                        }
+                    }
+                }
+                else if(isLearningState()) {
+                    if(0 != netPacket->getPath_id()) {
+                        // store RREQ
+                    } else {
+                        trace()<<"RREQ with 0 Path_id discarded during learning state";
+                    }
+                }
+            }
+            break;
+        }
+        case hdmrpPacketDef::SINK_RREQ_PACKET: {
+            if(isSink()) {
+                trace()<<"SRREQ discarded by sink";
+            }
+            else if(isNonRoot() || isRoot()) {
+                trace()<<"SRREQ received by non-root or root";
+                if(isNonRoot()) {
+                    setRole(hdmrpRoleDef::ROOT);
+                }
+
+                if(netPacket->getRound() > getRound()) {
+                    trace()<<"Old round: "<<getRound()<<" new round: "<<netPacket->getRound();
+                    setRound(netPacket->getRound());
+                    sendRREQ();
+                    
+                } else {
+                    trace()<<"Outdated SRREQ";
+                }
+            }
+            else if(isSubRoot()) {
+                trace()<<"SRREQ received by sub-root";
+            }
+            break;
         }
     }
 }
