@@ -13,8 +13,17 @@
 #ifndef _HDMRP_H_
 #define _HDMRP_H_
 
+#include <random>
+
 #include "node/communication/routing/VirtualRouting.h"
 #include "node/communication/routing/hdmrp/hdmrp_m.h"
+
+struct hdmrp_path {
+    int path_id;
+    int next_hop;
+    int nmas;
+    int len;
+};
 
 class hdmrp: public VirtualRouting {
  private:
@@ -22,6 +31,9 @@ class hdmrp: public VirtualRouting {
      int t_l;
      hdmrpStateDef state;
      hdmrpRoleDef role;
+     map<int, hdmrp_path> rreq_table;
+//     std::mt19937 gen(std::random_device());
+
 
  protected:
      void startup();
@@ -32,8 +44,11 @@ class hdmrp: public VirtualRouting {
      void sendSRREQ();
      void sendRREQ();
      void sendRREQ(int, int);
+     void sendRREQ(int, hdmrp_path);
      void sendRREQ(int, int, int, int); 
      void storeRREQ(hdmrpPacket *);
+     hdmrp_path selectRREQ() const;
+     float calculateCost(hdmrp_path) const;
 
      bool isSink() const;
      bool isRoot() const;
@@ -47,6 +62,7 @@ class hdmrp: public VirtualRouting {
 
      void initRound();
      void newRound();
+     bool isNewRound(hdmrpPacket*) const;
      void setRound(int);
      int  getRound() const;
      
