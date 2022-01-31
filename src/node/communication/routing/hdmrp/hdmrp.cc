@@ -20,10 +20,17 @@ void hdmrp::startup() {
     // Define role
     if(appModule->hasPar("isSink")) {
         appModule->par("isSink")?setRole(hdmrpRoleDef::SINK):setRole(hdmrpRoleDef::NON_ROOT);
-   } else {
+    } else {
         role=hdmrpRoleDef::NON_ROOT;
         throw cRuntimeError("\nHDMRP nodes require the parameter role");
     }
+
+    if(appModule->hasPar("isMaster")) {
+       setMaster(appModule->par("isMaster"));
+    } else {
+        setMaster(false);
+    }
+
 
     // T_l timer
     t_l=par("t_l");
@@ -35,25 +42,6 @@ void hdmrp::startup() {
     if(isSink()) {
         setTimer(hdmrpTimerDef::SINK_START,1);
         //Trigger 1st RREQ, timer should be also here
-    }
-}
-
-// Timer handling
-void hdmrp::timerFiredCallback(int index) {
-    switch (index) {
-        case hdmrpTimerDef::SINK_START: {
-            trace()<<"SINK_START timer expired";
-            sendSRREQ();
-            setTimer(hdmrpTimerDef::SINK_START,2);
-            break;
-        }
-        case hdmrpTimerDef::T_L: {
-            trace()<<"T_L expired";
-            // select path
-            sendRREQ(getRound(),selectRREQ());
-            setState(hdmrpStateDef::WORK);
-            break;
-        }
     }
 }
 
@@ -75,6 +63,14 @@ bool hdmrp::isNonRoot() const {
 
 void hdmrp::setRole(hdmrpRoleDef new_role) {
     role=new_role;
+}
+
+bool hdmrp::isMaster() const {
+    return master; 
+}
+
+void hdmrp::setMaster(bool master) {
+    this->master=master;
 }
 
 bool hdmrp::isWorkingState() const {
@@ -114,7 +110,7 @@ void hdmrp::sendRREQ() {
 }
 
 void hdmrp::sendRREQ(int round, hdmrp_path path) {
-    sendRREQ(round, path.path_id, path.nmas, path.len+1);
+    sendRREQ(round, path.path_id, path.nmas+isMaster()?1:0, path.len+1);
 }
 
 void hdmrp::sendRREQ(int round, int path_id) {
@@ -178,12 +174,36 @@ void hdmrp::storeRREQ(hdmrpPacket *pkt) {
 }
 
 hdmrp_path hdmrp::selectRREQ() const {
-    hdmrp_path p;
-    return p;
+    std::random_device rd;
+    uniform_int_distribution<int> dist(0, rreq_table.size()-1);
+    auto it=rreq_table.begin();
+    for(int i=dist(rd); i > 0 ; --i) {
+        ++it;
+    }
+    return it->second;
 }
 
 float hdmrp::calculateCost(hdmrp_path path) const {
     return (float)path.len/(float)path.nmas;
+}
+
+// Timer handling
+void hdmrp::timerFiredCallback(int index) {
+    switch (index) {
+        case hdmrpTimerDef::SINK_START: {
+            trace()<<"SINK_START timer expired";
+            sendSRREQ();
+            setTimer(hdmrpTimerDef::SINK_START,2);
+            break;
+        }
+        case hdmrpTimerDef::T_L: {
+            trace()<<"T_L expired";
+            // select path
+            sendRREQ(getRound(),selectRREQ());
+            setState(hdmrpStateDef::WORK);
+            break;
+        }
+    }
 }
 
 
@@ -199,7 +219,7 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination)
     hdmrpPacket *netPacket = new hdmrpPacket("HDMRP packet", NETWORK_LAYER_PACKET);
     netPacket->setSource(SELF_NETWORK_ADDRESS);
     netPacket->setDestination(destination);
-    std::cout<<"Destination "<<destination<<std::endl;
+    trace()<<"Destination "<<destination;
     encapsulatePacket(netPacket, pkt);
     toMacLayer(netPacket, resolveNetworkAddress(destination));
 }
@@ -221,7 +241,12 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
     switch(netPacket->getHdmrpPacketKind()) {
         case hdmrpPacketDef::DATA_PACKET: {
-            // process or route somewhere
+            if(netPacket->getSource()==SELF_NETWORK_ADDRESS) {
+                trace()<<"Process packet";
+            }
+            else if(netPacket->getSource()==BROADCAST_NETWORK_ADDRESS) {
+                trace()<<"Broadcast data packet, wtf?";
+            }
             break;
         }
         case hdmrpPacketDef::RREQ_PACKET: {
@@ -246,7 +271,6 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 } else {
                     trace()<<"RREQ with valid Path_id discarded by sub-root";
                 }
-                
             }
             else if(isNonRoot()) {
                 trace()<<"RREQ received by non-root";

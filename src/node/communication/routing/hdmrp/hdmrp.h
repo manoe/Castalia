@@ -31,8 +31,10 @@ class hdmrp: public VirtualRouting {
      int t_l;
      hdmrpStateDef state;
      hdmrpRoleDef role;
+     bool master;
      map<int, hdmrp_path> rreq_table;
-//     std::mt19937 gen(std::random_device());
+     std::mt19937 gen(std::random_device());
+     string next_hop;
 
 
  protected:
@@ -55,6 +57,9 @@ class hdmrp: public VirtualRouting {
      bool isSubRoot() const;
      bool isNonRoot() const;
      void setRole(hdmrpRoleDef);
+
+     bool isMaster() const;
+     void setMaster(bool);
 
      bool isWorkingState() const;
      bool isLearningState() const;
