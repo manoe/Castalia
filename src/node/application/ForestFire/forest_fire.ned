@@ -24,6 +24,7 @@ simple ForestFire like node.application.iApplication {
 	int constantDataPayload = default (0);
 
     bool isSink = default(false);
+    bool isMaster = default(false);
     
 
 //      bool broadcastReports = default(false);
