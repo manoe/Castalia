@@ -57,6 +57,7 @@ class hdmrp: public VirtualRouting {
      void addRoute(const hdmrp_path);
      void clearRoutes();
      hdmrp_path getRoute(const int) const;
+     hdmrp_path getRoute() const;
      bool RouteExists() const; 
 
      bool isSink() const;

@@ -214,6 +214,16 @@ hdmrp_path hdmrp::getRoute(const int path_id) const {
    return rreq_table.find(path_id)->second; // pretty unsafe
 }
 
+hdmrp_path hdmrp::getRoute() const {
+    std::random_device rd;
+    uniform_int_distribution<int> dist(0, routing_table.size()-1);
+    auto it=routing_table.begin();
+
+    for(int i=dist(rd); i > 0 ; --i, ++it);
+
+    return it->second;
+}
+
 // Timer handling
 void hdmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -272,8 +282,10 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination)
 {
     hdmrpPacket *netPacket = new hdmrpPacket("HDMRP packet", NETWORK_LAYER_PACKET);
     netPacket->setSource(SELF_NETWORK_ADDRESS);
-    netPacket->setDestination(destination);
-    trace()<<"Destination "<<destination;
+    auto path=getRoute();
+    netPacket->setDestination(path.next_hop.c_str());
+    trace()<<"Destination "<<path.next_hop;
+
     encapsulatePacket(netPacket, pkt);
     toMacLayer(netPacket, resolveNetworkAddress(destination));
 }
