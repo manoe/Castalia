@@ -20,7 +20,7 @@
 
 struct hdmrp_path {
     int path_id;
-    int next_hop;
+    string next_hop;
     int nmas;
     int len;
 };
@@ -49,10 +49,14 @@ class hdmrp: public VirtualRouting {
      void sendRREQ(int, int, int, int); 
      void storeRREQ(hdmrpPacket *);
      hdmrp_path selectRREQ() const;
+     void clearRREQ();
+     void removeRREQ(hdmrp_path path);
+     bool isRREQempty() const;
      float calculateCost(hdmrp_path) const;
 
      void addRoute(const hdmrp_path);
      void clearRoutes();
+     hdmrp_path getRoute(const int) const;
      bool RouteExists() const; 
 
      bool isSink() const;

@@ -160,7 +160,7 @@ void hdmrp::storeRREQ(hdmrpPacket *pkt) {
     candidate_path.path_id=pkt->getPath_id();
     candidate_path.len=pkt->getLen();
     candidate_path.nmas=pkt->getNmas();
-    candidate_path.next_hop=resolveNetworkAddress(pkt->getSource());
+    candidate_path.next_hop=string(pkt->getSource());
 
     if(rreq_table.find(candidate_path.path_id) == rreq_table.end()) {
         rreq_table[candidate_path.path_id]=candidate_path;
@@ -182,6 +182,18 @@ hdmrp_path hdmrp::selectRREQ() const {
     return it->second;
 }
 
+void hdmrp::removeRREQ(hdmrp_path path) {
+    rreq_table.erase(path.path_id);
+}
+
+void hdmrp::clearRREQ() {
+    rreq_table.clear();
+}
+
+bool hdmrp::isRREQempty() const {
+    return rreq_table.empty();
+}
+
 float hdmrp::calculateCost(hdmrp_path path) const {
     return (float)path.len/(float)path.nmas;
 }
@@ -198,6 +210,10 @@ void hdmrp::clearRoutes() {
     routing_table.clear();
 }
 
+hdmrp_path hdmrp::getRoute(const int path_id) const {
+   return rreq_table.find(path_id)->second; // pretty unsafe
+}
+
 // Timer handling
 void hdmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -210,8 +226,35 @@ void hdmrp::timerFiredCallback(int index) {
         case hdmrpTimerDef::T_L: {
             trace()<<"T_L expired";
             // select path
-            sendRREQ(getRound(),selectRREQ());
-            setState(hdmrpStateDef::WORK);
+            auto path=selectRREQ();
+            sendRREQ(getRound(),path);
+            addRoute(path);
+            if(isMaster()) {
+                removeRREQ(path);
+                if(isRREQempty()) {
+                    setState(hdmrpStateDef::WORK);
+                } else {
+                    setState(hdmrpStateDef::RELAY);
+                    setTimer(hdmrpTimerDef::T_RELAY,1);
+                }
+            } else {
+                clearRREQ();
+                setState(hdmrpStateDef::WORK);
+            }
+            break;
+        }
+        case hdmrpTimerDef::T_RELAY: {
+            trace()<<"T_RELAY expired";
+            auto path=selectRREQ();
+            sendRREQ(getRound(),path);
+            addRoute(path);
+            removeRREQ(path);
+            if(isRREQempty()) {
+                setState(hdmrpStateDef::WORK);
+            } else {
+                setState(hdmrpStateDef::RELAY);
+                setTimer(hdmrpTimerDef::T_RELAY,1);
+            }
             break;
         }
     }
@@ -253,10 +296,24 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
     switch(netPacket->getHdmrpPacketKind()) {
         case hdmrpPacketDef::DATA_PACKET: {
             if(netPacket->getSource()==SELF_NETWORK_ADDRESS) {
-                trace()<<"Process packet";
+                trace()<<"What?";
             }
             else if(netPacket->getSource()==BROADCAST_NETWORK_ADDRESS) {
                 trace()<<"Broadcast data packet, wtf?";
+            }
+            else if(netPacket->getDestination()==SELF_NETWORK_ADDRESS) {
+                hdmrp_path path;
+                if(isSink()) {
+                    trace()<<"Packet arrived";
+                }
+                else if(isRoot()) {
+                    path=getRoute(0);
+                }
+                else if(isSubRoot() || isNonRoot()) {
+                    path=getRoute(netPacket->getPath_id());
+                }
+                netPacket->setSource(SELF_NETWORK_ADDRESS);
+                netPacket->setDestination(path.next_hop.c_str());
             }
             break;
         }
@@ -276,7 +333,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                        trace()<<"New Round";
                        setRound(netPacket->getRound());
                        sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
-                       addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), resolveNetworkAddress(netPacket->getSource()), 0, 0}  );
+                       addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), string(netPacket->getSource()), 0, 0}  );
                     } else {
                         trace()<<"Old round";
                     }
@@ -292,6 +349,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             setState(hdmrpStateDef::LEARN);
                             setRound(netPacket->getRound());
                             setTimer(hdmrpTimerDef::T_L,t_l);
+                            clearRREQ();
                             storeRREQ(netPacket);
                         } else {
                             trace()<<"Old round";
@@ -299,19 +357,24 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     } else {
                         // once switched to sub-root, some guard timer is needed??
                         trace()<<"RREQ with 0 Path_id received";
-                        trace()<<"State transition to sub-root";
-                        setRole(hdmrpRoleDef::SUB_ROOT);
                         if(netPacket->getRound() > getRound()) {
                             trace()<<"New Round";
+                            trace()<<"State transition to sub-root";
+                            setRole(hdmrpRoleDef::SUB_ROOT);
                             setRound(netPacket->getRound());
                             sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
-                       addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), resolveNetworkAddress(netPacket->getSource()), 0, 0}  );
+                            clearRoutes();
+                            clearRREQ();
+                            addRoute( hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS),
+                                                 string(netPacket->getSource()),
+                                                 0,
+                                                 0} );
                         } else {
                             trace()<<"Old round";
                         }
                     }
                 }
-                else if(isLearningState()) {
+                else if(isLearningState()) { // What about new rounds?
                     if(0 != netPacket->getPath_id()) {
                         if(netPacket->getRound() == getRound()) {
                             storeRREQ(netPacket);
@@ -339,6 +402,9 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"Old round: "<<getRound()<<" new round: "<<netPacket->getRound();
                     setRound(netPacket->getRound());
                     sendRREQ();
+                    clearRREQ();
+                    clearRoutes();
+                    addRoute(hdmrp_path{0, string(netPacket->getSource()),0,0});
                     
                 } else {
                     trace()<<"Outdated SRREQ";

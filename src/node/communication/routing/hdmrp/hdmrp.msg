@@ -42,6 +42,7 @@ enum hdmrpTimerDef {
     ROOT_GUARD      = 3;
     SUB_ROOT_GUARD  = 4;
     NEW_ROUND       = 5;
+    T_RELAY         = 6;
 }
 
 // RREQ = { R, S, P, len, nmas }
