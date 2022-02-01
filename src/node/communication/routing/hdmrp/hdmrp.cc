@@ -31,7 +31,6 @@ void hdmrp::startup() {
         setMaster(false);
     }
 
-
     // T_l timer
     t_l=par("t_l");
 
@@ -177,14 +176,26 @@ hdmrp_path hdmrp::selectRREQ() const {
     std::random_device rd;
     uniform_int_distribution<int> dist(0, rreq_table.size()-1);
     auto it=rreq_table.begin();
-    for(int i=dist(rd); i > 0 ; --i) {
-        ++it;
-    }
+
+    for(int i=dist(rd); i > 0 ; --i, ++it);
+
     return it->second;
 }
 
 float hdmrp::calculateCost(hdmrp_path path) const {
     return (float)path.len/(float)path.nmas;
+}
+
+void hdmrp::addRoute(hdmrp_path path) {
+    routing_table[path.path_id]=path;
+}
+
+bool hdmrp::RouteExists() const {
+    return routing_table.size()>0;
+}
+
+void hdmrp::clearRoutes() {
+    routing_table.clear();
 }
 
 // Timer handling
@@ -265,6 +276,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                        trace()<<"New Round";
                        setRound(netPacket->getRound());
                        sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                       addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), resolveNetworkAddress(netPacket->getSource()), 0, 0}  );
                     } else {
                         trace()<<"Old round";
                     }
@@ -293,6 +305,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             trace()<<"New Round";
                             setRound(netPacket->getRound());
                             sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                       addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), resolveNetworkAddress(netPacket->getSource()), 0, 0}  );
                         } else {
                             trace()<<"Old round";
                         }
