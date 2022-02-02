@@ -48,7 +48,7 @@ class hdmrp: public VirtualRouting {
      void sendRREQ(int, hdmrp_path);
      void sendRREQ(int, int, int, int); 
      void storeRREQ(hdmrpPacket *);
-     hdmrp_path selectRREQ() const;
+     hdmrp_path selectRREQ();
      void clearRREQ();
      void removeRREQ(hdmrp_path path);
      bool isRREQempty() const;
@@ -57,6 +57,7 @@ class hdmrp: public VirtualRouting {
      void addRoute(const hdmrp_path);
      void clearRoutes();
      hdmrp_path getRoute(const int) const;
+     hdmrp_path getRoute() const;
      bool RouteExists() const; 
 
      bool isSink() const;
