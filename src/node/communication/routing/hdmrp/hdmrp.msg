@@ -2,7 +2,6 @@
 //*  Copyright: Balint Aron Uveges, 2022                                        *
 //*  Developed at Pazmany Peter Catholic University,                            *
 //*               Faculty of Information Technology and Bionics                 *
-//*                                                                             *
 //*  Author(s): Balint Aron Uveges                                              *
 //*  This file is distributed under the terms in the attached LICENSE file.     *
 //*                                                                             *
