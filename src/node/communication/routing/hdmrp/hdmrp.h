@@ -48,7 +48,7 @@ class hdmrp: public VirtualRouting {
      void sendRREQ(int, hdmrp_path);
      void sendRREQ(int, int, int, int); 
      void storeRREQ(hdmrpPacket *);
-     hdmrp_path selectRREQ() const;
+     hdmrp_path selectRREQ();
      void clearRREQ();
      void removeRREQ(hdmrp_path path);
      bool isRREQempty() const;

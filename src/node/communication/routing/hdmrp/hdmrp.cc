@@ -172,13 +172,14 @@ void hdmrp::storeRREQ(hdmrpPacket *pkt) {
     return;
 }
 
-hdmrp_path hdmrp::selectRREQ() const {
+hdmrp_path hdmrp::selectRREQ() {
+    trace()<<"WTF?!?!?";
     std::random_device rd;
     uniform_int_distribution<int> dist(0, rreq_table.size()-1);
     auto it=rreq_table.begin();
 
     for(int i=dist(rd); i > 0 ; --i, ++it);
-
+    trace()<<"RREQ table size: "<<rreq_table.size();
     return it->second;
 }
 
@@ -324,6 +325,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 else if(isSubRoot() || isNonRoot()) {
                     path=getRoute(netPacket->getPath_id());
                 }
+                // Something missing
                 netPacket->setSource(SELF_NETWORK_ADDRESS);
                 netPacket->setDestination(path.next_hop.c_str());
             }
@@ -407,11 +409,15 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             else if(isNonRoot() || isRoot()) {
                 trace()<<"SRREQ received by non-root or root";
                 if(isNonRoot()) {
+                    if(getTimer(hdmrpTimerDef::T_L) != -1) {
+                        cancelTimer(hdmrpTimerDef::T_L);
+                    }
                     setRole(hdmrpRoleDef::ROOT);
                 }
 
                 if(netPacket->getRound() > getRound()) {
                     trace()<<"Old round: "<<getRound()<<" new round: "<<netPacket->getRound();
+                    trace()<<"Source: "<<netPacket->getSource();
                     setRound(netPacket->getRound());
                     sendRREQ();
                     clearRREQ();
