@@ -110,15 +110,11 @@ void hdmrp::setRound(int new_round) {
 }
 
 void hdmrp::sendRREQ() {
-    sendRREQ(getRound(),0,0,0);
+    sendRREQ(getRound(),0,isMaster()?1:0,1);
 }
 
 void hdmrp::sendRREQ(int round, hdmrp_path path) {
     sendRREQ(round, path.path_id, path.nmas+isMaster()?1:0, path.len+1);
-}
-
-void hdmrp::sendRREQ(int round, int path_id) {
-    sendRREQ(round,path_id,0,0);
 }
 
 void hdmrp::sendRREQ(int round, int path_id, int nmas, int len) {
@@ -178,7 +174,6 @@ void hdmrp::storeRREQ(hdmrpPacket *pkt) {
 }
 
 hdmrp_path hdmrp::selectRREQ() {
-    trace()<<"WTF?!?!?";
     std::random_device rd;
     uniform_int_distribution<int> dist(0, rreq_table.size()-1);
     auto it=rreq_table.begin();
@@ -352,8 +347,11 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     if(isNewRound(netPacket)) {
                        trace()<<"New Round";
                        setRound(netPacket->getRound());
-                       sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                       clearRREQ();
+                       clearRoutes();
                        addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), string(netPacket->getSource()), 0, 0}  );
+                       sendRREQ(getRound(),getRoute());
+ 
                     } else {
                         trace()<<"Old round";
                     }
@@ -372,7 +370,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             clearRREQ();
                             storeRREQ(netPacket);
                         } else {
-                            trace()<<"Old round";
+                            trace()<<"Old round. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                         }
                     } else {
                         // once switched to sub-root, some guard timer is needed??
@@ -381,15 +379,15 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             trace()<<"New Round";
                             setRole(hdmrpRoleDef::SUB_ROOT);
                             setRound(netPacket->getRound());
-                            sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
                             clearRoutes();
                             clearRREQ();
                             addRoute( hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS),
                                                  string(netPacket->getSource()),
                                                  0,
                                                  0} );
+                            sendRREQ(getRound(),getRoute());
                         } else {
-                            trace()<<"Old round";
+                            trace()<<"Old round. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                         }
                     }
                 }
@@ -427,10 +425,10 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     sendRREQ();
                     clearRREQ();
                     clearRoutes();
-                    addRoute(hdmrp_path{0, string(netPacket->getSource()),0,0});
+                    addRoute(hdmrp_path{0, string(netPacket->getSource()),isMaster()?1:0,1});
                     
                 } else {
-                    trace()<<"Outdated SRREQ";
+                    trace()<<"Outdated SRREQ. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                 }
             }
             else if(isSubRoot()) {
