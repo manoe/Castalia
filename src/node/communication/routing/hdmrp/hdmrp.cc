@@ -1,12 +1,9 @@
 /*******************************************************************************
- *  Copyright: National ICT Australia,  2007 - 2011                            *
- *  Developed at the ATP lab, Networked Systems research theme                 *
- *  Author(s): Athanassios Boulis, Yuriy Tselishchev                           *
+ *  Copyright: Balint Aron Uveges, 2022                                        *
+ *  Developed at Pazmany Peter Catholic University,                            *
+ *               Faculty of Information Technology and Bionics                 *
+ *  Author(s): Balint Aron Uveges                                              *
  *  This file is distributed under the terms in the attached LICENSE file.     *
- *  If you do not find this file, copies can be found by writing to:           *
- *                                                                             *
- *      NICTA, Locked Bag 9013, Alexandria, NSW 1435, Australia                *
- *      Attention:  License Inquiry.                                           *
  *                                                                             *
  *******************************************************************************/
 
@@ -31,8 +28,14 @@ void hdmrp::startup() {
         setMaster(false);
     }
 
+    auto yes_no = [](auto value) { return value?"yes":"no";};
+
+    trace()<<"Sink: "<<yes_no(isSink())<<" Master: "<<yes_no(isMaster());;
+
     // T_l timer
     t_l=par("t_l");
+
+    t_rreq=par("t_rreq");
 
     // Set round to 0
     initRound();
@@ -61,6 +64,7 @@ bool hdmrp::isNonRoot() const {
 }
 
 void hdmrp::setRole(hdmrpRoleDef new_role) {
+    trace()<<"Role change: "<<role<<"->"<<new_role;
     role=new_role;
 }
 
@@ -81,6 +85,7 @@ bool hdmrp::isLearningState() const {
 }
 
 void hdmrp::setState(hdmrpStateDef new_state) {
+    trace()<<"State change: "<<state<<"->"<<new_state;
     state=new_state;
 }
 
@@ -105,15 +110,11 @@ void hdmrp::setRound(int new_round) {
 }
 
 void hdmrp::sendRREQ() {
-    sendRREQ(getRound(),0,0,0);
+    sendRREQ(getRound(),0,isMaster()?1:0,1);
 }
 
 void hdmrp::sendRREQ(int round, hdmrp_path path) {
     sendRREQ(round, path.path_id, path.nmas+isMaster()?1:0, path.len+1);
-}
-
-void hdmrp::sendRREQ(int round, int path_id) {
-    sendRREQ(round,path_id,0,0);
 }
 
 void hdmrp::sendRREQ(int round, int path_id, int nmas, int len) {
@@ -173,7 +174,6 @@ void hdmrp::storeRREQ(hdmrpPacket *pkt) {
 }
 
 hdmrp_path hdmrp::selectRREQ() {
-    trace()<<"WTF?!?!?";
     std::random_device rd;
     uniform_int_distribution<int> dist(0, rreq_table.size()-1);
     auto it=rreq_table.begin();
@@ -228,10 +228,11 @@ hdmrp_path hdmrp::getRoute() const {
 // Timer handling
 void hdmrp::timerFiredCallback(int index) {
     switch (index) {
+        case hdmrpTimerDef::NEW_ROUND:
         case hdmrpTimerDef::SINK_START: {
             trace()<<"SINK_START timer expired";
             sendSRREQ();
-            setTimer(hdmrpTimerDef::SINK_START,2);
+            setTimer(hdmrpTimerDef::NEW_ROUND,t_rreq);
             break;
         }
         case hdmrpTimerDef::T_L: {
@@ -346,8 +347,11 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     if(isNewRound(netPacket)) {
                        trace()<<"New Round";
                        setRound(netPacket->getRound());
-                       sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                       clearRREQ();
+                       clearRoutes();
                        addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), string(netPacket->getSource()), 0, 0}  );
+                       sendRREQ(getRound(),getRoute());
+ 
                     } else {
                         trace()<<"Old round";
                     }
@@ -366,25 +370,24 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             clearRREQ();
                             storeRREQ(netPacket);
                         } else {
-                            trace()<<"Old round";
+                            trace()<<"Old round. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                         }
                     } else {
                         // once switched to sub-root, some guard timer is needed??
                         trace()<<"RREQ with 0 Path_id received";
                         if(netPacket->getRound() > getRound()) {
                             trace()<<"New Round";
-                            trace()<<"State transition to sub-root";
                             setRole(hdmrpRoleDef::SUB_ROOT);
                             setRound(netPacket->getRound());
-                            sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
                             clearRoutes();
                             clearRREQ();
                             addRoute( hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS),
                                                  string(netPacket->getSource()),
                                                  0,
                                                  0} );
+                            sendRREQ(getRound(),getRoute());
                         } else {
-                            trace()<<"Old round";
+                            trace()<<"Old round. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                         }
                     }
                 }
@@ -422,10 +425,10 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     sendRREQ();
                     clearRREQ();
                     clearRoutes();
-                    addRoute(hdmrp_path{0, string(netPacket->getSource()),0,0});
+                    addRoute(hdmrp_path{0, string(netPacket->getSource()),isMaster()?1:0,1});
                     
                 } else {
-                    trace()<<"Outdated SRREQ";
+                    trace()<<"Outdated SRREQ. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                 }
             }
             else if(isSubRoot()) {
