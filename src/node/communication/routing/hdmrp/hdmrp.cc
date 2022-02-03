@@ -28,8 +28,14 @@ void hdmrp::startup() {
         setMaster(false);
     }
 
+    auto yes_no = [](auto value) { return value?"yes":"no";};
+
+    trace()<<"Sink: "<<yes_no(isSink())<<" Master: "<<yes_no(isMaster());;
+
     // T_l timer
     t_l=par("t_l");
+
+    t_rreq=par("t_rreq");
 
     // Set round to 0
     initRound();
@@ -58,6 +64,7 @@ bool hdmrp::isNonRoot() const {
 }
 
 void hdmrp::setRole(hdmrpRoleDef new_role) {
+    trace()<<"Role change: "<<role<<"->"<<new_role;
     role=new_role;
 }
 
@@ -78,6 +85,7 @@ bool hdmrp::isLearningState() const {
 }
 
 void hdmrp::setState(hdmrpStateDef new_state) {
+    trace()<<"State change: "<<state<<"->"<<new_state;
     state=new_state;
 }
 
@@ -225,10 +233,11 @@ hdmrp_path hdmrp::getRoute() const {
 // Timer handling
 void hdmrp::timerFiredCallback(int index) {
     switch (index) {
+        case hdmrpTimerDef::NEW_ROUND:
         case hdmrpTimerDef::SINK_START: {
             trace()<<"SINK_START timer expired";
             sendSRREQ();
-            setTimer(hdmrpTimerDef::SINK_START,2);
+            setTimer(hdmrpTimerDef::NEW_ROUND,t_rreq);
             break;
         }
         case hdmrpTimerDef::T_L: {
@@ -370,7 +379,6 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                         trace()<<"RREQ with 0 Path_id received";
                         if(netPacket->getRound() > getRound()) {
                             trace()<<"New Round";
-                            trace()<<"State transition to sub-root";
                             setRole(hdmrpRoleDef::SUB_ROOT);
                             setRound(netPacket->getRound());
                             sendRREQ(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));

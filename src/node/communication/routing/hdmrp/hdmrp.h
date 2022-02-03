@@ -26,6 +26,7 @@ class hdmrp: public VirtualRouting {
  private:
      int round;
      int t_l;
+     int t_rreq;
      hdmrpStateDef state;
      hdmrpRoleDef role;
      bool master;
