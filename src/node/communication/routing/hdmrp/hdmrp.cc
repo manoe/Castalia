@@ -310,25 +310,30 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
     switch(netPacket->getHdmrpPacketKind()) {
         case hdmrpPacketDef::DATA_PACKET: {
             if(netPacket->getSource()==SELF_NETWORK_ADDRESS) {
-                trace()<<"What?";
+                trace()<<"Data packet from the same node. Should not happen.";
             }
             else if(netPacket->getSource()==BROADCAST_NETWORK_ADDRESS) {
-                trace()<<"Broadcast data packet, wtf?";
+                trace()<<"Data packet with broadcast as source. Should not happen.";
+            }
+            else if(netPacket->getDestination()==BROADCAST_NETWORK_ADDRESS) {
+                trace()<<"Broadcast data packet. should not happen.";
             }
             else if(netPacket->getDestination()==SELF_NETWORK_ADDRESS) {
-                hdmrp_path path;
                 if(isSink()) {
                     trace()<<"Packet arrived";
+                } else {
+                    hdmrp_path path;
+                    trace()<<"Packet received, routing forward.";
+                    if(isRoot()) {
+                        path=getRoute(0);
+                    }
+                    else if(isSubRoot() || isNonRoot()) {
+                        path=getRoute(netPacket->getPath_id());
+                    }
+                    netPacket->setSource(SELF_NETWORK_ADDRESS);
+                    netPacket->setDestination(path.next_hop.c_str());
+                    toMacLayer(netPacket, resolveNetworkAddress(path.next_hop.c_str()));
                 }
-                else if(isRoot()) {
-                    path=getRoute(0);
-                }
-                else if(isSubRoot() || isNonRoot()) {
-                    path=getRoute(netPacket->getPath_id());
-                }
-                // Something missing
-                netPacket->setSource(SELF_NETWORK_ADDRESS);
-                netPacket->setDestination(path.next_hop.c_str());
             }
             break;
         }
@@ -353,7 +358,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                        sendRREQ(getRound(),getRoute());
  
                     } else {
-                        trace()<<"Old round";
+                        trace()<<"Old round. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                     }
                 } else {
                     trace()<<"RREQ with valid Path_id discarded by sub-root";
