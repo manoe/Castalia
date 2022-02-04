@@ -353,7 +353,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                        sendRREQ(getRound(),getRoute());
  
                     } else {
-                        trace()<<"Old round";
+                        trace()<<"Old round. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                     }
                 } else {
                     trace()<<"RREQ with valid Path_id discarded by sub-root";
