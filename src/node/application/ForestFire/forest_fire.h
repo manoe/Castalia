@@ -1,14 +1,11 @@
-/****************************************************************************
- *  Copyright: National ICT Australia,  2007 - 2011                         *
- *  Developed at the ATP lab, Networked Systems research theme              *
- *  Author(s): Yuriy Tselishchev                                            *
- *  This file is distributed under the terms in the attached LICENSE file.  *
- *  If you do not find this file, copies can be found by writing to:        *
- *                                                                          *
- *      NICTA, Locked Bag 9013, Alexandria, NSW 1435, Australia             *
- *      Attention:  License Inquiry.                                        *
- *                                                                          *
- ****************************************************************************/
+/*******************************************************************************
+ *  Copyright: Balint Aron Uveges, 2022                                        *
+ *  Developed at Pazmany Peter Catholic University,                            *
+ *               Faculty of Information Technology and Bionics                 *
+ *  Author(s): Balint Aron Uveges                                              *
+ *  This file is distributed under the terms in the attached LICENSE file.     *
+ *                                                                             *
+ *******************************************************************************/
 
 #ifndef _FOREST_FIRE_H_
 #define _FOREST_FIRE_H_
@@ -16,8 +13,6 @@
 #include "node/application/VirtualApplication.h"
 
 #define REPORT_PACKET_NAME "Bridge test report packet"
-
-using namespace std;
 
 struct version_info {
 	double version;
@@ -33,10 +28,7 @@ struct report_info {
 
 enum ForestFireTimers {
 	REQUEST_SAMPLE = 1,
-	REPROGRAM_NODES = 2,
-	SEND_REPROGRAM_PACKET = 3,
-	LEARN_PATHS = 4,
-	START_PATH_CONSTRUCTION = 5
+	SEND_REPROGRAM_PACKET = 3
 };
 
 class ForestFire :public VirtualApplication {
@@ -69,6 +61,7 @@ class ForestFire :public VirtualApplication {
 	void fromNetworkLayer(ApplicationPacket *, const char *, double, double);
 	void timerFiredCallback(int);
 	void handleSensorReading(SensorReadingMessage *);
+
 };
 
 #endif				// _FOREST_FIRE_H_

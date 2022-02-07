@@ -1,14 +1,11 @@
-/****************************************************************************
- *  Copyright: National ICT Australia,  2007 - 2011                         *
- *  Developed at the ATP lab, Networked Systems research theme              *
- *  Author(s): Yuriy Tselishchev                                            *
- *  This file is distributed under the terms in the attached LICENSE file.  *
- *  If you do not find this file, copies can be found by writing to:        *
- *                                                                          *
- *      NICTA, Locked Bag 9013, Alexandria, NSW 1435, Australia             *
- *      Attention:  License Inquiry.                                        *
- *                                                                          *
- ****************************************************************************/
+/*******************************************************************************
+ *  Copyright: Balint Aron Uveges, 2022                                        *
+ *  Developed at Pazmany Peter Catholic University,                            *
+ *               Faculty of Information Technology and Bionics                 *
+ *  Author(s): Balint Aron Uveges                                              *
+ *  This file is distributed under the terms in the attached LICENSE file.     *
+ *                                                                             *
+ *******************************************************************************/
 
 #include "node/application/ForestFire/forest_fire.h"
 
@@ -34,12 +31,11 @@ void ForestFire::startup()
 	version_info_table.clear();
 	report_info_table.clear();
 
-	if (isSink) {
-		setTimer(START_PATH_CONSTRUCTION, 1);	//add initial delay parameter
-	} else {
+	if (!isSink) {
 		setTimer(REQUEST_SAMPLE, sampleInterval);
 	}
 }
+
 
 void ForestFire::timerFiredCallback(int timer)
 {
@@ -51,15 +47,7 @@ void ForestFire::timerFiredCallback(int timer)
 			break;
 		}
 
-		case REPROGRAM_NODES:{
-			currentVersion++;
-			currentVersionPacket = 1;
-			//setTimer(REPROGRAM_NODES, reprogramInterval);
-			setTimer(SEND_REPROGRAM_PACKET, 0);
-			break;
-		}
-
-		case SEND_REPROGRAM_PACKET:{
+	//	case SEND_REPROGRAM_PACKET:{
 	//		ApplicationPacket *newPkt =
 	//		    createGenericDataPacket(currentVersion, currentVersionPacket,  maxPayload);
 	//		newPkt->setName(REPROGRAM_PACKET_NAME);
@@ -69,16 +57,8 @@ void ForestFire::timerFiredCallback(int timer)
 	//		currentVersionPacket++;
 	//		if (currentVersionPacket < totalVersionPackets)
 	//			setTimer(SEND_REPROGRAM_PACKET, reprogramPacketDelay);
-			break;
-		}
-		case ForestFireTimers::LEARN_PATHS: {
-			trace()<<"Path learning";
-			
-		}
-		case ForestFireTimers::START_PATH_CONSTRUCTION: {
-			trace()<<"Path construction initiated by Sink";
-
-		}
+	//		break;
+	//	}
 	}
 
 }
