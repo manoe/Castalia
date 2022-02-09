@@ -39,6 +39,7 @@ class hdmrp: public VirtualRouting {
      void fromApplicationLayer(cPacket *, const char *);
      void fromMacLayer(cPacket *, int, double, double);
      void timerFiredCallback(int);
+     void finishSpecific();
 
      void sendSRREQ();
      void sendRREQ();

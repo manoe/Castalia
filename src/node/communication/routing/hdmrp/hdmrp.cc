@@ -240,6 +240,7 @@ void hdmrp::timerFiredCallback(int index) {
             // select path
             auto path=selectRREQ();
             sendRREQ(getRound(),path);
+            clearRoutes();
             addRoute(path);
             if(isMaster()) {
                 removeRREQ(path);
@@ -444,3 +445,11 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
     }
 }
 
+void hdmrp::finishSpecific() {
+    declareOutput("Paths");
+    collectOutput("Paths","",routing_table.size());
+
+    declareOutput("Role");
+    collectOutput("Role","",role);
+    return;
+}
