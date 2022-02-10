@@ -35,6 +35,7 @@ simple hdmrp like node.communication.routing.iRouting
 	int netBufferSize = default (32);	// number of messages
     int t_l = default (1); // Tl timer, default 1 sec
     int t_rreq = default (10); // Trreq timer, default 10 sec
+    int t_start = default (1); // sink start timer
 
  gates:
 	output toCommunicationModule;

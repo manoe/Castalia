@@ -37,12 +37,14 @@ void hdmrp::startup() {
 
     t_rreq=par("t_rreq");
 
+    t_start=par("t_start");
+
     // Set round to 0
     initRound();
     initState(hdmrpStateDef::WORK);
 
     if(isSink()) {
-        setTimer(hdmrpTimerDef::SINK_START,1);
+        setTimer(hdmrpTimerDef::SINK_START,t_start);
         //Trigger 1st RREQ, timer should be also here
     }
 }
