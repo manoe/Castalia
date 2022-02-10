@@ -63,6 +63,7 @@ class hdmrp: public VirtualRouting {
      bool isRoot() const;
      bool isSubRoot() const;
      bool isNonRoot() const;
+     void initRole(hdmrpRoleDef);
      void setRole(hdmrpRoleDef);
 
      bool isMaster() const;

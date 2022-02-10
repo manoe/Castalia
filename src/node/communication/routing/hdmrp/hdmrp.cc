@@ -16,7 +16,7 @@ void hdmrp::startup() {
 
     // Define role
     if(appModule->hasPar("isSink")) {
-        appModule->par("isSink")?setRole(hdmrpRoleDef::SINK):setRole(hdmrpRoleDef::NON_ROOT);
+        appModule->par("isSink")?initRole(hdmrpRoleDef::SINK):initRole(hdmrpRoleDef::NON_ROOT);
     } else {
         role=hdmrpRoleDef::NON_ROOT;
         throw cRuntimeError("\nHDMRP nodes require the parameter role");
@@ -63,6 +63,11 @@ bool hdmrp::isSubRoot() const {
 
 bool hdmrp::isNonRoot() const {
     return hdmrpRoleDef::NON_ROOT==role;
+}
+
+void hdmrp::initRole(hdmrpRoleDef new_role) {
+    trace()<<"Role initialized to: "<<new_role;
+    role=new_role;
 }
 
 void hdmrp::setRole(hdmrpRoleDef new_role) {
