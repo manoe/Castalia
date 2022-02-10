@@ -39,7 +39,7 @@ void hdmrp::startup() {
 
     // Set round to 0
     initRound();
-    setState(hdmrpStateDef::WORK);
+    initState(hdmrpStateDef::WORK);
 
     if(isSink()) {
         setTimer(hdmrpTimerDef::SINK_START,1);
@@ -88,6 +88,12 @@ void hdmrp::setState(hdmrpStateDef new_state) {
     trace()<<"State change: "<<state<<"->"<<new_state;
     state=new_state;
 }
+
+void hdmrp::initState(hdmrpStateDef new_state) {
+    trace()<<"State initializied to: "<<new_state;
+    state=new_state;
+}
+
 
 void hdmrp::initRound() {
     round = 0;
