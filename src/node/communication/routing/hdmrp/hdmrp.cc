@@ -233,6 +233,16 @@ hdmrp_path hdmrp::getRoute() const {
     return it->second;
 }
 
+set<int> hdmrp::getPaths() {
+    std::set<int> ret;
+    if(routing_table.size()>0) {
+        for(auto it=routing_table.begin(); it != routing_table.end(); ++it) {
+            ret.insert(it->first);
+        }
+    }
+    return ret;
+}
+
 // Timer handling
 void hdmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -459,5 +469,34 @@ void hdmrp::finishSpecific() {
 
     declareOutput("Role");
     collectOutput("Role","",role);
+
+    // Only the sink calculates individual paths
+    if (getParentModule()->getIndex() == 0) {
+        declareOutput("Number of Paths");
+
+        cTopology *topo;        // temp variable to access energy spent by other nodes
+        topo = new cTopology("topo");
+        topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+        
+        set<int> paths;
+
+        for (int i = 1; i < topo->getNumNodes(); ++i) {
+            hdmrp *hdmrp_instance = dynamic_cast<hdmrp*>
+                (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+            set<int> tmp_paths=hdmrp_instance->getPaths();
+            trace()<<"Node: "<<i;
+            trace()<<"Number of paths at node: "<<tmp_paths.size();
+            for(auto it=tmp_paths.begin() ; it != tmp_paths.end() ; ++it) {
+                if(paths.find(*it)==paths.end()) {
+                    paths.insert(*it);
+                    trace()<<"Path: "<<*it;
+                }
+            }
+        }
+        
+        delete(topo);
+        collectOutput("Number of Paths", "", paths.size());
+
+    }
     return;
 }
