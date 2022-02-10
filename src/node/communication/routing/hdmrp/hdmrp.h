@@ -78,7 +78,9 @@ class hdmrp: public VirtualRouting {
      bool isNewRound(hdmrpPacket*) const;
      void setRound(int);
      int  getRound() const;
-     
+
+ public:
+     set<int> getPaths();
 
 };
 
