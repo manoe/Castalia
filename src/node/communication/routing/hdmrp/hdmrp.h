@@ -27,6 +27,7 @@ class hdmrp: public VirtualRouting {
      int round;
      int t_l;
      int t_rreq;
+     int t_start;
      hdmrpStateDef state;
      hdmrpRoleDef role;
      bool master;
@@ -70,6 +71,7 @@ class hdmrp: public VirtualRouting {
      bool isWorkingState() const;
      bool isLearningState() const;
      void setState(hdmrpStateDef);
+     void initState(hdmrpStateDef);
 
      void initRound();
      void newRound();

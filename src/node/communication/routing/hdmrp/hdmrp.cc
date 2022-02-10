@@ -37,12 +37,14 @@ void hdmrp::startup() {
 
     t_rreq=par("t_rreq");
 
+    t_start=par("t_start");
+
     // Set round to 0
     initRound();
-    setState(hdmrpStateDef::WORK);
+    initState(hdmrpStateDef::WORK);
 
     if(isSink()) {
-        setTimer(hdmrpTimerDef::SINK_START,1);
+        setTimer(hdmrpTimerDef::SINK_START,t_start);
         //Trigger 1st RREQ, timer should be also here
     }
 }
@@ -88,6 +90,12 @@ void hdmrp::setState(hdmrpStateDef new_state) {
     trace()<<"State change: "<<state<<"->"<<new_state;
     state=new_state;
 }
+
+void hdmrp::initState(hdmrpStateDef new_state) {
+    trace()<<"State initializied to: "<<new_state;
+    state=new_state;
+}
+
 
 void hdmrp::initRound() {
     round = 0;
