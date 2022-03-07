@@ -1,23 +1,21 @@
-/****************************************************************************
- *  Copyright: National ICT Australia,  2007 - 2010                         *
- *  Developed at the ATP lab, Networked Systems research theme              *
- *  Author(s): Yuri Tselishchev                                             *
- *  This file is distributed under the terms in the attached LICENSE file.  *
- *  If you do not find this file, copies can be found by writing to:        *
- *                                                                          *
- *      NICTA, Locked Bag 9013, Alexandria, NSW 1435, Australia             *
- *      Attention:  License Inquiry.                                        *
- *                                                                          *  
- ****************************************************************************/
+/*******************************************************************************
+ *  Copyright: Balint Aron Uveges, 2022                                        *
+ *  Developed at Pazmany Peter Catholic University,                            *
+ *               Faculty of Information Technology and Bionics                 *
+ *  Author(s): Balint Aron Uveges                                              *
+ *  This file is distributed under the terms in the attached LICENSE file.     *
+ *                                                                             *
+ *******************************************************************************/
 
-#include "physicalProcess/carsPhysicalProcess/CarsPhysicalProcess.h"
+
+#include "physicalProcess/WildFirePhysicalProcess/WildFirePhysicalProcess.h"
 
 #define K_PARAM 0.1
 #define A_PARAM 1
 
-Define_Module(CarsPhysicalProcess);
+Define_Module(WildFirePhysicalProcess);
 
-void CarsPhysicalProcess::initialize()
+void WildFirePhysicalProcess::initialize()
 {
 	readIniFileParameters();
 
@@ -41,7 +39,7 @@ void CarsPhysicalProcess::initialize()
 	declareOutput("Cars generated on the road");
 }
 
-void CarsPhysicalProcess::handleMessage(cMessage * msg)
+void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 {
 	switch (msg->getKind()) {
 		case PHYSICAL_PROCESS_SAMPLING: {
@@ -93,7 +91,7 @@ void CarsPhysicalProcess::handleMessage(cMessage * msg)
 	}
 }
 
-void CarsPhysicalProcess::finishSpecific()
+void WildFirePhysicalProcess::finishSpecific()
 {
 	int i;
 	for (i = 0; i < max_num_cars; i++) {
@@ -102,20 +100,12 @@ void CarsPhysicalProcess::finishSpecific()
 	delete[]sources_snapshots;
 }
 
-void CarsPhysicalProcess::readIniFileParameters(void)
+void WildFirePhysicalProcess::readIniFileParameters(void)
 {
-	max_num_cars = par("max_num_cars");
-	car_speed = par("car_speed");
-	car_value = par("car_value");
-	car_interarrival = par("car_interarrival");
-	point1_x_coord = par("point1_x_coord");
-	point1_y_coord = par("point1_y_coord");
-	point2_x_coord = par("point2_x_coord");
-	point2_y_coord = par("point2_y_coord");
 	description = par("description");
 }
 
-double CarsPhysicalProcess::calculateScenarioReturnValue(const double &x_coo,
+double WildFirePhysicalProcess::calculateScenarioReturnValue(const double &x_coo,
 							 const double &y_coo, const simtime_t &stime)
 {
 	double retVal = 0.0f;
