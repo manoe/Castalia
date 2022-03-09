@@ -15,6 +15,7 @@
 
 #include "helpStructures/CastaliaModule.h"
 #include "physicalProcess/PhysicalProcessMessage_m.h"
+#include "wf.h"
 
 using namespace std;
 
@@ -26,20 +27,14 @@ typedef struct {
 
 class WildFirePhysicalProcess: public CastaliaModule {
  private:
-	int max_num_cars;
-	double car_speed;
-	double car_value;
-	double car_interarrival;
-	double point1_x_coord;
-	double point1_y_coord;
-	double point2_x_coord;
-	double point2_y_coord;
-
-	double road_length;
-	sourceSnapshot **sources_snapshots;	// N by M array, where N is numSources and, M is the 
-										// maximum number of source snapshots. A source 
-										// snapshot is a tuple (time, x, y, value)
+    int wf_start_x_coord;
+    int wf_start_y_coord;
+//    int x_size;
+//    int y_size;
+    int map_scale;
+    const char *map_file;
 	const char *description;
+    WildFireCA *wf_ca;
 
  protected:
 	virtual void initialize();
@@ -47,7 +42,15 @@ class WildFirePhysicalProcess: public CastaliaModule {
 	virtual void finishSpecific();
 	double calculateScenarioReturnValue(const double &x_coo,
 					    const double &y_coo, const simtime_t & stime);
-	void readIniFileParameters(void);
+	void readIniFileParameters();
+    int getInt16(const std::vector<unsigned char> &buffer, int index);
+    int getInt8(const std::vector<unsigned char> &buffer, int index);
+    float getFloat(const std::vector<unsigned char> &buffer, int index);
+    void getMapSize(const std::vector<unsigned char> &buffer, int &map_x_size, int &map_y_size);
+    VegetationType mapFnfValue(int value);
+    std::vector<unsigned char> readMapFile();
+    GridCell** generatePlane(const std::vector<unsigned char> &buffer, int map_x_size, int map_y_size);
+    void deletePlane(GridCell **plane, int map_x_size);
 };
 
 #endif /* _WILDFIREPHYSICALPROCESS_H_ */

@@ -1,11 +1,11 @@
-/*******************************************************************************
- *  Copyright: Balint Aron Uveges, 2022                                        *
- *  Developed at Pazmany Peter Catholic University,                            *
- *               Faculty of Information Technology and Bionics                 *
- *  Author(s): Balint Aron Uveges                                              *
- *  This file is distributed under the terms in the attached LICENSE file.     *
- *                                                                             *
- *******************************************************************************/
+///*******************************************************************************
+// *  Copyright: Balint Aron Uveges, 2022                                        *
+// *  Developed at Pazmany Peter Catholic University,                            *
+// *               Faculty of Information Technology and Bionics                 *
+// *  Author(s): Balint Aron Uveges                                              *
+// *  This file is distributed under the terms in the attached LICENSE file.     *
+// *                                                                             *
+// *******************************************************************************/
 
 package physicalProcess.WildFirePhysicalProcess;
 
@@ -20,6 +20,7 @@ parameters:
     int     wf_start_x_coord = default (0);
     int     wf_start_y_coord = default (0);
     string  map_file;
+    int     map_scale = default (90);
 
 	string  description = default ("CA based wildfire");
 
