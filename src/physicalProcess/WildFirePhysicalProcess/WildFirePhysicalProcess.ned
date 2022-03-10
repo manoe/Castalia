@@ -21,6 +21,7 @@ parameters:
     int     wf_start_y_coord = default (0);
     string  map_file;
     int     map_scale = default (90);
+    int     ca_step_period;
 
 	string  description = default ("CA based wildfire");
 

@@ -19,13 +19,13 @@ void WildFirePhysicalProcess::initialize()
 {
 	readIniFileParameters();
     cModule *app=getParentModule();
-    int sim_x_size=0;
+    sim_x_size=0;
     if(app->hasPar("field_x")) {
         double tmp_sim_x_size=app->par("field_x");
         sim_x_size=static_cast<int>(tmp_sim_x_size);
     }
 
-    int sim_y_size=0;
+    sim_y_size=0;
     if(app->hasPar("field_y")) {
         double tmp_sim_y_size=app->par("field_y");
         sim_y_size=static_cast<int>(tmp_sim_y_size);
@@ -52,20 +52,11 @@ void WildFirePhysicalProcess::initialize()
         throw cRuntimeError("WildFire starting coordinate is invalid");
     }
 
-	//int i, j;
-	//sources_snapshots = new sourceSnapshot *[max_num_cars];
-	//for (i = 0; i < max_num_cars; i++) {
-	//	sources_snapshots[i] = new sourceSnapshot[2];
-	//	for (j = 0; j < 2; j++) {
-	//		sources_snapshots[i][j].time = -1;
-	//	}
-	//}
-    //
-	//double arrival = getRNG(0)->doubleRand() * car_interarrival + car_interarrival / 2;
-	//trace() << "First car arrival at " << arrival;
-	//scheduleAt(arrival,	new cMessage("New car arrival message", TIMER_SERVICE));
-    //
-	//declareOutput("Cars generated on the road");
+    wf_ca->addFireSpot({wf_start_x_coord,wf_start_y_coord});
+
+	trace() << "Firt CA step at: "<<ca_step_period<<" seconds";
+	scheduleAt(SimTime()+static_cast<double>(ca_step_period), new cMessage("CA step timer expired", TIMER_SERVICE));
+	//declareOutput("Cars GENErated on the road");
 }
 
 void WildFirePhysicalProcess::handleMessage(cMessage * msg)
@@ -73,44 +64,21 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 	switch (msg->getKind()) {
 		case PHYSICAL_PROCESS_SAMPLING: {
 			PhysicalProcessMessage *phyMsg = check_and_cast < PhysicalProcessMessage * >(msg);
-			// int nodeIndex = phyMsg->getSrcID();
-			// int sensorIndex = phyMsg->getSensorIndex();
+            CellPosition pos=getMapCoordinates(phyMsg->getXCoor(), phyMsg->getYCoor());
 
-			// get the sensed value based on node location
-			phyMsg->setValue(calculateScenarioReturnValue(
-				phyMsg->getXCoor(), phyMsg->getYCoor(), phyMsg->getSendingTime()));
+            std::cout<<pos<<std::endl;
+
+            CellState state=wf_ca->getState(pos);
+			phyMsg->setValue(convertStateToSensedValue(state));
 			// Send reply back to the node who made the request
 			send(phyMsg, "toNode", phyMsg->getSrcID());
 			return;
 		}
 
 		case TIMER_SERVICE: {
-		//	int pos = -1;
-		//	for (int i = 0; pos == -1 && i < max_num_cars; i++) {
-		//		if (sources_snapshots[i][1].time < simTime())
-		//			pos = i;
-		//	}
-        //
-		//	if (pos != -1) {
-		//		trace() << "New car arrives on the bridge, index " << pos;
-		//		if (getRNG(0)->doubleRand() > 0.5) {
-		//			sources_snapshots[pos][0].x = point1_x_coord;
-		//			sources_snapshots[pos][0].y = point1_y_coord;
-		//			sources_snapshots[pos][1].x = point2_x_coord;
-		//			sources_snapshots[pos][1].y = point2_y_coord;
-		//		} else {
-		//			sources_snapshots[pos][0].x = point2_x_coord;
-		//			sources_snapshots[pos][0].y = point2_y_coord;
-		//			sources_snapshots[pos][1].x = point1_x_coord;
-		//			sources_snapshots[pos][1].y = point1_y_coord;
-		//		}
-		//		sources_snapshots[pos][0].time = simTime();
-		//		sources_snapshots[pos][1].time = simTime() + road_length / car_speed;
-		//		collectOutput("Cars generated on the road");
-		//	}
-        //
-		//	double arrival = getRNG(0)->doubleRand() * car_interarrival + car_interarrival / 2;
-		//	scheduleAt(simTime() + arrival,	msg);
+            trace()<<"CA timer expired";
+            wf_ca->step();
+			scheduleAt(simTime() + static_cast<double>(ca_step_period), msg);
 			return;
 		}
 
@@ -123,17 +91,13 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 void WildFirePhysicalProcess::finishSpecific()
 {
     delete wf_ca;
-	//int i;
-	//for (i = 0; i < max_num_cars; i++) {
-	//	delete[]sources_snapshots[i];
-	//}
-	//delete[]sources_snapshots;
 }
 
 void WildFirePhysicalProcess::readIniFileParameters() {
     wf_start_x_coord = par("wf_start_x_coord");
     wf_start_y_coord = par("wf_start_y_coord");
     map_scale        = par("map_scale");
+    ca_step_period   = par("ca_step_period");
     map_file         = par("map_file");
 	description      = par("description");
 }
@@ -213,26 +177,24 @@ void WildFirePhysicalProcess::getMapSize(const std::vector<unsigned char> &buffe
    trace()<<"map y size: "<<map_y_size;
 }
 
-double WildFirePhysicalProcess::calculateScenarioReturnValue(const double &x_coo,
-							 const double &y_coo, const simtime_t &stime)
-{
-	double retVal = 0.0f;
-	//int i;
-	//double linear_coeff, distance, x, y;
-    //
-	//for (i = 0; i < max_num_cars; i++) {
-	//	if (sources_snapshots[i][1].time >= stime) {
-	//		linear_coeff = (stime - sources_snapshots[i][0].time) /
-	//		    (sources_snapshots[i][1].time - sources_snapshots[i][0].time);
-	//		x = sources_snapshots[i][0].x + linear_coeff * 
-	//			(sources_snapshots[i][1].x - sources_snapshots[i][0].x);
-	//		y = sources_snapshots[i][0].y + linear_coeff * 
-	//			(sources_snapshots[i][1].y - sources_snapshots[i][0].y);
-	//		distance = sqrt((x_coo - x) * (x_coo - x) +
-	//			 (y_coo - y) * (y_coo - y));
-	//		retVal += pow(K_PARAM * distance + 1, -A_PARAM) * car_value;
-	//	}
-	//}
-	return retVal;
+CellPosition WildFirePhysicalProcess::getMapCoordinates(double x_sim_coord, double y_sim_coord) {
+    double x_d_pos=x_sim_coord/static_cast<double>(map_scale);
+    if(static_cast<int>(x_d_pos)*map_scale >= static_cast<double>(sim_x_size)) {
+        x_d_pos-=1;
+    }
+
+    double y_d_pos=y_sim_coord/static_cast<double>(map_scale);
+    if(static_cast<int>(y_d_pos)*map_scale >= static_cast<double>(sim_y_size)) {
+        y_d_pos-=1;
+    }
+
+    return CellPosition(static_cast<int>(x_d_pos),static_cast<int>(y_d_pos));
 }
 
+double WildFirePhysicalProcess::convertStateToSensedValue(CellState state) {
+    if(CellState::BURNING==state) {
+        return 1.0;
+    } else {
+        return 0.0;
+    }
+}

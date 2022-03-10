@@ -29,9 +29,10 @@ class WildFirePhysicalProcess: public CastaliaModule {
  private:
     int wf_start_x_coord;
     int wf_start_y_coord;
-//    int x_size;
-//    int y_size;
+    int sim_x_size;
+    int sim_y_size;
     int map_scale;
+    int ca_step_period;
     const char *map_file;
 	const char *description;
     WildFireCA *wf_ca;
@@ -40,8 +41,6 @@ class WildFirePhysicalProcess: public CastaliaModule {
 	virtual void initialize();
 	virtual void handleMessage(cMessage * msg);
 	virtual void finishSpecific();
-	double calculateScenarioReturnValue(const double &x_coo,
-					    const double &y_coo, const simtime_t & stime);
 	void readIniFileParameters();
     int getInt16(const std::vector<unsigned char> &buffer, int index);
     int getInt8(const std::vector<unsigned char> &buffer, int index);
@@ -51,6 +50,9 @@ class WildFirePhysicalProcess: public CastaliaModule {
     std::vector<unsigned char> readMapFile();
     GridCell** generatePlane(const std::vector<unsigned char> &buffer, int map_x_size, int map_y_size);
     void deletePlane(GridCell **plane, int map_x_size);
+    CellPosition getMapCoordinates(double x_sim_coord, double y_sim_coord); 
+    double convertStateToSensedValue(CellState state); 
+
 };
 
 #endif /* _WILDFIREPHYSICALPROCESS_H_ */
