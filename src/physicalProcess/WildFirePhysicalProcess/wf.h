@@ -345,6 +345,7 @@ class WildFireCA {
         }
 
         void step() {
+            ++counter;
             std::vector<CellPosition> cells=collectBurningCells();
             for(auto i : cells) {
                 propagateFire(i);
@@ -353,7 +354,7 @@ class WildFireCA {
 
         CellState getState(CellPosition pos) {
             if(!validPosition(pos)) {
-               throw std::string("FASZOM");
+               throw std::string("Invalid cell position");
             }
             return plane[pos.x][pos.y].state;
         }

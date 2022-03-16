@@ -16,4 +16,5 @@ message PhysicalProcessMessage {
 	double yCoor;
 	int srcID;		//the ID of the node module that sends the Sample request
 	int sensorIndex;
+    int mod;
 }
