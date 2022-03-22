@@ -10,8 +10,6 @@
 
 #include "physicalProcess/WildFirePhysicalProcess/WildFirePhysicalProcess.h"
 
-#define K_PARAM 0.1
-#define A_PARAM 1
 
 Define_Module(WildFirePhysicalProcess);
 
@@ -77,13 +75,28 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 
 		case TIMER_SERVICE: {
             trace()<<"CA timer expired";
-            wf_ca->step();
+            auto b_cells=wf_ca->stepAndCollect();
+            auto d_nodes=getDestroyedNodes(b_cells);
+            if(d_nodes.size()) {
+                signalTermination(d_nodes);
+            }
 			scheduleAt(simTime() + static_cast<double>(ca_step_period), msg);
 			return;
 		}
 
+        case PHYSICAL_EVENT: {
+            trace()<<"Subscription to physical event";
+            PhysicalEventMessage *reg_msg=check_and_cast<PhysicalEventMessage *>(msg);
+            if(EventType::REGISTER==reg_msg->getEvent()) {
+                trace()<<reg_msg->getSrcID()<<" registered";
+                subs.push_back({reg_msg->getSrcID(), reg_msg->getXCoor(), reg_msg->getYCoor()});
+            }
+            delete msg;
+            return;
+        }
+
 		default: {
-			throw cRuntimeError(":\n Physical Process received message other than PHYSICAL_PROCESS_SAMPLING");
+			throw cRuntimeError(":\n Physical Process received message other than PHYSICAL_PROCESS_SAMPLING or PHYSICAL_EVENT");
 		}
 	}
 }
@@ -198,3 +211,30 @@ double WildFirePhysicalProcess::convertStateToSensedValue(CellState state) {
         return 0.0;
     }
 }
+
+std::vector<int> WildFirePhysicalProcess::getDestroyedNodes(std::vector<CellPosition> cells) {
+    std::vector<int> b_nodes;
+    for(auto node: subs) {
+        for(auto cell: cells) {
+            if(getMapCoordinates(node.x_coord, node.y_coord)==cell) {
+                trace()<<node.id<<" terminated";
+                b_nodes.push_back(node.id);
+            }
+        }
+    }
+    return b_nodes;
+}
+
+void WildFirePhysicalProcess::signalTermination(std::vector<int> nodes) {
+    if(!nodes.size()) {
+        return;
+    }
+    
+    for(auto node: nodes) {
+        PhysicalEventMessage *msg=new PhysicalEventMessage();
+        msg->setSrcID(node);
+        msg->setEvent(EventType::TERMINATE);
+        send(msg, "toNode", msg->getSrcID());
+    }
+}
+

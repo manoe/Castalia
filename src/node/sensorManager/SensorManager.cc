@@ -56,6 +56,17 @@ void SensorManager::handleMessage(cMessage * msg)
 		{
 			disabled = 0;
 			trace() << "Received STARTUP MESSAGE";
+
+            PhysicalEventMessage *reg_msg=new PhysicalEventMessage("register node", PHYSICAL_EVENT);
+			reg_msg->setSrcID(self);	//insert information about the ID of the node
+			reg_msg->setXCoor(nodeMobilityModule->getLocation().x);
+			reg_msg->setYCoor(nodeMobilityModule->getLocation().y);
+            reg_msg->setEvent(EventType::REGISTER);
+
+            // Ugly hack, but at this point we assume that there is only one physical process
+            // An alternative solution would be to iterate through all physical processes
+			send(reg_msg, "toNodeContainerModule", corrPhyProcess[0]);
+
 			break;
 		}
 

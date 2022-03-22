@@ -15,6 +15,7 @@
 
 #include "helpStructures/CastaliaModule.h"
 #include "physicalProcess/PhysicalProcessMessage_m.h"
+#include "physicalProcess/PhysicalEventMessage_m.h"
 #include "wf.h"
 
 using namespace std;
@@ -24,6 +25,12 @@ typedef struct {
 	double x;
 	double y;
 } sourceSnapshot;
+
+struct nodeLocation {
+    int id;
+    double x_coord;
+    double y_coord;
+};
 
 class WildFirePhysicalProcess: public CastaliaModule {
  private:
@@ -36,6 +43,7 @@ class WildFirePhysicalProcess: public CastaliaModule {
     const char *map_file;
 	const char *description;
     WildFireCA *wf_ca;
+    std::vector<nodeLocation> subs;
 
  protected:
 	virtual void initialize();
@@ -51,7 +59,11 @@ class WildFirePhysicalProcess: public CastaliaModule {
     GridCell** generatePlane(const std::vector<unsigned char> &buffer, int map_x_size, int map_y_size);
     void deletePlane(GridCell **plane, int map_x_size);
     CellPosition getMapCoordinates(double x_sim_coord, double y_sim_coord); 
-    double convertStateToSensedValue(CellState state); 
+    double convertStateToSensedValue(CellState state);
+
+    std::vector<int> getDestroyedNodes(std::vector<CellPosition> cells);
+    void signalTermination(std::vector<int> nodes);
+
 
 };
 

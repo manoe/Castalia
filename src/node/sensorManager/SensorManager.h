@@ -15,6 +15,7 @@
 
 #include "node/sensorManager/SensorManagerMessage_m.h"
 #include "physicalProcess/PhysicalProcessMessage_m.h"
+#include "physicalProcess/PhysicalEventMessage_m.h"
 
 #include "node/mobilityManager/VirtualMobilityManager.h"
 #include "helpStructures/CastaliaModule.h"
