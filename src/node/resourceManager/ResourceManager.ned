@@ -41,5 +41,6 @@ simple ResourceManager {
 	output toMac;
 	output toRadio;
 	input powerConsumption @ directIn;
+    input fromSensorManager;
 }
 

@@ -16,6 +16,7 @@
 #include <map>
 #include "helpStructures/CastaliaModule.h"
 #include "node/resourceManager/ResourceManagerMessage_m.h"
+#include "node/resourceManager/TerminalEventMessage_m.h"
 
 using namespace std;
 

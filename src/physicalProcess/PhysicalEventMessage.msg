@@ -10,11 +10,14 @@
 //*                                                                              *
 //*******************************************************************************/
 
-message PhysicalProcessMessage {
-	double value;
+enum EventType {
+    REGISTER    = 1;
+    TERMINATE   = 2;
+};
+
+message PhysicalEventMessage {
 	double xCoor;
 	double yCoor;
 	int srcID;		//the ID of the node module that sends the Sample request
-	int sensorIndex;
-    int mod;
+    int event @enum(EventType);
 }

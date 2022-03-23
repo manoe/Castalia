@@ -95,6 +95,12 @@ void ResourceManager::handleMessage(cMessage * msg)
 			break;
 		}
 
+        case TERMINAL_EVENT: {
+            trace()<<"Terminal event message received, Node terminating.";
+            destroyNode();
+            break;
+        }
+
 		default:{
 			throw cRuntimeError("ERROR: Unexpected message received by resource manager: %s", msg->getKind());
 		}
