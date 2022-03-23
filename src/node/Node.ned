@@ -69,5 +69,7 @@ module Node {
 	ResourceManager.toNetwork --> Communication.fromResourceManager2Net;
 	ResourceManager.toMac --> Communication.fromResourceManager2Mac;
 	ResourceManager.toRadio --> Communication.fromResourceManager2Radio;
+
+    SensorManager.toResourceManager --> ResourceManager.fromSensorManager;
 }
 

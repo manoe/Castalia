@@ -53,6 +53,7 @@ simple SensorManager {
  gates:
 	output toApplicationModule;
 	output toNodeContainerModule[];
+    output toResourceManager;
 	input fromNodeContainerModule[];
 	input fromApplicationModule;
 	input fromResourceManager;
