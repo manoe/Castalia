@@ -18,8 +18,6 @@
 #include "physicalProcess/PhysicalEventMessage_m.h"
 #include "wf.h"
 
-using namespace std;
-
 typedef struct {
 	simtime_t time;
 	double x;

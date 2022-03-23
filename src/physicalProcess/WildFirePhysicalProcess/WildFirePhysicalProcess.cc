@@ -76,6 +76,9 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 		case TIMER_SERVICE: {
             trace()<<"CA timer expired";
             auto b_cells=wf_ca->stepAndCollect();
+            for(auto cell: b_cells) {
+                trace()<<"Burnt cell: "<<cell;
+            }
             auto d_nodes=getDestroyedNodes(b_cells);
             if(d_nodes.size()) {
                 signalTermination(d_nodes);
@@ -217,7 +220,7 @@ std::vector<int> WildFirePhysicalProcess::getDestroyedNodes(std::vector<CellPosi
     for(auto node: subs) {
         for(auto cell: cells) {
             if(getMapCoordinates(node.x_coord, node.y_coord)==cell) {
-                trace()<<node.id<<" terminated";
+                trace()<<node.id<<" terminated, position: "<<cell<<" real position: "<<node.x_coord<<" "<<node.y_coord;
                 b_nodes.push_back(node.id);
             }
         }
