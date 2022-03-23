@@ -166,6 +166,16 @@ void SensorManager::handleMessage(cMessage * msg)
 			break;
 		}
 
+        case PHYSICAL_EVENT: {
+            PhysicalEventMessage *pe_msg=check_and_cast<PhysicalEventMessage *>(msg);
+            if(EventType::TERMINATE==pe_msg->getEvent()) {
+                trace()<<"Node received terminal physical event";
+                TerminalEventMessage *t_msg=new TerminalEventMessage("terminal event",TERMINAL_EVENT);
+                send(t_msg,"toResourceManager");
+            }
+            break;
+        }
+
 		default:
 		{
 			trace() << "WARNING: received packet of unknown type";

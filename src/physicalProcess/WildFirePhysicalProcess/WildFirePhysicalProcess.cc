@@ -234,7 +234,7 @@ void WildFirePhysicalProcess::signalTermination(std::vector<int> nodes) {
     }
     
     for(auto node: nodes) {
-        PhysicalEventMessage *msg=new PhysicalEventMessage();
+        PhysicalEventMessage *msg=new PhysicalEventMessage("destroyed node", PHYSICAL_EVENT);
         msg->setSrcID(node);
         msg->setEvent(EventType::TERMINATE);
         send(msg, "toNode", msg->getSrcID());
