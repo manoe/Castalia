@@ -38,6 +38,7 @@ class WildFirePhysicalProcess: public CastaliaModule {
     int sim_y_size;
     int map_scale;
     int ca_step_period;
+    int ca_start_timer;
     const char *map_file;
 	const char *description;
     WildFireCA *wf_ca;
