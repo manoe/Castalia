@@ -8,3 +8,5 @@ src/Makefile
 .qtenvrc
 .vscode
 Castalia-Trace.txt
+[0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9].txt
+tags

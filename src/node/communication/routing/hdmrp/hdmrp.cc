@@ -47,6 +47,7 @@ void hdmrp::startup() {
         setTimer(hdmrpTimerDef::SINK_START,t_start);
         //Trigger 1st RREQ, timer should be also here
     }
+    d_pkt_seq=1;
 }
 
 bool hdmrp::isSink() const {
@@ -213,6 +214,7 @@ float hdmrp::calculateCost(hdmrp_path path) const {
 }
 
 void hdmrp::addRoute(hdmrp_path path) {
+    trace()<<"Path ID: "<<path.path_id<<" Next hop: "<<path.next_hop;
     routing_table[path.path_id]=path;
 }
 
@@ -224,11 +226,20 @@ void hdmrp::clearRoutes() {
     routing_table.clear();
 }
 
-hdmrp_path hdmrp::getRoute(const int path_id) const {
-   return rreq_table.find(path_id)->second; // pretty unsafe
+hdmrp_path hdmrp::getRoute(const int path_id) {
+    if(!routing_table.size()) {
+        throw std::length_error("Routing table empty");
+    }
+    if(routing_table.find(path_id) == routing_table.end()) {
+        throw std::length_error("Path ID not available in routing table");
+    }
+    return routing_table.find(path_id)->second;
 }
 
 hdmrp_path hdmrp::getRoute() const {
+    if(!routing_table.size()) {
+        throw std::length_error("Routing table empty");
+    }
     std::random_device rd;
     uniform_int_distribution<int> dist(0, routing_table.size()-1);
     auto it=routing_table.begin();
@@ -304,16 +315,26 @@ void hdmrp::timerFiredCallback(int index) {
  * (e.g. "3" becomes 3, or a BROADCAST_NETWORK_ADDRESS becomes BROADCAST_MAC_ADDRESS)
  * If the destination is a 1-hop neighbor it will receive the packet.
  */
-void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination)
-{
+void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
+    hdmrp_path path;
+    
+    try {
+        path=getRoute();
+    } catch (std::length_error &e) {
+        trace()<<"No route available: "<<e.what();
+        return;
+    }
+
     hdmrpPacket *netPacket = new hdmrpPacket("HDMRP packet", NETWORK_LAYER_PACKET);
     netPacket->setSource(SELF_NETWORK_ADDRESS);
-    auto path=getRoute();
+    netPacket->setHdmrpPacketKind(hdmrpPacketDef::DATA_PACKET);
     netPacket->setDestination(path.next_hop.c_str());
-    trace()<<"Destination "<<path.next_hop;
+    netPacket->setPath_id(path.path_id);
+    netPacket->setSequenceNumber(d_pkt_seq++);
+    trace()<<"Destination "<<path.next_hop<<" Path: "<<path.path_id;
 
     encapsulatePacket(netPacket, pkt);
-    toMacLayer(netPacket, resolveNetworkAddress(destination));
+    toMacLayer(netPacket, resolveNetworkAddress(path.next_hop.c_str()));
 }
 
 /* MAC layer sends a packet together with the source MAC address and other info.
@@ -333,30 +354,39 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
     switch(netPacket->getHdmrpPacketKind()) {
         case hdmrpPacketDef::DATA_PACKET: {
-            if(netPacket->getSource()==SELF_NETWORK_ADDRESS) {
+
+            if(0==strcmp(netPacket->getSource(),SELF_NETWORK_ADDRESS)) {
                 trace()<<"Data packet from the same node. Should not happen.";
             }
-            else if(netPacket->getSource()==BROADCAST_NETWORK_ADDRESS) {
+            else if(0==strcmp(netPacket->getSource(),BROADCAST_NETWORK_ADDRESS)) {
                 trace()<<"Data packet with broadcast as source. Should not happen.";
             }
-            else if(netPacket->getDestination()==BROADCAST_NETWORK_ADDRESS) {
+            else if(0==strcmp(netPacket->getDestination(),BROADCAST_NETWORK_ADDRESS)) {
                 trace()<<"Broadcast data packet. should not happen.";
             }
-            else if(netPacket->getDestination()==SELF_NETWORK_ADDRESS) {
+            else if(0==strcmp(netPacket->getDestination(),SELF_NETWORK_ADDRESS)) {
                 if(isSink()) {
                     trace()<<"Packet arrived";
                 } else {
                     hdmrp_path path;
                     trace()<<"Packet received, routing forward.";
                     if(isRoot()) {
-                        path=getRoute(0);
+                        try {
+                            path=getRoute(0);
+                        } catch(std::length_error &e) {
+                            trace()<<e.what();
+                            return;
+                        }
+                        trace()<<"Root|Path: "<<netPacket->getPath_id()<<"|Next hop: "<<path.next_hop<<"|Seq: "<<netPacket->getSequenceNumber();
                     }
                     else if(isSubRoot() || isNonRoot()) {
                         path=getRoute(netPacket->getPath_id());
+                        trace()<<(isSubRoot()?"SubRoot|":"NonRoot|")<<"Path: "<<netPacket->getPath_id()<<" Next hop: "<<path.next_hop<<"|Seq: "<<netPacket->getSequenceNumber();
+
                     }
                     netPacket->setSource(SELF_NETWORK_ADDRESS);
                     netPacket->setDestination(path.next_hop.c_str());
-                    toMacLayer(netPacket, resolveNetworkAddress(path.next_hop.c_str()));
+                    toMacLayer(netPacket->dup(), resolveNetworkAddress(path.next_hop.c_str()));
                 }
             }
             break;
@@ -454,7 +484,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     sendRREQ();
                     clearRREQ();
                     clearRoutes();
-                    addRoute(hdmrp_path{0, string(netPacket->getSource()),isMaster()?1:0,1});
+                    addRoute(hdmrp_path{0, string(netPacket->getSource()),0,0});
                     
                 } else {
                     trace()<<"Outdated SRREQ. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();

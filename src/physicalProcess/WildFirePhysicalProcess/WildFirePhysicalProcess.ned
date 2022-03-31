@@ -22,6 +22,7 @@ parameters:
     string  map_file;
     int     map_scale = default (90);
     int     ca_step_period;
+    int     ca_start_timer;
 
 	string  description = default ("CA based wildfire");
 

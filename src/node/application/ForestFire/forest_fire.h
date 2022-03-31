@@ -12,7 +12,7 @@
 
 #include "node/application/VirtualApplication.h"
 
-#define REPORT_PACKET_NAME "Bridge test report packet"
+#define REPORT_PACKET_NAME "Wildfire report"
 
 struct version_info {
 	double version;
@@ -28,7 +28,6 @@ struct report_info {
 
 enum ForestFireTimers {
 	REQUEST_SAMPLE = 1,
-	SEND_REPROGRAM_PACKET = 3
 };
 
 class ForestFire :public VirtualApplication {

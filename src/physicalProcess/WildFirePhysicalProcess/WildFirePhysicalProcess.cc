@@ -52,8 +52,8 @@ void WildFirePhysicalProcess::initialize()
 
     wf_ca->addFireSpot({wf_start_x_coord,wf_start_y_coord});
 
-    trace() << "Firt CA step at: "<<ca_step_period<<" seconds";
-    scheduleAt(SimTime()+static_cast<double>(ca_step_period), new cMessage("CA step timer expired", TIMER_SERVICE));
+    trace() << "Firt CA step at: "<<ca_start_timer<<" seconds";
+    scheduleAt(SimTime()+static_cast<double>(ca_start_timer), new cMessage("CA step timer expired", TIMER_SERVICE));
     //declareOutput("Cars GENErated on the road");
 }
 
@@ -64,7 +64,7 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             PhysicalProcessMessage *phyMsg = check_and_cast < PhysicalProcessMessage * >(msg);
             CellPosition pos=getMapCoordinates(phyMsg->getXCoor(), phyMsg->getYCoor());
 
-            std::cout<<pos<<std::endl;
+//            std::cout<<pos<<std::endl;
 
             CellState state=wf_ca->getState(pos);
             phyMsg->setValue(convertStateToSensedValue(state));
@@ -114,6 +114,7 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     wf_start_y_coord = par("wf_start_y_coord");
     map_scale        = par("map_scale");
     ca_step_period   = par("ca_step_period");
+    ca_start_timer   = par("ca_start_timer");
     map_file         = par("map_file");
     description      = par("description");
 }

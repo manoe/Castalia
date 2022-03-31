@@ -34,6 +34,7 @@ class hdmrp: public VirtualRouting {
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
      map<int, hdmrp_path> routing_table;
+     int d_pkt_seq;
 
  protected:
      void startup();
@@ -55,7 +56,7 @@ class hdmrp: public VirtualRouting {
 
      void addRoute(const hdmrp_path);
      void clearRoutes();
-     hdmrp_path getRoute(const int) const;
+     hdmrp_path getRoute(const int);
      hdmrp_path getRoute() const;
      bool RouteExists() const; 
 
