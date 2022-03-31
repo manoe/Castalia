@@ -14,7 +14,9 @@ Define_Module(ForestFire);
 void ForestFire::startup()
 {
 	reportTreshold = par("reportTreshold");
-	sampleInterval = (double)par("sampleInterval") / 1000;
+//	sampleInterval = (double)par("sampleInterval") / 1000;
+	sampleInterval = (double)par("sampleInterval");
+
 	reportDestination = par("reportDestination").stringValue();
 	sampleSize = par("sampleSize");
 
@@ -32,7 +34,7 @@ void ForestFire::startup()
 	report_info_table.clear();
 
 	if (!isSink) {
-		setTimer(REQUEST_SAMPLE, sampleInterval);
+		setTimer(ForestFireTimers::REQUEST_SAMPLE, sampleInterval);
 	}
 }
 
@@ -40,27 +42,13 @@ void ForestFire::startup()
 void ForestFire::timerFiredCallback(int timer)
 {
 	switch (timer) {
-
 		case ForestFireTimers::REQUEST_SAMPLE:{
+            trace()<<"REQUEST_SAMPLE timer expired";
 			setTimer(REQUEST_SAMPLE, sampleInterval);
 			requestSensorReading();
 			break;
 		}
-
-	//	case SEND_REPROGRAM_PACKET:{
-	//		ApplicationPacket *newPkt =
-	//		    createGenericDataPacket(currentVersion, currentVersionPacket,  maxPayload);
-	//		newPkt->setName(REPROGRAM_PACKET_NAME);
-	//		trace() << "Sending reprogram packet, version " <<
-	//		    currentVersion << ", sequence " << currentVersionPacket;
-	//		toNetworkLayer(newPkt, BROADCAST_NETWORK_ADDRESS);
-	//		currentVersionPacket++;
-	//		if (currentVersionPacket < totalVersionPackets)
-	//			setTimer(SEND_REPROGRAM_PACKET, reprogramPacketDelay);
-	//		break;
-	//	}
 	}
-
 }
 
 	
@@ -107,24 +95,26 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 	string sensType(sensorMsg->getSensorType());
 	double sensValue = sensorMsg->getSensedValue();
 
-	if (isSink) {
-		trace() << "Sink recieved SENSOR_READING (while it shouldnt) "
-		    << sensValue << " (int)" << (int)sensValue;
-		return;
-	}
+    trace()<<"Sensed value: "<<sensValue;
 
-	if (sensValue < reportTreshold) {
-		trace() << "Sensed value " << sensValue << " is less than the treshold ("
-			<< reportTreshold << "), discarding";
-		return;
-	}
-
-	currentSampleAccumulated += sampleSize;
-	if (currentSampleAccumulated < maxSampleAccumulated) {
-		trace() << "Accumulated " << currentSampleAccumulated << "/" << maxSampleAccumulated << " bytes of samples";
-		return;
-	}
-
+	//if (isSink) {
+	//	trace() << "Sink recieved SENSOR_READING (while it shouldnt) "
+	//	    << sensValue << " (int)" << (int)sensValue;
+	//	return;
+	//}
+    //
+	//if (sensValue < reportTreshold) {
+	//	trace() << "Sensed value " << sensValue << " is less than the treshold ("
+	//		<< reportTreshold << "), discarding";
+	//	return;
+	//}
+    //
+	//currentSampleAccumulated += sampleSize;
+	//if (currentSampleAccumulated < maxSampleAccumulated) {
+	//	trace() << "Accumulated " << currentSampleAccumulated << "/" << maxSampleAccumulated << " bytes of samples";
+	//	return;
+	//}
+    //
 	trace() << "Sending report packet, sequence number " << currSampleSN;
 	ApplicationPacket *newPkt = createGenericDataPacket((double)self, currSampleSN, currentSampleAccumulated);
 	newPkt->setName(REPORT_PACKET_NAME);

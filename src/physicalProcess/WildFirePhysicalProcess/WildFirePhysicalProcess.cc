@@ -64,7 +64,7 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             PhysicalProcessMessage *phyMsg = check_and_cast < PhysicalProcessMessage * >(msg);
             CellPosition pos=getMapCoordinates(phyMsg->getXCoor(), phyMsg->getYCoor());
 
-            std::cout<<pos<<std::endl;
+//            std::cout<<pos<<std::endl;
 
             CellState state=wf_ca->getState(pos);
             phyMsg->setValue(convertStateToSensedValue(state));
