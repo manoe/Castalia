@@ -116,8 +116,9 @@ void VirtualMobilityManager::parseDeployment() {
 			gridz = 0;
 		}
 		
-		nodeLocation.x = (gridi % gridx) * (xlen / (gridx - 1));
-		nodeLocation.y = ((int)floor(gridi / gridx) % gridy) * (ylen / (gridy - 1));
+		// Ugly ?: hack. IF there is only one row/column of sensors, division by 0 happens
+        nodeLocation.x = (gridi % gridx) * (xlen / (gridx==1?2:gridx - 1));
+		nodeLocation.y = ((int)floor(gridi / gridx) % gridy) * (ylen / (gridy==1?2:gridy - 1));
 		if (gridz > 0 && zlen > 0) {
 			nodeLocation.z = ((int)floor(gridi / (gridx * gridy)) % gridz) * (zlen / (gridz - 1));
 		} else {
