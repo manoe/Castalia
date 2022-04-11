@@ -34,7 +34,7 @@ void ForestFire::startup()
 	report_info_table.clear();
 
 	if (!isSink) {
-		setTimer(ForestFireTimers::REQUEST_SAMPLE, sampleInterval);
+		setTimer(ForestFireTimers::REQUEST_SAMPLE, sampleInterval+std::atof(selfAddress.c_str()));
 	}
 }
 

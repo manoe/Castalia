@@ -30,11 +30,14 @@ class hdmrp: public VirtualRouting {
      int t_start;
      hdmrpStateDef state;
      hdmrpRoleDef role;
+     bool no_role_change;
      bool master;
+     double min_rreq_rssi;
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
      map<int, hdmrp_path> routing_table;
      int d_pkt_seq;
+     int sent_data_pkt;
 
  protected:
      void startup();
@@ -57,7 +60,7 @@ class hdmrp: public VirtualRouting {
      void addRoute(const hdmrp_path);
      void clearRoutes();
      hdmrp_path getRoute(const int);
-     hdmrp_path getRoute() const;
+     hdmrp_path getRoute();
      bool RouteExists() const; 
 
      bool isSink() const;

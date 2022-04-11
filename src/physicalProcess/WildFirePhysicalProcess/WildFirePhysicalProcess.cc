@@ -65,8 +65,14 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             CellPosition pos=getMapCoordinates(phyMsg->getXCoor(), phyMsg->getYCoor());
 
 //            std::cout<<pos<<std::endl;
-
-            CellState state=wf_ca->getState(pos);
+//
+            CellState state;
+            try {
+                state=wf_ca->getState(pos);
+            } catch(std::string &e) {
+                trace()<<"Error: "<<e<<" x: "<<pos.x<<" y: "<<pos.y;
+                return;
+            }
             phyMsg->setValue(convertStateToSensedValue(state));
             // Send reply back to the node who made the request
             send(phyMsg, "toNode", phyMsg->getSrcID());
@@ -91,7 +97,7 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             trace()<<"Subscription to physical event";
             PhysicalEventMessage *reg_msg=check_and_cast<PhysicalEventMessage *>(msg);
             if(EventType::REGISTER==reg_msg->getEvent()) {
-                trace()<<reg_msg->getSrcID()<<" registered";
+                trace()<<reg_msg->getSrcID()<<" registered. Position x: "<<reg_msg->getXCoor()<<" y: "<<reg_msg->getYCoor();
                 subs.push_back({reg_msg->getSrcID(), reg_msg->getXCoor(), reg_msg->getYCoor()});
             }
             delete msg;
