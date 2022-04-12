@@ -331,6 +331,7 @@ if options.interface:
 for ini in iniList:
 	ini_num += 1
 	baselabel = label = labelList.pop(0)
+	fr.write("Castalia| label:"+label+"\n");
 	f = open("omnetpp.tmp","w")
 	f.write("[General]\n")
 	f.write("repeat = " + str(options.repeat) + "\n")
@@ -390,14 +391,14 @@ for ini in iniList:
 			if percent == 100:	#end of this run, record execution time in the results file
 				if not options.debug:
 					print ("\tTime taken", str(timedelta(0,elapsed)))
-				fr.write("Castalia|		module:SN.Simulation\n")
-				fr.write("Castalia|			simple output name:Execution time, seconds\n")
+				fr.write("Castalia|	module:SN.Simulation\n")
+				fr.write("Castalia|		simple output name:Execution time, seconds\n")
 				fr.write("Castalia|				" + str(elapsed) + "\n")
-				fr.write("Castalia|			simple output name:Execution ratio (simtime/realtime)\n")
+				fr.write("Castalia|		simple output name:Execution ratio (simtime/realtime)\n")
 				if elapsed > 0: 
-					fr.write("Castalia|				" + str(simtime/elapsed) + "\n")
+					fr.write("Castalia|			" + str(simtime/elapsed) + "\n")
 				else:
-					fr.write("Castalia|				" + "Simulation did not run. Real runtime not greater than 0.\n")
+					fr.write("Castalia|			" + "Simulation did not run. Real runtime not greater than 0.\n")
 			continue
 				
 		m = r_scenario.match(line)
