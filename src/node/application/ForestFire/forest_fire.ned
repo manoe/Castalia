@@ -25,6 +25,8 @@ simple ForestFire like node.application.iApplication {
 
     bool isSink = default(false);
     bool isMaster = default(false);
+    bool noRoleChange = default(false);
+    string Role = default("NonRoot"); // NonRoot, SubRoot, Root
     
 
 //      bool broadcastReports = default(false);

@@ -22,6 +22,25 @@ void hdmrp::startup() {
         throw cRuntimeError("\nHDMRP nodes require the parameter role");
     }
 
+    no_role_change=appModule->hasPar("noRoleChange")?appModule->par("noRoleChange"):false;
+
+    if(no_role_change) {
+       if(appModule->hasPar("Role")) {
+           if(0==appModule->par("Role").stdstringValue().compare("Root")) {
+               initRole(hdmrpRoleDef::ROOT);
+           }
+           else if(0==appModule->par("Role").stdstringValue().compare("SubRoot")) {
+            initRole(hdmrpRoleDef::SUB_ROOT);
+           } else {
+               throw cRuntimeError("Role change not allowed without a valid role");
+           }
+       } else {
+           throw cRuntimeError("Role change not allowed without a role");
+       }
+    }
+
+    min_rreq_rssi=hasPar("min_rreq_rssi")?par("min_rreq_rssi").doubleValue():-100.0;
+
     if(appModule->hasPar("isMaster")) {
        setMaster(appModule->par("isMaster"));
     } else {
@@ -48,6 +67,9 @@ void hdmrp::startup() {
         //Trigger 1st RREQ, timer should be also here
     }
     d_pkt_seq=1;
+    sent_data_pkt=0;
+    declareOutput("Data packets");
+
 }
 
 bool hdmrp::isSink() const {
@@ -214,7 +236,7 @@ float hdmrp::calculateCost(hdmrp_path path) const {
 }
 
 void hdmrp::addRoute(hdmrp_path path) {
-    trace()<<"Path ID: "<<path.path_id<<" Next hop: "<<path.next_hop;
+    trace()<<"New route with Path ID: "<<path.path_id<<" Next hop: "<<path.next_hop;
     routing_table[path.path_id]=path;
 }
 
@@ -236,7 +258,7 @@ hdmrp_path hdmrp::getRoute(const int path_id) {
     return routing_table.find(path_id)->second;
 }
 
-hdmrp_path hdmrp::getRoute() const {
+hdmrp_path hdmrp::getRoute() {
     if(!routing_table.size()) {
         throw std::length_error("Routing table empty");
     }
@@ -245,7 +267,7 @@ hdmrp_path hdmrp::getRoute() const {
     auto it=routing_table.begin();
 
     for(int i=dist(rd); i > 0 ; --i, ++it);
-
+    trace()<<"Path selected: "<<it->second.path_id;
     return it->second;
 }
 
@@ -335,6 +357,9 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
 
     encapsulatePacket(netPacket, pkt);
     toMacLayer(netPacket, resolveNetworkAddress(path.next_hop.c_str()));
+    ++sent_data_pkt;
+    collectOutput("Data packets","Orig sent",1);
+
 }
 
 /* MAC layer sends a packet together with the source MAC address and other info.
@@ -352,8 +377,12 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         return;
     }
 
+    trace()<<"RSSI: "<<rssi<<" LQI: "<<lqi<<" From: "<<srcMacAddress;
+
     switch(netPacket->getHdmrpPacketKind()) {
         case hdmrpPacketDef::DATA_PACKET: {
+            collectOutput("Data packets","Recv",1);
+
 
             if(0==strcmp(netPacket->getSource(),SELF_NETWORK_ADDRESS)) {
                 trace()<<"Data packet from the same node. Should not happen.";
@@ -366,7 +395,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
             else if(0==strcmp(netPacket->getDestination(),SELF_NETWORK_ADDRESS)) {
                 if(isSink()) {
-                    trace()<<"Packet arrived";
+                    trace()<<"Packet arrived on path: "<<netPacket->getPath_id()<<" From: "<<netPacket->getSource();
                 } else {
                     hdmrp_path path;
                     trace()<<"Packet received, routing forward.";
@@ -374,24 +403,33 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                         try {
                             path=getRoute(0);
                         } catch(std::length_error &e) {
-                            trace()<<e.what();
+                            trace()<<"Error: "<<e.what();
                             return;
                         }
                         trace()<<"Root|Path: "<<netPacket->getPath_id()<<"|Next hop: "<<path.next_hop<<"|Seq: "<<netPacket->getSequenceNumber();
                     }
                     else if(isSubRoot() || isNonRoot()) {
-                        path=getRoute(netPacket->getPath_id());
+                        try {
+                            path=getRoute(netPacket->getPath_id());
+                        } catch(std::length_error &e) {
+                            trace()<<"Error: "<<e.what();
+                            return;
+                        }
                         trace()<<(isSubRoot()?"SubRoot|":"NonRoot|")<<"Path: "<<netPacket->getPath_id()<<" Next hop: "<<path.next_hop<<"|Seq: "<<netPacket->getSequenceNumber();
 
                     }
                     netPacket->setSource(SELF_NETWORK_ADDRESS);
                     netPacket->setDestination(path.next_hop.c_str());
                     toMacLayer(netPacket->dup(), resolveNetworkAddress(path.next_hop.c_str()));
+                    collectOutput("Data packets","Forw",1);
                 }
             }
             break;
         }
         case hdmrpPacketDef::RREQ_PACKET: {
+            if(rssi<min_rreq_rssi) {
+                break;
+            }
             if(isSink()) {
                 trace()<<"RREQ discarded by sink";
             }
@@ -465,6 +503,9 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             break;
         }
         case hdmrpPacketDef::SINK_RREQ_PACKET: {
+            if(rssi<min_rreq_rssi) {
+                break;
+            }
             if(isSink()) {
                 trace()<<"SRREQ discarded by sink";
             }
@@ -504,6 +545,8 @@ void hdmrp::finishSpecific() {
 
     declareOutput("Role");
     collectOutput("Role","",role);
+
+
 
     // Only the sink calculates individual paths
     if (getParentModule()->getIndex() == 0) {
