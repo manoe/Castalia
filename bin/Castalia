@@ -331,7 +331,8 @@ if options.interface:
 for ini in iniList:
 	ini_num += 1
 	baselabel = label = labelList.pop(0)
-	fr.write("Castalia| label:"+label+"\n");
+	if(options.config != "General"):
+		fr.write("Castalia| label:"+label+"\n");
 	f = open("omnetpp.tmp","w")
 	f.write("[General]\n")
 	f.write("repeat = " + str(options.repeat) + "\n")
