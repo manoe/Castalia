@@ -18,6 +18,7 @@ enum hdmrpPacketDef {
     DATA_PACKET         = 1;
     RREQ_PACKET         = 2;
     SINK_RREQ_PACKET    = 4;
+    ACK_PACKET          = 8;
 }
 
 enum hdmrpRoleDef {
@@ -41,6 +42,7 @@ enum hdmrpTimerDef {
     SUB_ROOT_GUARD  = 4;
     NEW_ROUND       = 5;
     T_RELAY         = 6;
+// TIMER ID SHALL BE LESS THAN 8
 }
 
 // RREQ = { R, S, P, len, nmas }
@@ -50,5 +52,8 @@ packet hdmrpPacket extends RoutingPacket {
     int path_id;    // 2 byte
     int len;        // 1 byte?
     int nmas;       // 1 byte?
+    bool ack_req;
+    int rep_count;
+    int orig;
 }
 

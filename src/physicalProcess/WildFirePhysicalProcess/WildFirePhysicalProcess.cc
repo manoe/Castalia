@@ -32,19 +32,29 @@ void WildFirePhysicalProcess::initialize()
     std::vector<unsigned char> map_buffer;
     int map_x_size;
     int map_y_size;
-
-    map_buffer=readMapFile();
-    getMapSize(map_buffer,map_x_size,map_y_size);
-    if(map_x_size*map_scale != sim_x_size || map_y_size*map_scale != sim_y_size) {
-        throw cRuntimeError("map_size*map_scale does not match simulation field size\n");
-    }
-
-    GridCell **plane=generatePlane(map_buffer, map_x_size, map_y_size);
-    if(plane) {
-        wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 0, 8.1, static_cast<float>(map_scale),true}, plane);
-        deletePlane(plane, map_x_size);
+    
+    
+    if(no_map_file) {
+        if(0!=sim_x_size%map_scale || 0!=sim_y_size%map_scale) {
+            throw cRuntimeError("Simulation size is not an integer multiple of cell_size");
+        }
+        map_x_size=sim_x_size/map_scale;
+        map_y_size=sim_y_size/map_scale;
+        wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 0, 8.1, static_cast<float>(map_scale),true});
     } else {
-        throw cRuntimeError("Cannot generate plane\n");
+        map_buffer=readMapFile();
+        getMapSize(map_buffer,map_x_size,map_y_size);
+        if(map_x_size*map_scale != sim_x_size || map_y_size*map_scale != sim_y_size) {
+            throw cRuntimeError("map_size*map_scale does not match simulation field size\n");
+        }
+       GridCell **plane=generatePlane(map_buffer, map_x_size, map_y_size);
+
+       if(plane) {
+           wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 0, 8.1, static_cast<float>(map_scale),true}, plane);
+           deletePlane(plane, map_x_size);
+       } else {
+           throw cRuntimeError("Cannot generate plane\n");
+       }
     }
     if(wf_start_x_coord < 0 || wf_start_x_coord >= map_x_size || wf_start_y_coord < 0 || wf_start_y_coord >= map_y_size) {
         throw cRuntimeError("WildFire starting coordinate is invalid");
@@ -54,7 +64,6 @@ void WildFirePhysicalProcess::initialize()
 
     trace() << "Firt CA step at: "<<ca_start_timer<<" seconds";
     scheduleAt(SimTime()+static_cast<double>(ca_start_timer), new cMessage("CA step timer expired", TIMER_SERVICE));
-    //declareOutput("Cars GENErated on the road");
 }
 
 void WildFirePhysicalProcess::handleMessage(cMessage * msg)
@@ -121,8 +130,11 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     map_scale        = par("map_scale");
     ca_step_period   = par("ca_step_period");
     ca_start_timer   = par("ca_start_timer");
-    map_file         = par("map_file");
     description      = par("description");
+    no_map_file      = par("no_map_file");
+    if(!no_map_file) {
+        map_file         = par("map_file");
+    }
 }
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {

@@ -66,8 +66,11 @@ void hdmrp::startup() {
         setTimer(hdmrpTimerDef::SINK_START,t_start);
         //Trigger 1st RREQ, timer should be also here
     }
-    d_pkt_seq=1;
+    d_pkt_seq=8;
     sent_data_pkt=0;
+    recv_pkt=0;
+    s_rssi=0.0;
+    s_lqi=0.0;
     declareOutput("Data packets");
 
 }
@@ -159,11 +162,12 @@ void hdmrp::sendRREQ(int round, int path_id, int nmas, int len) {
     RREQPkt->setHdmrpPacketKind(hdmrpPacketDef::RREQ_PACKET);
     RREQPkt->setSource(SELF_NETWORK_ADDRESS);
     RREQPkt->setDestination(BROADCAST_NETWORK_ADDRESS);
-
     RREQPkt->setRound(round);
     RREQPkt->setPath_id(path_id);
     RREQPkt->setNmas(nmas);
     RREQPkt->setLen(len);
+
+    RREQPkt->setByteLength(7);
 
     toMacLayer(RREQPkt, BROADCAST_MAC_ADDRESS);
 
@@ -185,6 +189,7 @@ void hdmrp::sendSRREQ() {
     SRREQPkt->setPath_id(0);
     SRREQPkt->setNmas(0);
     SRREQPkt->setLen(0);
+    SRREQPkt->setByteLength(7);
 
     toMacLayer(SRREQPkt, BROADCAST_MAC_ADDRESS);
 
@@ -281,6 +286,11 @@ set<int> hdmrp::getPaths() {
     return ret;
 }
 
+void hdmrp::bufferForAck(hdmrpPacket *pkt) {
+    trace()<<"Buffered packet: "<<pkt->getSequenceNumber();
+    wf_ack_buffer[pkt->getSequenceNumber()]=pkt;
+}
+
 // Timer handling
 void hdmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -326,6 +336,20 @@ void hdmrp::timerFiredCallback(int index) {
             }
             break;
         }
+        default: {
+            trace()<<"Most probably packet timer: "<<index;
+            if(wf_ack_buffer.find(index) == wf_ack_buffer.end()) {
+                trace()<<"No packet with "<<index<<" index.";
+                break;
+            }
+            hdmrpPacket *pkt=wf_ack_buffer[index];
+            trace()<<"Resend packet";
+            auto path=getRoute(pkt->getPath_id());
+            toMacLayer(pkt->dup(), resolveNetworkAddress(path.next_hop.c_str()));
+            setTimer(index,1); // should be a parameter
+            break;
+
+        }
     }
 }
 
@@ -339,6 +363,7 @@ void hdmrp::timerFiredCallback(int index) {
  */
 void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     hdmrp_path path;
+    bool ack_req=false;
     
     try {
         path=getRoute();
@@ -347,16 +372,43 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         return;
     }
 
+
     hdmrpPacket *netPacket = new hdmrpPacket("HDMRP packet", NETWORK_LAYER_PACKET);
+    ApplicationPacket *app_pkt=dynamic_cast<ApplicationPacket *>(pkt);
+    if(0==std::strcmp(app_pkt->getApplicationID(),"ForestFire")) {
+        ForestFirePacket *ff_pkt=dynamic_cast<ForestFirePacket *>(app_pkt);
+        if(ForestFirePacketDef::PERIODIC_REPORT_PACKET == ff_pkt->getForestFirePacketKind()) {
+            ack_req=true;
+            trace()<<"Periodic report packet, ack required set";
+        } 
+    }
+
     netPacket->setSource(SELF_NETWORK_ADDRESS);
     netPacket->setHdmrpPacketKind(hdmrpPacketDef::DATA_PACKET);
     netPacket->setDestination(path.next_hop.c_str());
     netPacket->setPath_id(path.path_id);
-    netPacket->setSequenceNumber(d_pkt_seq++);
+    netPacket->setAck_req(ack_req);
+    netPacket->setOrig(resolveNetworkAddress(SELF_NETWORK_ADDRESS)); 
     trace()<<"Destination "<<path.next_hop<<" Path: "<<path.path_id;
-
     encapsulatePacket(netPacket, pkt);
+    // UGLY HACK, sequence number should not be handled like so, in two places
+    netPacket->setSequenceNumber(d_pkt_seq);
+
+    trace()<<"Sequence number: "<<netPacket->dup()->getSequenceNumber();
+
+    if(ack_req) {
+        netPacket->setRep_count(1);
+        bufferForAck(netPacket->dup());
+        setTimer(d_pkt_seq,1); // should be a parameter
+    }
     toMacLayer(netPacket, resolveNetworkAddress(path.next_hop.c_str()));
+
+
+    if(d_pkt_seq == TIMER_MAX_SIZE-1) {
+        d_pkt_seq=8;
+    } else {
+        ++d_pkt_seq;
+    }
     ++sent_data_pkt;
     collectOutput("Data packets","Orig sent",1);
 
@@ -378,11 +430,40 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
     }
 
     trace()<<"RSSI: "<<rssi<<" LQI: "<<lqi<<" From: "<<srcMacAddress;
+    ++recv_pkt;
+    s_rssi+=rssi;
+    s_lqi+=lqi;
+
 
     switch(netPacket->getHdmrpPacketKind()) {
+        case hdmrpPacketDef::ACK_PACKET: {
+            try {
+                trace()<<"Ack packet received for: "<<netPacket->getSequenceNumber();
+                cancelTimer(netPacket->getSequenceNumber());
+                hdmrpPacket *orig_pkt=wf_ack_buffer[netPacket->getSequenceNumber()];
+                wf_ack_buffer.erase(netPacket->getSequenceNumber());
+                delete orig_pkt;
+            } catch (cRuntimeError &e) {
+                trace()<<e.what();
+            }
+            break;
+        }
         case hdmrpPacketDef::DATA_PACKET: {
             collectOutput("Data packets","Recv",1);
 
+            if(netPacket->getAck_req()) {
+                hdmrpPacket *ack_pkt=new hdmrpPacket("HDMRP ACK packet", NETWORK_LAYER_PACKET);
+                ack_pkt->setSource(SELF_NETWORK_ADDRESS);
+                ack_pkt->setHdmrpPacketKind(hdmrpPacketDef::ACK_PACKET);
+                char buffer[10];
+                sprintf(buffer,"%d",srcMacAddress);
+                ack_pkt->setDestination(buffer);
+                ack_pkt->setPath_id(netPacket->getPath_id());
+                ack_pkt->setSequenceNumber(netPacket->getSequenceNumber());
+                trace()<<"Acknowledgement of packet with sequence number: "<<ack_pkt->getSequenceNumber();
+                toMacLayer(ack_pkt, srcMacAddress);
+            }
+            
 
             if(0==strcmp(netPacket->getSource(),SELF_NETWORK_ADDRESS)) {
                 trace()<<"Data packet from the same node. Should not happen.";
@@ -396,6 +477,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             else if(0==strcmp(netPacket->getDestination(),SELF_NETWORK_ADDRESS)) {
                 if(isSink()) {
                     trace()<<"Packet arrived on path: "<<netPacket->getPath_id()<<" From: "<<netPacket->getSource();
+                    trace()<<"Orig source: "<<netPacket->getOrig()<<" Sequence number: "<<netPacket->getSequenceNumber();
                 } else {
                     hdmrp_path path;
                     trace()<<"Packet received, routing forward.";
@@ -574,7 +656,10 @@ void hdmrp::finishSpecific() {
         
         delete(topo);
         collectOutput("Number of Paths", "", paths.size());
-
     }
+    declareOutput("Recv Pkt ind");
+    collectOutput("Recv Pkt ind","RSSI",0==recv_pkt?0.0:s_rssi/static_cast<double>(recv_pkt) );
+    collectOutput("Recv Pkt ind","LQI", 0==recv_pkt?0.0:s_lqi/static_cast<double>(recv_pkt) );
+
     return;
 }

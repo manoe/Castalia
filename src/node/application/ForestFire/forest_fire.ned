@@ -32,9 +32,9 @@ simple ForestFire like node.application.iApplication {
 //      bool broadcastReports = default(false);
 	string reportDestination = default ("0");	//this can also be set to "-1" for broadcast
 												// or to a specific node's address (e.g "0")
-
+    bool report_timer_offset = default (true);
 	double reportTreshold = default (10);
-	double sampleInterval = default (100);	// in ms
+	double sampleInterval = default (100);	// in s
 	int sampleSize = default (12);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes
 
