@@ -14,6 +14,8 @@
 
 #include "node/communication/routing/VirtualRouting.h"
 #include "node/communication/routing/hdmrp/hdmrp_m.h"
+#include "node/application/ApplicationPacket_m.h"
+#include "node/application/ForestFire/forest_fire_packet_m.h"
 
 struct hdmrp_path {
     int path_id;
@@ -36,8 +38,12 @@ class hdmrp: public VirtualRouting {
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
      map<int, hdmrp_path> routing_table;
+     map<unsigned int, hdmrpPacket *> wf_ack_buffer;
      int d_pkt_seq;
      int sent_data_pkt;
+     int recv_pkt;
+     double s_rssi;
+     double s_lqi;
 
  protected:
      void startup();
@@ -83,6 +89,8 @@ class hdmrp: public VirtualRouting {
      bool isNewRound(hdmrpPacket*) const;
      void setRound(int);
      int  getRound() const;
+
+     void bufferForAck(hdmrpPacket *);
 
  public:
      set<int> getPaths();

@@ -11,8 +11,10 @@
 #define _FOREST_FIRE_H_
 
 #include "node/application/VirtualApplication.h"
+#include "node/application/ForestFire/forest_fire_packet_m.h"
 
 #define REPORT_PACKET_NAME "Wildfire report"
+#define EVENT_PACKET_NAME  "Wildfire event"
 
 struct version_info {
 	double version;
@@ -50,13 +52,14 @@ class ForestFire :public VirtualApplication {
 	vector<report_info> report_info_table;
 
 	string reportDestination;
+    bool report_timer_offset;
 
  protected:
 	virtual void startup();
 	void finishSpecific();
 	void send2NetworkDataPacket(const char *destID, const char *pcktID, int data, int pckSeqNumber, int size);
-	int updateVersionTable(double version, int seq);
-	int updateReportTable(int src, int seq);
+//	int updateVersionTable(double version, int seq);
+//	int updateReportTable(int src, int seq);
 	void fromNetworkLayer(ApplicationPacket *, const char *, double, double);
 	void timerFiredCallback(int);
 	void handleSensorReading(SensorReadingMessage *);
