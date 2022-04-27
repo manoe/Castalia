@@ -549,8 +549,8 @@ void TMAC::fromRadioLayer(cPacket * pkt, double RSSI, double LQI)
 		/* received DATA frame */
 		case DATA_TMAC_PACKET:{
 			// Forward the frame to upper layer first
-			if (isNotDuplicatePacket(macPkt))
-				toNetworkLayer(decapsulatePacket(macPkt));
+			if (isNotDuplicatePacket(macPkt)) 
+               	toNetworkLayer(decapsulatePacket(macPkt));
 
 			// If the frame was sent to broadcast address, nothing else needs to be done
 			if (destination == BROADCAST_MAC_ADDRESS)

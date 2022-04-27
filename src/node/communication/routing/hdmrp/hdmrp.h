@@ -24,12 +24,22 @@ struct hdmrp_path {
     int len;
 };
 
+struct pkt_hist_entry {
+    int orig;
+    unsigned int seq;
+    int l_seq;
+    simtime_t ts;
+};
+
+
 class hdmrp: public VirtualRouting {
  private:
      int round;
      int t_l;
      int t_rreq;
      int t_start;
+     int t_pkt_hist;
+     int t_rsnd;
      hdmrpStateDef state;
      hdmrpRoleDef role;
      bool no_role_change;
@@ -37,8 +47,10 @@ class hdmrp: public VirtualRouting {
      double min_rreq_rssi;
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
-     map<int, hdmrp_path> routing_table;
-     map<unsigned int, hdmrpPacket *> wf_ack_buffer;
+     std::map<int, hdmrp_path> routing_table;
+     std::map<unsigned int, hdmrpPacket *> wf_ack_buffer;
+     std::vector<pkt_hist_entry> pkt_hist;
+
      int d_pkt_seq;
      int sent_data_pkt;
      int recv_pkt;
@@ -91,6 +103,12 @@ class hdmrp: public VirtualRouting {
      int  getRound() const;
 
      void bufferForAck(hdmrpPacket *);
+     bool bufferedPktExists(int index);
+     hdmrpPacket* getBufferedPkt(int index);
+
+     void incrementSeqNum();
+     bool findPktHistEntry(pkt_hist_entry);
+     void addPktHistEntry(pkt_hist_entry);
 
  public:
      set<int> getPaths();

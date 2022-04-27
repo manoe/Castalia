@@ -37,6 +37,8 @@ simple hdmrp like node.communication.routing.iRouting
     int t_rreq = default (10); // Trreq timer, default 10 sec
     int t_start = default (1); // sink start timer
     double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
+    int t_pkt_hist  = default (5); // keep pkt history entry at least this long
+    int t_rsnd = default(1); // Resend timer
 
  gates:
 	output toCommunicationModule;
