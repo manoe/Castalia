@@ -36,13 +36,14 @@ enum hdmrpStateDef {
 }
 
 enum hdmrpTimerDef {
-    SINK_START      = 1;
-    T_L             = 2;
-    ROOT_GUARD      = 3;
-    SUB_ROOT_GUARD  = 4;
-    NEW_ROUND       = 5;
-    T_RELAY         = 6;
-// TIMER ID SHALL BE LESS THAN 8
+    SINK_START       = 1;
+    T_L              = 2;
+    ROOT_GUARD       = 3;
+    SUB_ROOT_GUARD   = 4;
+    NEW_ROUND        = 5;
+    T_RELAY          = 6;
+    ACK_HIST_PURGE   = 7;
+    PACKET_TIMER_1   = 8;
 }
 
 // RREQ = { R, S, P, len, nmas }
@@ -55,5 +56,6 @@ packet hdmrpPacket extends RoutingPacket {
     bool ack_req;
     int rep_count;
     int orig;
+    int l_seq;      // 1 byte
 }
 
