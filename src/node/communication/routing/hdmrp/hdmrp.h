@@ -31,6 +31,13 @@ struct pkt_hist_entry {
     simtime_t ts;
 };
 
+struct quality_entry {
+    bool confirmed;
+    int path_id;
+    double rssi;
+    double lqi;
+};
+
 
 class hdmrp: public VirtualRouting {
  private:
@@ -50,6 +57,7 @@ class hdmrp: public VirtualRouting {
      std::map<int, hdmrp_path> routing_table;
      std::map<unsigned int, hdmrpPacket *> wf_ack_buffer;
      std::vector<pkt_hist_entry> pkt_hist;
+     std::map<int, quality_entry> neigh_list;
 
      int d_pkt_seq;
      int sent_data_pkt;
@@ -79,7 +87,11 @@ class hdmrp: public VirtualRouting {
      void clearRoutes();
      hdmrp_path getRoute(const int);
      hdmrp_path getRoute();
-     bool RouteExists() const; 
+     bool RouteExists() const;
+     void confirmPaths();
+
+     void sendAck(hdmrpPacket*, int);
+
 
      bool isSink() const;
      bool isRoot() const;
