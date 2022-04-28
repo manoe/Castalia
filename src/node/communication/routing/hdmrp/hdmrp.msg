@@ -19,6 +19,7 @@ enum hdmrpPacketDef {
     RREQ_PACKET         = 2;
     SINK_RREQ_PACKET    = 4;
     ACK_PACKET          = 8;
+    PATH_CONFIRM_PACKET = 16;
 }
 
 enum hdmrpRoleDef {
