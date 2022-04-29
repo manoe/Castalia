@@ -351,6 +351,14 @@ void hdmrp::addPktHistEntry(pkt_hist_entry pkt_entry) {
     pkt_hist.push_back(pkt_entry);
 }
 
+void hdmrp::updatePktHistEntryRepCount(pkt_hist_entry pkt_entry) {
+    for(auto &i: pkt_hist) {
+        if(i.orig==pkt_entry.orig && i.seq == pkt_entry.seq && i.l_seq == pkt_entry.l_seq) {
+            ++i.rep_count;
+        }
+    }
+}
+
 void hdmrp::sendAck(hdmrpPacket *orig_pkt, int dest) {
     hdmrpPacket *ack_pkt=new hdmrpPacket("HDMRP ACK packet", NETWORK_LAYER_PACKET);
     ack_pkt->setSource(SELF_NETWORK_ADDRESS);
@@ -553,11 +561,12 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             neigh_list[srcMacAddress]={true,netPacket->getPath_id(),rssi,lqi};
             if(netPacket->getAck_req()) {
                 sendAck(netPacket,srcMacAddress);
-                if(findPktHistEntry({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),0})) {
+                if(findPktHistEntry({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),0,0})) {
+                    updatePktHistEntryRepCount({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),0,0});
                     trace()<<"Confirm Pkt already received";
                     break;
                 } else {
-                    addPktHistEntry({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),getClock()});
+                    addPktHistEntry({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),0,getClock()});
                 }
             }
             break;
@@ -586,12 +595,13 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
             if(netPacket->getAck_req()) {
                 sendAck(netPacket,srcMacAddress);
-                if(findPktHistEntry({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),0})) {
+                if(findPktHistEntry({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),0,0})) {
                     trace()<<"Pkt already received";
+                    updatePktHistEntryRepCount({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),0,0});
                     break;
                 } else {
                     collectOutput("Data packets","Recv first",1);
-                    addPktHistEntry({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),getClock()});
+                    addPktHistEntry({netPacket->getOrig(),netPacket->getSequenceNumber(),netPacket->getL_seq(),0,getClock()});
                 }
             }
             

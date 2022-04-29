@@ -28,6 +28,7 @@ struct pkt_hist_entry {
     int orig;
     unsigned int seq;
     int l_seq;
+    int rep_count;
     simtime_t ts;
 };
 
@@ -121,6 +122,7 @@ class hdmrp: public VirtualRouting {
      void incrementSeqNum();
      bool findPktHistEntry(pkt_hist_entry);
      void addPktHistEntry(pkt_hist_entry);
+     void updatePktHistEntryRepCount(pkt_hist_entry pkt_entry);
 
  public:
      set<int> getPaths();
