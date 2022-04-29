@@ -51,12 +51,15 @@ enum hdmrpTimerDef {
 packet hdmrpPacket extends RoutingPacket {
     int hdmrpPacketKind enum (hdmrpPacketDef); // 1 byte
     int round;      // 2 byte
+    int minor_round; // 2 byte?
     int path_id;    // 2 byte
+    int path_filter[]; // x byte
     int len;        // 1 byte?
     int nmas;       // 1 byte?
     bool ack_req;
     int rep_count;
     int orig;
     int l_seq;      // 1 byte
+
 }
 
