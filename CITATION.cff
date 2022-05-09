@@ -1,0 +1,19 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  Wireless sensor network based wildfire monitoring
+  with application-specific multi-path routing
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Bálint Áron
+    family-names: Üveges
+    email: uveges.balint.aron@itk.ppke.hu
+    orcid: 'https://orcid.org/0000-0002-2169-8407'
+    affiliation: >-
+      Pázmány Péter Catholic University, Faculty of
+      Information Technology and Bionics
