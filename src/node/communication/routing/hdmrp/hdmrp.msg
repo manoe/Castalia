@@ -20,6 +20,7 @@ enum hdmrpPacketDef {
     SINK_RREQ_PACKET    = 4;
     ACK_PACKET          = 8;
     PATH_CONFIRM_PACKET = 16;
+    PATH_FAILURE_PACKET = 32;
 }
 
 enum hdmrpRoleDef {
@@ -33,7 +34,7 @@ enum hdmrpStateDef {
     WORK    = 1;
     INIT    = 2;
     LEARN   = 3;
-    RELAY   = 4;
+    RELAY   = 5;
 }
 
 enum hdmrpTimerDef {

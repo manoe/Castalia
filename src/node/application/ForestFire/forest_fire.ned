@@ -35,6 +35,11 @@ simple ForestFire like node.application.iApplication {
     bool report_timer_offset = default (true);
 	double reportTreshold = default (10);
 	double sampleInterval = default (100);	// in s
+    double emergencyThreshold = default (0.8);
+    double emergencyBroadcastPeriod = default (60); // in sec
+    double reportPeriod = default (86400); // 24 hours
+    double eventPeriod  = default (120);  // every two min
+
 	int sampleSize = default (12);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes
 

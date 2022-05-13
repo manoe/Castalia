@@ -39,6 +39,9 @@ simple hdmrp like node.communication.routing.iRouting
     double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
     int t_pkt_hist  = default (5); // keep pkt history entry at least this long
     int t_rsnd = default(1); // Resend timer
+    int rep_limit = default(3); // give after rep_limit and send path failure // give after rep_limit and send path failure
+    int report_ack_period = default(10);
+    int event_ack_req_period = default (10);
 
  gates:
 	output toCommunicationModule;
