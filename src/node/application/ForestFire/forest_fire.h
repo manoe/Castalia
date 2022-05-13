@@ -15,6 +15,7 @@
 
 #define REPORT_PACKET_NAME "Wildfire report"
 #define EVENT_PACKET_NAME  "Wildfire event"
+#define BROADCAST_PACKET_NAME "Wildfire broadcast"
 
 struct version_info {
 	double version;
@@ -29,7 +30,10 @@ struct report_info {
 };
 
 enum ForestFireTimers {
-	REQUEST_SAMPLE = 1,
+	REQUEST_SAMPLE      = 1,
+    EMERGENCY_BROADCAST = 2,
+    EVENT_PERIOD        = 3,
+    REPORT_PERIOD       = 4
 };
 
 class ForestFire :public VirtualApplication {
@@ -38,13 +42,17 @@ class ForestFire :public VirtualApplication {
 	double sampleInterval;
 	int sampleSize;
 	int maxPayload;
-
+    double sensedValue;
 	simtime_t outOfEnergy;
+    double emergency_broadcast;
+    double event_period;
+    double report_period;
+    double emergency_threshold;
+    bool emergency;
 
 	int currentVersion;
 	int currentVersionPacket;
 	int currSampleSN;
-	int currentSampleAccumulated;
 	int maxSampleAccumulated;
 	int totalVersionPackets;
 	int routingLevel;
@@ -63,7 +71,9 @@ class ForestFire :public VirtualApplication {
 	void fromNetworkLayer(ApplicationPacket *, const char *, double, double);
 	void timerFiredCallback(int);
 	void handleSensorReading(SensorReadingMessage *);
-
+    void sendEvent();
+    void sendReport();
+    void sendEmergencyBroadcast();
 };
 
 #endif				// _FOREST_FIRE_H_

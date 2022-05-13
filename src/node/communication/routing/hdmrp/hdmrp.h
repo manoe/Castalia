@@ -11,6 +11,7 @@
 #define _HDMRP_H_
 
 #include <random>
+#include <algorithm>
 
 #include "node/communication/routing/VirtualRouting.h"
 #include "node/communication/routing/hdmrp/hdmrp_m.h"
@@ -22,6 +23,7 @@ struct hdmrp_path {
     string next_hop;
     int nmas;
     int len;
+    std::vector<int> path_filter;
 };
 
 struct pkt_hist_entry {
@@ -32,9 +34,10 @@ struct pkt_hist_entry {
     simtime_t ts;
 };
 
-struct quality_entry {
+struct neigh_entry {
+    int address;
     bool confirmed;
-    int path_id;
+    vector<int> paths;
     double rssi;
     double lqi;
 };
@@ -43,11 +46,15 @@ struct quality_entry {
 class hdmrp: public VirtualRouting {
  private:
      int round;
+     int minor_round;
      int t_l;
      int t_rreq;
      int t_start;
      int t_pkt_hist;
      int t_rsnd;
+     int rep_limit;
+     int event_ack_req_period;
+     int event_pkt_counter;
      hdmrpStateDef state;
      hdmrpRoleDef role;
      bool no_role_change;
@@ -58,7 +65,7 @@ class hdmrp: public VirtualRouting {
      std::map<int, hdmrp_path> routing_table;
      std::map<unsigned int, hdmrpPacket *> wf_ack_buffer;
      std::vector<pkt_hist_entry> pkt_hist;
-     std::map<int, quality_entry> neigh_list;
+     std::map<int, neigh_entry> neigh_list;
 
      int d_pkt_seq;
      int sent_data_pkt;
@@ -86,6 +93,8 @@ class hdmrp: public VirtualRouting {
 
      void addRoute(const hdmrp_path);
      void clearRoutes();
+     void removeRoutes(vector<int>);
+
      hdmrp_path getRoute(const int);
      hdmrp_path getRoute();
      bool RouteExists() const;
@@ -112,12 +121,32 @@ class hdmrp: public VirtualRouting {
      void initRound();
      void newRound();
      bool isNewRound(hdmrpPacket*) const;
+     bool isSameRound(hdmrpPacket*) const;
      void setRound(int);
      int  getRound() const;
+
+     void initMinorRound();
+     void newMinorRound();
+     bool isNewMinorRound(hdmrpPacket*) const;
+     void setMinorRound(int);
+     int  getMinorRound() const;
+
+     std::vector<int> getPath_filter_array(hdmrpPacket *);
+     void setPath_filter(hdmrpPacket *, vector<int>);
+     std::vector<int> collectPath_filter();
+     bool matchPathFilter(hdmrpPacket *);
+     void sendMinorSRREQ(vector<int>);
+     void sendMinorRREQ(int round, int minor_round, int path_id, int nmas, int len, vector<int> path_array);
+     void sendMinorRREQ(int round, int minor_round, hdmrp_path path, std::vector<int> path_array);
+     void sendMinorRREQ(int round, int minor_round, hdmrp_path path);
+     void sendMinorRREQ(std::vector<int>);
 
      void bufferForAck(hdmrpPacket *);
      bool bufferedPktExists(int index);
      hdmrpPacket* getBufferedPkt(int index);
+
+     void sendPathFailure(int);
+     int getBackupDestination(int);
 
      void incrementSeqNum();
      bool findPktHistEntry(pkt_hist_entry);

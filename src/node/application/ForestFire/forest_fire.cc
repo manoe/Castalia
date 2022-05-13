@@ -24,7 +24,6 @@ void ForestFire::startup()
 	currentVersion = 0;
 	currSampleSN = 1;
 	outOfEnergy = 0;
-	currentSampleAccumulated = 0;
 
 	maxPayload = par("maxPayloadPacketSize");
 	div_t tmp_div = div(maxPayload, sampleSize);
@@ -33,15 +32,56 @@ void ForestFire::startup()
 	version_info_table.clear();
 	report_info_table.clear();
 
+    report_period=par("reportPeriod"); 
+    event_period=par("eventPeriod");
+    emergency_threshold=par("emergencyThreshold");
+    emergency_broadcast=par("emergencyBroadcastPeriod"); 
+
     report_timer_offset=par("report_timer_offset");
 	if (!isSink) {
+        setTimer(ForestFireTimers::REQUEST_SAMPLE, sampleInterval);
         if(report_timer_offset) {
-            setTimer(ForestFireTimers::REQUEST_SAMPLE, sampleInterval+std::atof(selfAddress.c_str()));
+            setTimer(ForestFireTimers::REPORT_PERIOD, sampleInterval+std::atof(selfAddress.c_str()));
     }
         else {
-            setTimer(ForestFireTimers::REQUEST_SAMPLE, sampleInterval);
+             setTimer(ForestFireTimers::REPORT_PERIOD, sampleInterval);
         }
 	}
+    emergency=false;
+}
+
+void ForestFire::sendEvent() {
+	ForestFirePacket *newPkt = new ForestFirePacket("ForestFire event packet", APPLICATION_PACKET);
+	newPkt->setName(EVENT_PACKET_NAME);
+	newPkt->setData(sensedValue);
+	newPkt->setSequenceNumber(currSampleSN);
+    newPkt->setForestFirePacketKind(ForestFirePacketDef::PERIODIC_REPORT_PACKET);
+    newPkt->setByteLength(2);
+	toNetworkLayer(newPkt, reportDestination.c_str());
+	currSampleSN++;
+}
+
+void ForestFire::sendReport() {
+	ForestFirePacket *newPkt = new ForestFirePacket("ForestFire report packet", APPLICATION_PACKET);
+	newPkt->setName(REPORT_PACKET_NAME);
+	newPkt->setData(sensedValue);
+	newPkt->setSequenceNumber(currSampleSN);
+    newPkt->setForestFirePacketKind(ForestFirePacketDef::PERIODIC_REPORT_PACKET);
+    newPkt->setByteLength(2);
+	toNetworkLayer(newPkt, reportDestination.c_str());
+	currSampleSN++;
+}
+
+void ForestFire::sendEmergencyBroadcast() {
+	ForestFirePacket *newPkt = new ForestFirePacket("ForestFire emergency broadcast packet", APPLICATION_PACKET);
+	newPkt->setName(BROADCAST_PACKET_NAME);
+	newPkt->setData(sensedValue);
+	newPkt->setSequenceNumber(currSampleSN);
+    newPkt->setForestFirePacketKind(ForestFirePacketDef::EMERGENCY_BROADCAST_PACKET);
+    newPkt->setByteLength(2);
+	toNetworkLayer(newPkt, BROADCAST_NETWORK_ADDRESS);
+	currSampleSN++;
+
 }
 
 
@@ -54,6 +94,24 @@ void ForestFire::timerFiredCallback(int timer)
 			requestSensorReading();
 			break;
 		}
+        case ForestFireTimers::EVENT_PERIOD: {
+            trace()<<"EVENT_PERIOD timer expired";
+            sendEvent();
+            setTimer(EVENT_PERIOD, event_period);
+            break;
+        }
+        case ForestFireTimers::REPORT_PERIOD: {
+            trace()<<"REPORT_PERIOD timer expired";
+            sendReport();
+            setTimer(REPORT_PERIOD, report_period);
+            break;
+        }
+        case ForestFireTimers::EMERGENCY_BROADCAST: {
+            trace()<<"EMERGENCY_BROADCAST timer expired";
+            sendEmergencyBroadcast();
+            setTimer(EMERGENCY_BROADCAST,emergency_broadcast);
+            break;
+        }
 	}
 }
 
@@ -66,6 +124,15 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
 
 	double data = rcvPacket->getData();
 	int sequenceNumber = rcvPacket->getSequenceNumber();
+
+    if(packetName.compare(BROADCAST_PACKET_NAME) == 0) {
+        trace()<<"Emergency broadcast message received.";
+        if(!emergency && getTimer(EVENT_PERIOD)==-1) {
+            trace()<<"Start EVENT_PERIOD timer based on broadcast message";
+            setTimer(EVENT_PERIOD, event_period);
+            sendEvent();
+        }
+    }
 
 	if (packetName.compare(REPORT_PACKET_NAME) == 0) {
 		// this is report packet which contains sensor reading information
@@ -99,10 +166,19 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
 void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 {
 	string sensType(sensorMsg->getSensorType());
-	double sensValue = sensorMsg->getSensedValue();
+	sensedValue = sensorMsg->getSensedValue();
 
-    trace()<<"Sensed value: "<<sensValue;
-
+    trace()<<"Sensed value: "<<sensedValue;
+    if(sensedValue >= emergency_threshold && !emergency) {
+        trace()<<"Node enters emergency state based on sensor reading.";
+        emergency=true;
+        sendEvent();
+        cancelTimer(EVENT_PERIOD);
+        setTimer(EVENT_PERIOD, event_period);
+        sendEmergencyBroadcast();
+        cancelTimer(EMERGENCY_BROADCAST);
+        setTimer(EMERGENCY_BROADCAST,emergency_broadcast);
+    }
 	//if (isSink) {
 	//	trace() << "Sink recieved SENSOR_READING (while it shouldnt) "
 	//	    << sensValue << " (int)" << (int)sensValue;
@@ -123,16 +199,6 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
     //
 	trace() << "Sending report packet, sequence number " << currSampleSN;
 
-	ForestFirePacket *newPkt = new ForestFirePacket("ForestFire report packet", APPLICATION_PACKET);
-//        createGenericDataPacket((double)self, currSampleSN, currentSampleAccumulated);
-	newPkt->setName(REPORT_PACKET_NAME);
-	newPkt->setData(sensValue);
-	newPkt->setSequenceNumber(currSampleSN);
-    newPkt->setForestFirePacketKind(ForestFirePacketDef::PERIODIC_REPORT_PACKET);
-    newPkt->setByteLength(2);
-	toNetworkLayer(newPkt, reportDestination.c_str());
-	currentSampleAccumulated = 0;
-	currSampleSN++;
 }
 
 void ForestFire::finishSpecific()
