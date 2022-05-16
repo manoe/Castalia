@@ -63,6 +63,8 @@ void hdmrp::startup() {
 
     rep_limit=par("rep_limit");
 
+    send_path_failure=par("send_path_failure");
+
     event_ack_req_period=par("event_ack_req_period");
     event_pkt_counter=0;
     // Set round to 0
@@ -506,6 +508,7 @@ void hdmrp::sendPathFailure(int path) {
     fail_pkt->setOrig(resolveNetworkAddress(SELF_NETWORK_ADDRESS));
     fail_pkt->setSequenceNumber(d_pkt_seq);
     fail_pkt->setL_seq(d_pkt_seq);
+    fail_pkt->setPath_id(0);
     fail_pkt->setAck_req(true);
     auto dest=getBackupDestination(path);
     char buffer[10];
@@ -656,7 +659,9 @@ void hdmrp::timerFiredCallback(int index) {
 
             if(pkt->getRep_count() >= rep_limit) {
                 trace()<<"Path failure";
-                sendPathFailure(pkt->getPath_id());
+                if(send_path_failure) {
+                    sendPathFailure(pkt->getPath_id());
+                }
                 break;
             } else {
                pkt->setRep_count(1+pkt->getRep_count());
@@ -669,7 +674,12 @@ void hdmrp::timerFiredCallback(int index) {
                     if(isRoot()) {
                         path=getRoute(0);
                     } else {
+                        try {
                         path=getRoute(pkt->getPath_id());
+                        } catch (exception &e) {
+                            trace()<<e.what();
+                            break;
+                        }
                     }
                     toMacLayer(pkt->dup(), resolveNetworkAddress(path.next_hop.c_str()));
                     collectOutput("Data packets","Forw",1);
@@ -854,10 +864,14 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     path=getRoute(0);
                 }
                 else if(isSubRoot() || isNonRoot()) {
+                    try {
                     if(0 != netPacket->getPath_id()) {
                         path=getRoute(netPacket->getPath_id());
                     } else {
                         path=getRoute();
+                    } } catch (exception &e) {
+                        trace()<<"FUUCK"<<e.what();
+                        break;
                     }
                     // If the packet would go back
                     if(0==strcmp(path.next_hop.c_str(),netPacket->getSource())) {
@@ -919,6 +933,8 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 if(isSink()) {
                     trace()<<"Packet arrived on path: "<<netPacket->getPath_id()<<" From: "<<netPacket->getSource();
                     trace()<<"Orig source: "<<netPacket->getOrig()<<" Sequence number: "<<netPacket->getSequenceNumber();
+toApplicationLayer(decapsulatePacket(netPacket));
+
                 } else {
                     hdmrp_path path;
                     trace()<<"Packet received, routing forward.";
@@ -1139,5 +1155,9 @@ void hdmrp::finishSpecific() {
     collectOutput("Recv Pkt ind","RSSI",0==recv_pkt?0.0:s_rssi/static_cast<double>(recv_pkt) );
     collectOutput("Recv Pkt ind","LQI", 0==recv_pkt?0.0:s_lqi/static_cast<double>(recv_pkt) );
 
+    declareOutput("Constructed paths");
+    for(auto path: routing_table) {
+        collectOutput("Constructed paths", path.second.path_id,path.second.next_hop.c_str());
+    }
     return;
 }

@@ -59,6 +59,7 @@ class hdmrp: public VirtualRouting {
      hdmrpRoleDef role;
      bool no_role_change;
      bool master;
+     bool send_path_failure;
      double min_rreq_rssi;
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());

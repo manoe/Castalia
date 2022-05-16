@@ -29,6 +29,8 @@ void WildFirePhysicalProcess::initialize()
         sim_y_size=static_cast<int>(tmp_sim_y_size);
     }
 
+    seed=par("seed");
+
     std::vector<unsigned char> map_buffer;
     int map_x_size;
     int map_y_size;
@@ -40,7 +42,7 @@ void WildFirePhysicalProcess::initialize()
         }
         map_x_size=sim_x_size/map_scale;
         map_y_size=sim_y_size/map_scale;
-        wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 0, 8.1, static_cast<float>(map_scale),true});
+        wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 3.92, 8.1, static_cast<float>(map_scale),true, seed});
     } else {
         map_buffer=readMapFile();
         getMapSize(map_buffer,map_x_size,map_y_size);
@@ -50,7 +52,7 @@ void WildFirePhysicalProcess::initialize()
        GridCell **plane=generatePlane(map_buffer, map_x_size, map_y_size);
 
        if(plane) {
-           wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 0, 8.1, static_cast<float>(map_scale),true}, plane);
+           wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 3.92, 8.1, static_cast<float>(map_scale),true,seed}, plane);
            deletePlane(plane, map_x_size);
        } else {
            throw cRuntimeError("Cannot generate plane\n");
@@ -64,6 +66,7 @@ void WildFirePhysicalProcess::initialize()
 
     trace() << "Firt CA step at: "<<ca_start_timer<<" seconds";
     scheduleAt(SimTime()+static_cast<double>(ca_start_timer), new cMessage("CA step timer expired", TIMER_SERVICE));
+
 }
 
 void WildFirePhysicalProcess::handleMessage(cMessage * msg)

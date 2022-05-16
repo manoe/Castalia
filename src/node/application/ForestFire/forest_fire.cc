@@ -48,6 +48,8 @@ void ForestFire::startup()
         }
 	}
     emergency=false;
+	declareOutput("Report packet");
+	declareOutput("Event packet");
 }
 
 void ForestFire::sendEvent() {
@@ -59,6 +61,7 @@ void ForestFire::sendEvent() {
     newPkt->setByteLength(2);
 	toNetworkLayer(newPkt, reportDestination.c_str());
 	currSampleSN++;
+    collectOutput("Event packet","Sent");
 }
 
 void ForestFire::sendReport() {
@@ -70,6 +73,7 @@ void ForestFire::sendReport() {
     newPkt->setByteLength(2);
 	toNetworkLayer(newPkt, reportDestination.c_str());
 	currSampleSN++;
+    collectOutput("Report packet","Sent");
 }
 
 void ForestFire::sendEmergencyBroadcast() {
@@ -134,7 +138,8 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
         }
     }
 
-	if (packetName.compare(REPORT_PACKET_NAME) == 0) {
+    else	if (packetName.compare(REPORT_PACKET_NAME) == 0) {
+        collectOutput("Report packet","Received");
 		// this is report packet which contains sensor reading information
 		// NOTE that data field is used to store source address instead of using char *source
 		// this is done because some routing and flooding is done on the application layer
@@ -158,6 +163,9 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
 //		}
 
 //	}
+    else    if(0==packetName.compare(EVENT_PACKET_NAME)) {
+        collectOutput("Event packet","Received");
+    }
 		else {
 		trace() << "unknown packet received: [" << packetName << "]";
 	}
@@ -197,7 +205,6 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 	//	return;
 	//}
     //
-	trace() << "Sending report packet, sequence number " << currSampleSN;
 
 }
 
