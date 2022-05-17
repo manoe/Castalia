@@ -24,8 +24,15 @@ parameters:
     int     map_scale = default (90);
     int     ca_step_period;
     int     ca_start_timer;
-    int     seed = default(0);
-
+    double  p_h  = default(0.58);   // - p_h  - corrective probability coefficent
+    double  c_1  = default(0.045);  // - c_1  - wind model's first coefficient - affects speed
+    double  c_2  = default(0.131);  // - c_2  - wind model's second coefficient - affects angle
+    double  a    = default(0.078);  // - a    - slope model's coefficient
+    double  w_a  = default(3.92);   // - w_a  - wind angle (North: 0, East: Pi/2, South: Pi, West: 3PI/2), rad
+    double  w_s  = default(8.1);    // - w_s  - wind speed, m/s
+    double  l    = default(90);     // - l    - cell's side length, m
+    bool    sp   = default(false);  // - sp   - fire spotting enabled/disabled
+    int     seed = default(0);      // - seed - random seed 
 	string  description = default ("CA based wildfire");
 
  gates:

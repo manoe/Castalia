@@ -29,12 +29,10 @@ void WildFirePhysicalProcess::initialize()
         sim_y_size=static_cast<int>(tmp_sim_y_size);
     }
 
-    seed=par("seed");
-
     std::vector<unsigned char> map_buffer;
     int map_x_size;
     int map_y_size;
-    
+   
     
     if(no_map_file) {
         if(0!=sim_x_size%map_scale || 0!=sim_y_size%map_scale) {
@@ -42,7 +40,7 @@ void WildFirePhysicalProcess::initialize()
         }
         map_x_size=sim_x_size/map_scale;
         map_y_size=sim_y_size/map_scale;
-        wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 3.92, 8.1, static_cast<float>(map_scale),true, seed});
+        wf_ca=new WildFireCA(map_x_size, map_y_size,wf_params);
     } else {
         map_buffer=readMapFile();
         getMapSize(map_buffer,map_x_size,map_y_size);
@@ -52,7 +50,7 @@ void WildFirePhysicalProcess::initialize()
        GridCell **plane=generatePlane(map_buffer, map_x_size, map_y_size);
 
        if(plane) {
-           wf_ca=new WildFireCA(map_x_size, map_y_size,{ 0.58, 0.045, 0.131, 0.078, 3.92, 8.1, static_cast<float>(map_scale),true,seed}, plane);
+           wf_ca=new WildFireCA(map_x_size, map_y_size,wf_params, plane);
            deletePlane(plane, map_x_size);
        } else {
            throw cRuntimeError("Cannot generate plane\n");
@@ -138,6 +136,16 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     if(!no_map_file) {
         map_file         = par("map_file");
     }
+    wf_params        = { static_cast<float>( (double)par("p_h")),
+                         static_cast<float>( (double)par("c_1")),
+                         static_cast<float>( (double)par("c_2")),
+                         static_cast<float>( (double)par("a")),
+                         static_cast<float>( (double)par("w_a")),
+                         static_cast<float>( (double)par("w_s")),
+                         static_cast<float>( (double)par("l")),
+                         par("sp"),
+                         par("seed")};
+
 }
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {
