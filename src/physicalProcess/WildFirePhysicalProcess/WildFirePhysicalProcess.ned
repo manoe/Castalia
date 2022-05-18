@@ -28,7 +28,7 @@ parameters:
     double  c_1  = default(0.045);  // - c_1  - wind model's first coefficient - affects speed
     double  c_2  = default(0.131);  // - c_2  - wind model's second coefficient - affects angle
     double  a    = default(0.078);  // - a    - slope model's coefficient
-    double  w_a  = default(3.92);   // - w_a  - wind angle (North: 0, East: Pi/2, South: Pi, West: 3PI/2), rad
+    double  w_a  = default(0);   // - w_a  - wind angle (North: 0, East: Pi/2, South: Pi, West: 3PI/2), rad
     double  w_s  = default(8.1);    // - w_s  - wind speed, m/s
     double  l    = default(90);     // - l    - cell's side length, m
     bool    sp   = default(false);  // - sp   - fire spotting enabled/disabled

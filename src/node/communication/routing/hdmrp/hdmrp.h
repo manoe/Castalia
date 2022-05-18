@@ -48,6 +48,7 @@ class hdmrp: public VirtualRouting {
      int round;
      int minor_round;
      int t_l;
+     double t_relay;
      int t_rreq;
      int t_start;
      int t_pkt_hist;
@@ -60,6 +61,7 @@ class hdmrp: public VirtualRouting {
      bool no_role_change;
      bool master;
      bool send_path_failure;
+     bool store_all_paths;
      double min_rreq_rssi;
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
@@ -145,6 +147,7 @@ class hdmrp: public VirtualRouting {
      void bufferForAck(hdmrpPacket *);
      bool bufferedPktExists(int index);
      hdmrpPacket* getBufferedPkt(int index);
+     void removeBufferedPkt(int index);
 
      void sendPathFailure(int);
      int getBackupDestination(int);

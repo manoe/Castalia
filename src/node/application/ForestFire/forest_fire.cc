@@ -35,7 +35,9 @@ void ForestFire::startup()
     report_period=par("reportPeriod"); 
     event_period=par("eventPeriod");
     emergency_threshold=par("emergencyThreshold");
-    emergency_broadcast=par("emergencyBroadcastPeriod"); 
+    emergency_broadcast=par("emergencyBroadcastPeriod");
+
+
 
     report_timer_offset=par("report_timer_offset");
 	if (!isSink) {

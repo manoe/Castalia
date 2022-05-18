@@ -60,11 +60,10 @@ void WildFirePhysicalProcess::initialize()
         throw cRuntimeError("WildFire starting coordinate is invalid");
     }
 
-    wf_ca->addFireSpot({wf_start_x_coord,wf_start_y_coord});
 
     trace() << "Firt CA step at: "<<ca_start_timer<<" seconds";
     scheduleAt(SimTime()+static_cast<double>(ca_start_timer), new cMessage("CA step timer expired", TIMER_SERVICE));
-
+    first_step=true;
 }
 
 void WildFirePhysicalProcess::handleMessage(cMessage * msg)
@@ -90,6 +89,11 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
         }
 
         case TIMER_SERVICE: {
+            if(first_step) {
+                wf_ca->addFireSpot({wf_start_x_coord,wf_start_y_coord});
+                first_step=false;
+            }
+
             trace()<<"CA timer expired";
             auto b_cells=wf_ca->stepAndCollect();
             for(auto cell: b_cells) {
