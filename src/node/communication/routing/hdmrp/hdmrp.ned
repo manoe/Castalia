@@ -34,6 +34,7 @@ simple hdmrp like node.communication.routing.iRouting
 	int netDataFrameOverhead = default (10);	// bytes
 	int netBufferSize = default (32);	// number of messages
     int t_l = default (1); // Tl timer, default 1 sec
+    double t_relay = default(0.1); // relay timer
     int t_rreq = default (10); // Trreq timer, default 10 sec
     int t_start = default (1); // sink start timer
     double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
@@ -43,6 +44,7 @@ simple hdmrp like node.communication.routing.iRouting
     int report_ack_period = default(10);
     int event_ack_req_period = default (10);
     bool send_path_failure = default(true);
+    bool store_all_paths   = default(false);
 
  gates:
 	output toCommunicationModule;

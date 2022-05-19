@@ -55,6 +55,8 @@ void hdmrp::startup() {
 
     t_rreq=par("t_rreq");
 
+    t_relay=par("t_relay");
+
     t_start=par("t_start");
 
     t_rsnd=par("t_rsnd");
@@ -64,6 +66,8 @@ void hdmrp::startup() {
     rep_limit=par("rep_limit");
 
     send_path_failure=par("send_path_failure");
+
+    store_all_paths=par("store_all_paths");
 
     event_ack_req_period=par("event_ack_req_period");
     event_pkt_counter=0;
@@ -457,6 +461,16 @@ hdmrpPacket* hdmrp::getBufferedPkt(int index) {
     return wf_ack_buffer[index];
 }
 
+void hdmrp::removeBufferedPkt(int index) {
+    if(!bufferedPktExists(index)) {
+        throw cRuntimeError("Packet with l_seq %d is not buffered",index);
+    }
+    hdmrpPacket *orig_pkt=wf_ack_buffer[index];
+    wf_ack_buffer.erase(index);
+    delete orig_pkt;
+
+}
+
 void hdmrp::incrementSeqNum() {
    if(d_pkt_seq == TIMER_MAX_SIZE-1) {
         d_pkt_seq=hdmrpTimerDef::PACKET_TIMER_1;
@@ -558,6 +572,7 @@ int hdmrp::getBackupDestination(int failing_path) {
         return m.address;
     }
     throw cRuntimeError("No backup destination");
+
 }
 
 vector<int> hdmrp::collectPath_filter() {
@@ -603,9 +618,12 @@ void hdmrp::timerFiredCallback(int index) {
                     setState(hdmrpStateDef::WORK);
                 } else {
                     setState(hdmrpStateDef::RELAY);
-                    setTimer(hdmrpTimerDef::T_RELAY,1);
+                    setTimer(hdmrpTimerDef::T_RELAY,t_relay);
                 }
             } else {
+                while(!isRREQempty() && store_all_paths) {
+                    addRoute(selectRREQ());
+                }
                 clearRREQ();
                 confirmPaths();
                 setState(hdmrpStateDef::WORK);
@@ -627,7 +645,7 @@ void hdmrp::timerFiredCallback(int index) {
                 setState(hdmrpStateDef::WORK);
             } else {
                 setState(hdmrpStateDef::RELAY);
-                setTimer(hdmrpTimerDef::T_RELAY,1);
+                setTimer(hdmrpTimerDef::T_RELAY,t_relay);
             }
             break;
         }
@@ -659,9 +677,11 @@ void hdmrp::timerFiredCallback(int index) {
 
             if(pkt->getRep_count() >= rep_limit) {
                 trace()<<"Path failure";
+                collectOutput("Data packets","Dropped",1);
                 if(send_path_failure) {
                     sendPathFailure(pkt->getPath_id());
                 }
+                removeBufferedPkt(index);
                 break;
             } else {
                pkt->setRep_count(1+pkt->getRep_count());
@@ -822,9 +842,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"No such packet waiting for ack";
                     break;
                 }
-                hdmrpPacket *orig_pkt=wf_ack_buffer[netPacket->getL_seq()];
-                wf_ack_buffer.erase(netPacket->getL_seq());
-                delete orig_pkt;
+                removeBufferedPkt(netPacket->getL_seq());
                 collectOutput("Data packets","Ack",1);
 
             } catch (cRuntimeError &e) {
@@ -861,6 +879,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     break;
                 }
                 else if(isRoot()) {
+
                     path=getRoute(0);
                 }
                 else if(isSubRoot() || isNonRoot()) {
@@ -1099,10 +1118,13 @@ toApplicationLayer(decapsulatePacket(netPacket));
                     addRoute(hdmrp_path{0, string(netPacket->getSource()),0,0});
                 }
                 else if(isSameRound(netPacket) && isNewMinorRound(netPacket)) {
-                        trace()<<"New minor round";
-                        setMinorRound(netPacket->getMinor_round());
-                        clearRREQ();
-                        sendMinorRREQ(getPath_filter_array(netPacket));
+                    trace()<<"New minor round";
+                    setMinorRound(netPacket->getMinor_round());
+                    sendMinorRREQ(getPath_filter_array(netPacket));
+                    clearRREQ();
+                    clearRoutes();
+                    addRoute(hdmrp_path{0, string(netPacket->getSource()),0,0});
+
                 } else {
                     trace()<<"Outdated SRREQ. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                 }

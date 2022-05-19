@@ -44,7 +44,8 @@ class WildFirePhysicalProcess: public CastaliaModule {
 	const char *description;
     WildFireCA *wf_ca;
     std::vector<nodeLocation> subs;
-    int seed;
+    WildFireParams wf_params;
+    bool first_step;
 
  protected:
 	virtual void initialize();
