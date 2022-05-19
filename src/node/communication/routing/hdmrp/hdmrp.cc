@@ -677,10 +677,11 @@ void hdmrp::timerFiredCallback(int index) {
 
             if(pkt->getRep_count() >= rep_limit) {
                 trace()<<"Path failure";
+                collectOutput("Data packets","Dropped",1);
                 if(send_path_failure) {
                     sendPathFailure(pkt->getPath_id());
-                    removeBufferedPkt(index);
                 }
+                removeBufferedPkt(index);
                 break;
             } else {
                pkt->setRep_count(1+pkt->getRep_count());
