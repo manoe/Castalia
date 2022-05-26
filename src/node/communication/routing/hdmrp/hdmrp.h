@@ -63,6 +63,9 @@ class hdmrp: public VirtualRouting {
      bool send_path_failure;
      bool store_all_paths;
      double min_rreq_rssi;
+     bool path_confirm;
+     bool minor_rreq;
+     bool failing;
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
      std::map<int, hdmrp_path> routing_table;
@@ -97,6 +100,7 @@ class hdmrp: public VirtualRouting {
      void addRoute(const hdmrp_path);
      void clearRoutes();
      void removeRoutes(vector<int>);
+     void removeRoute(int);
 
      hdmrp_path getRoute(const int);
      hdmrp_path getRoute();

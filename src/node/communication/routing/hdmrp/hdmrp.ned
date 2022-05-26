@@ -45,6 +45,8 @@ simple hdmrp like node.communication.routing.iRouting
     int event_ack_req_period = default (10);
     bool send_path_failure = default(true);
     bool store_all_paths   = default(false);
+    bool path_confirm      = default(true);
+    bool minor_rreq        = default(true);
 
  gates:
 	output toCommunicationModule;
