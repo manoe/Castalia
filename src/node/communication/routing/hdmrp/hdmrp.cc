@@ -74,7 +74,10 @@ void hdmrp::startup() {
     path_confirm=par("path_confirm");
 
     minor_rreq=par("minor_rreq");
+
+    resel_limit=par("resel_limit");
     event_pkt_counter=0;
+    num_rreq=0;
     // Set round to 0
     initRound();
     initMinorRound();
@@ -98,6 +101,8 @@ void hdmrp::startup() {
     declareOutput("Minor round");
     declareOutput("Backup destination");
     declareOutput("RREQ");
+    declareOutput("origRREQ");
+    declareOutput("origMinorRREQ");
 }
 
 bool hdmrp::isSink() const {
@@ -265,6 +270,7 @@ void hdmrp::sendMinorRREQ(int round, int minor_round, int path_id, int nmas, int
 void hdmrp::sendMinorSRREQ(vector<int> path_array) {
     trace()<<"sendMinorSRRQ() called";
     collectOutput("RREQ","minor",1);
+    collectOutput("origMinorRREQ","",1);
     hdmrpPacket *SRREQPkt=new hdmrpPacket("HDMRP Sink RREQ packet", NETWORK_LAYER_PACKET);
     SRREQPkt->setHdmrpPacketKind(hdmrpPacketDef::SINK_RREQ_PACKET);
     SRREQPkt->setSource(SELF_NETWORK_ADDRESS);
@@ -282,7 +288,7 @@ void hdmrp::sendMinorSRREQ(vector<int> path_array) {
 
     toMacLayer(SRREQPkt, BROADCAST_MAC_ADDRESS);
 
-    trace()<<"Round #: "<<getRound();
+    trace()<<"Round #: "<<getRound()<<" MinorRound #: "<<getMinorRound();
 }
 
 
@@ -320,7 +326,7 @@ void hdmrp::sendRREQ(int round, int path_id, int nmas, int len) {
 void hdmrp::sendSRREQ() {
     trace()<<"sendSRRQ() called";
     collectOutput("RREQ","normal",1);
-
+    collectOutput("origRREQ","",1);
     hdmrpPacket *SRREQPkt=new hdmrpPacket("HDMRP Sink RREQ packet", NETWORK_LAYER_PACKET);
     SRREQPkt->setHdmrpPacketKind(hdmrpPacketDef::SINK_RREQ_PACKET);
     SRREQPkt->setSource(SELF_NETWORK_ADDRESS);
@@ -705,24 +711,26 @@ void hdmrp::timerFiredCallback(int index) {
             
             }
 
-            if(pkt->getRep_count() >= rep_limit) {
-                trace()<<"Path failure";
-                collectOutput("Data packets","Dropped",1);
-                if(send_path_failure) {
-                    collectOutput("Path failure","",1);
-                    if(!isSink()) { failing=true;}
-                    sendPathFailure(pkt->getPath_id());
-                }
-                removeBufferedPkt(index);
-                break;
-            } else {
-               pkt->setRep_count(1+pkt->getRep_count());
-            } 
 
             switch (pkt->getHdmrpPacketKind()) {
                 case hdmrpPacketDef::DATA_PACKET: {
-                    trace()<<"Resend data packet on path: "<<pkt->getPath_id()<<" with l_seq: "<<index;
                     hdmrp_path path;
+
+                   if(pkt->getRep_count() >= rep_limit && pkt->getResel_count() >=resel_limit ) {
+                       trace()<<"Path failure";
+                       collectOutput("Data packets","Dropped",1);
+                       if(send_path_failure) {
+                           collectOutput("Path failure","",1);
+                           if(!isSink()) { failing=true;}
+                           sendPathFailure(pkt->getPath_id());
+                       }
+                       removeBufferedPkt(index);
+                       break;
+                   } else if(pkt->getRep_count() >= rep_limit && pkt->getResel_count() <resel_limit) {
+                      pkt->setRep_count(0);
+                      pkt->setResel_count(pkt->getResel_count()+1);
+                      path=getRoute();
+                   } else {
                     if(isRoot()) {
                         path=getRoute(0);
                     } else {
@@ -730,15 +738,30 @@ void hdmrp::timerFiredCallback(int index) {
                         path=getRoute(pkt->getPath_id());
                         } catch (exception &e) {
                             trace()<<e.what();
+                            removeBufferedPkt(index);
                             break;
                         }
                     }
+
+                        pkt->setRep_count(pkt->getRep_count()+1);
+                   }
+
+                    trace()<<"Resend data packet on path: "<<pkt->getPath_id()<<" with l_seq: "<<index;
+                        pkt->setPath_id(path.path_id);
                     toMacLayer(pkt->dup(), resolveNetworkAddress(path.next_hop.c_str()));
                     collectOutput("Data packets","Forw",1);
                     collectOutput("Data packets","Repeat",1);
                     break;
                 }
                 case hdmrpPacketDef::PATH_CONFIRM_PACKET: {
+                    if(pkt->getRep_count() >= rep_limit) {
+                        collectOutput("Data packets","Dropped conf",1);
+                       removeBufferedPkt(index);
+                       break;
+
+                    } else {
+                        pkt->setRep_count(pkt->getRep_count());
+                    }
                     trace()<<"Resend path confirm packet to: "<<pkt->getDestination()<<" with l_seq: "<<index;
                     toMacLayer(pkt->dup(),resolveNetworkAddress(pkt->getDestination()));
                     break;
@@ -1182,6 +1205,7 @@ toApplicationLayer(decapsulatePacket(netPacket));
 void hdmrp::finishSpecific() {
     declareOutput("Paths");
     collectOutput("Paths","",routing_table.size());
+    
 
     declareOutput("Role");
     if(role==hdmrpRoleDef::SINK) {

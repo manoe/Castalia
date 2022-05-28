@@ -59,6 +59,7 @@ packet hdmrpPacket extends RoutingPacket {
     int nmas;       // 1 byte?
     bool ack_req;
     int rep_count;
+    int resel_count;
     int orig;
     int l_seq;      // 1 byte
 
