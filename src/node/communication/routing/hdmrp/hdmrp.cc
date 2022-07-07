@@ -557,7 +557,7 @@ void hdmrp::sendPathFailure(int path) {
     fail_pkt->setDestination(buffer);
     setPath_filter(fail_pkt,collectPath_filter());
     setTimer(d_pkt_seq,t_rsnd);
-    fail_pkt->setRep_count(0);
+    fail_pkt->setRep_count(1);
     bufferForAck(fail_pkt->dup());
     incrementSeqNum();
     toMacLayer(fail_pkt,dest);
@@ -713,7 +713,8 @@ void hdmrp::timerFiredCallback(int index) {
 
 
             switch (pkt->getHdmrpPacketKind()) {
-                case hdmrpPacketDef::DATA_PACKET: {
+                case hdmrpPacketDef::DATA_PACKET:
+                case hdmrpPacketDef::PATH_FAILURE_PACKET: {
                     hdmrp_path path;
 
                    if(pkt->getRep_count() >= rep_limit && pkt->getResel_count() >=resel_limit ) {
@@ -727,9 +728,15 @@ void hdmrp::timerFiredCallback(int index) {
                        removeBufferedPkt(index);
                        break;
                    } else if(pkt->getRep_count() >= rep_limit && pkt->getResel_count() <resel_limit) {
-                      pkt->setRep_count(0);
+                      pkt->setRep_count(1);
                       pkt->setResel_count(pkt->getResel_count()+1);
-                      path=getRoute();
+                      try {
+                          path=getRoute();
+                      } catch (exception &e) {
+                          trace()<<e.what();
+                          removeBufferedPkt(index);
+                          break;
+                      }
                    } else {
                     if(isRoot()) {
                         path=getRoute(0);
@@ -834,6 +841,7 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     trace()<<"Sequence number: "<<netPacket->getSequenceNumber();
     if(ack_req) {
         netPacket->setRep_count(1);
+        netPacket->setResel_count(1);
         setTimer(d_pkt_seq,t_rsnd);
         netPacket->setL_seq(d_pkt_seq);
         bufferForAck(netPacket->dup());
@@ -969,7 +977,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 }
                 if(netPacket->getAck_req()) {
                     netPacket->setL_seq(d_pkt_seq);
-                    netPacket->setRep_count(0);
+                    netPacket->setRep_count(1);
                     bufferForAck(netPacket->dup());
                     trace()<<"t_rsnd started for l_seq: "<<d_pkt_seq;
                     setTimer(d_pkt_seq,t_rsnd);
@@ -1043,7 +1051,8 @@ toApplicationLayer(decapsulatePacket(netPacket));
                     netPacket->setDestination(path.next_hop.c_str());
                     if(netPacket->getAck_req()) {
                         netPacket->setL_seq(d_pkt_seq);
-                        netPacket->setRep_count(0);
+                        netPacket->setRep_count(1);
+                        netPacket->setResel_count(1);
                         bufferForAck(netPacket->dup());
                         trace()<<"t_rsnd started for l_seq: "<<d_pkt_seq;
                         setTimer(d_pkt_seq,t_rsnd); // should be a parameter

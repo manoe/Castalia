@@ -44,6 +44,7 @@ class SensorManager: public CastaliaModule {
 	vector<double> sensorBias;
 	VirtualMobilityManager *nodeMobilityModule;
 	int disabled;
+    bool register_node;
 
  protected:
 	virtual void initialize();

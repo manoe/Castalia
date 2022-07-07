@@ -35,6 +35,8 @@ void SensorManager::initialize()
 		theBias = normal(0, sensorBiasSigma[i]);	// using rng generator --> "0" 
 		sensorBias.push_back(theBias);
 	}
+
+    register_node = par("registerNode");
 }
 
 void SensorManager::handleMessage(cMessage * msg)
@@ -56,20 +58,20 @@ void SensorManager::handleMessage(cMessage * msg)
 		{
 			disabled = 0;
 			trace() << "Received STARTUP MESSAGE";
-
-            PhysicalEventMessage *reg_msg=new PhysicalEventMessage("register node", PHYSICAL_EVENT);
-			reg_msg->setSrcID(self);	//insert information about the ID of the node
-			reg_msg->setXCoor(nodeMobilityModule->getLocation().x);
-			reg_msg->setYCoor(nodeMobilityModule->getLocation().y);
-
-            trace()<<"Position x: "<<nodeMobilityModule->getLocation().x<<" y: "<<nodeMobilityModule->getLocation().y;
-
-            reg_msg->setEvent(EventType::REGISTER);
-
-            // Ugly hack, but at this point we assume that there is only one physical process
-            // An alternative solution would be to iterate through all physical processes
-			send(reg_msg, "toNodeContainerModule", corrPhyProcess[0]);
-
+            if(register_node) {
+                PhysicalEventMessage *reg_msg=new PhysicalEventMessage("register node", PHYSICAL_EVENT);
+			    reg_msg->setSrcID(self);	//insert information about the ID of the node
+			    reg_msg->setXCoor(nodeMobilityModule->getLocation().x);
+			    reg_msg->setYCoor(nodeMobilityModule->getLocation().y);
+                
+                trace()<<"Position x: "<<nodeMobilityModule->getLocation().x<<" y: "<<nodeMobilityModule->getLocation().y;
+                
+                reg_msg->setEvent(EventType::REGISTER);
+                
+                // Ugly hack, but at this point we assume that there is only one physical process
+                // An alternative solution would be to iterate through all physical processes
+			    send(reg_msg, "toNodeContainerModule", corrPhyProcess[0]);
+            }
 			break;
 		}
 
