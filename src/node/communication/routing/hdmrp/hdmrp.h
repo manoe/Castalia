@@ -48,6 +48,7 @@ class hdmrp: public VirtualRouting {
      int round;
      int minor_round;
      int t_l;
+     int num_rreq;
      double t_relay;
      int t_rreq;
      int t_start;
@@ -66,6 +67,7 @@ class hdmrp: public VirtualRouting {
      bool path_confirm;
      bool minor_rreq;
      bool failing;
+     int resel_limit;
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
      std::map<int, hdmrp_path> routing_table;

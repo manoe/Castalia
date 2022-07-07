@@ -49,6 +49,7 @@ simple SensorManager {
 													//number, given here)
 													
 	string devicesSaturation = default ("1000");	//holds the saturation value for each sensing device
+    bool registerNode = default(false);
 
  gates:
 	output toApplicationModule;
