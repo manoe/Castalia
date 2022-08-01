@@ -52,7 +52,11 @@ void TimerService::setTimer(int timerIndex, simtime_t time)
 	}
 	timerMessages[timerIndex] = new TimerServiceMessage("Timer message", TIMER_SERVICE);
 	timerMessages[timerIndex]->setTimerIndex(timerIndex);
-	scheduleAt(simTime() + timerDrift * time, timerMessages[timerIndex]);
+    if(simTime() > timerDrift*time + simTime() ) {
+        scheduleAt(simTime() , timerMessages[timerIndex]);
+    } else {
+    	scheduleAt(simTime() + timerDrift * time, timerMessages[timerIndex]);
+    }
 }
 
 void TimerService::handleTimerMessage(cMessage * msg)
