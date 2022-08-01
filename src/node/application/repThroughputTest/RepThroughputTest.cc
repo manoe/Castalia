@@ -130,8 +130,9 @@ void RepThroughputTest::finishSpecific() {
 				float rate = (float)packetsReceived[i]/packetsSent;
 				collectOutput("Packets reception rate", i, "total", rate);
 				collectOutput("Packets loss rate", i, "total", 1-rate);
+                trace()<<"Packets received: "<<packetsReceived[i]<<" Packets sent: "<<packetsSent; 
 			}
-
+            
 			bytesDelivered += appModule->getBytesReceived(self);
 		}
 	}
