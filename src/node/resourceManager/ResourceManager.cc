@@ -102,7 +102,7 @@ void ResourceManager::handleMessage(cMessage * msg)
         }
 
 		default:{
-			throw cRuntimeError("ERROR: Unexpected message received by resource manager: %s", msg->getKind());
+			throw cRuntimeError("ERROR: Unexpected message received by resource manager: %d", msg->getKind());
 		}
 	}
 	delete msg;
