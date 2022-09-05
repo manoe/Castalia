@@ -12,11 +12,16 @@
 
 #include <random>
 #include <algorithm>
+#include <map>
+#include <fstream>
+#include <unordered_set>
+#include <ctime> 
 
 #include "node/communication/routing/VirtualRouting.h"
 #include "node/communication/routing/hdmrp/hdmrp_m.h"
 #include "node/application/ApplicationPacket_m.h"
 #include "node/application/ForestFire/forest_fire_packet_m.h"
+#include "node/mobilityManager/VirtualMobilityManager.h"
 
 struct hdmrp_path {
     int path_id;
@@ -53,7 +58,7 @@ class hdmrp: public VirtualRouting {
      int t_rreq;
      int t_start;
      int t_pkt_hist;
-     int t_rsnd;
+     double t_rsnd;
      int rep_limit;
      int event_ack_req_period;
      int event_pkt_counter;
@@ -68,12 +73,14 @@ class hdmrp: public VirtualRouting {
      bool minor_rreq;
      bool failing;
      int resel_limit;
+     bool default_ack;
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
      std::map<int, hdmrp_path> routing_table;
      std::map<unsigned int, hdmrpPacket *> wf_ack_buffer;
      std::vector<pkt_hist_entry> pkt_hist;
      std::map<int, neigh_entry> neigh_list;
+     std::unordered_set<int> root_table;
 
      int d_pkt_seq;
      int sent_data_pkt;
@@ -134,6 +141,11 @@ class hdmrp: public VirtualRouting {
      void setRound(int);
      int  getRound() const;
 
+     bool isSameRoot(int) const;
+     void addRoot(int);
+     void clearRootTable(); 
+     int  selectRoot() const;
+
      void initMinorRound();
      void newMinorRound();
      bool isNewMinorRound(hdmrpPacket*) const;
@@ -165,7 +177,10 @@ class hdmrp: public VirtualRouting {
 
  public:
      set<int> getPaths();
-
+     map<int,string> getPathsAndHops();
+     vector<int> getNeighbors();
+     hdmrpRoleDef getRole() const;
+     static std::string roleToStr(hdmrpRoleDef);
 };
 
 #endif //HDMRP

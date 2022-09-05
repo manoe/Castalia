@@ -26,11 +26,17 @@ void hdmrp::startup() {
 
     if(no_role_change) {
        if(appModule->hasPar("Role")) {
-           if(0==appModule->par("Role").stdstringValue().compare("Root")) {
+           if(0==appModule->par("Role").stdstringValue().compare("Sink")) {
+               initRole(hdmrpRoleDef::SINK);
+           }
+           else if(0==appModule->par("Role").stdstringValue().compare("Root")) {
                initRole(hdmrpRoleDef::ROOT);
            }
            else if(0==appModule->par("Role").stdstringValue().compare("SubRoot")) {
-            initRole(hdmrpRoleDef::SUB_ROOT);
+               initRole(hdmrpRoleDef::SUB_ROOT);
+           }
+           else if(0==appModule->par("Role").stdstringValue().compare("NonRoot")) {
+               initRole(hdmrpRoleDef::NON_ROOT);
            } else {
                throw cRuntimeError("Role change not allowed without a valid role");
            }
@@ -76,6 +82,9 @@ void hdmrp::startup() {
     minor_rreq=par("minor_rreq");
 
     resel_limit=par("resel_limit");
+
+    default_ack=par("default_ack");
+
     event_pkt_counter=0;
     num_rreq=0;
     // Set round to 0
@@ -131,6 +140,11 @@ void hdmrp::setRole(hdmrpRoleDef new_role) {
     role=new_role;
 }
 
+hdmrpRoleDef hdmrp::getRole() const {
+    return role;
+}
+
+
 bool hdmrp::isMaster() const {
     return master; 
 }
@@ -172,6 +186,30 @@ bool hdmrp::isNewRound(hdmrpPacket* pkt) const {
 
 bool hdmrp::isSameRound(hdmrpPacket* pkt) const {
     return pkt->getRound()==round;
+}
+
+bool hdmrp::isSameRoot(int mac_addr) const {
+    if(root_table.end() == root_table.find(mac_addr)) {
+        return false;
+    }
+    return true;
+}
+
+void hdmrp::addRoot(int mac_addr) {
+    root_table.insert(mac_addr);
+}
+
+void hdmrp::clearRootTable() {
+    root_table.clear();
+}
+
+int hdmrp::selectRoot() const {
+    std::random_device rd;
+    default_random_engine eng{static_cast<long unsigned int>(time(0))};
+    uniform_int_distribution<int> dist(0, root_table.size()-1);
+    auto it=root_table.begin();
+    for(auto i=dist(eng); i > 0 ; --i, ++it);
+    return *it;  
 }
 
 
@@ -469,6 +507,28 @@ set<int> hdmrp::getPaths() {
     return ret;
 }
 
+map<int,string> hdmrp::getPathsAndHops() {
+    map<int,string> ret;
+    if(0==routing_table.size()) {
+        std::length_error("Routing table empty");
+    }
+    for(auto it=routing_table.begin(); it != routing_table.end(); ++it) {
+        ret.insert(std::pair<int,string>(it->second.path_id,it->second.next_hop));
+    }
+    return ret;
+}
+
+vector<int> hdmrp::getNeighbors() {
+    if(0==neigh_list.size()) {
+        std::length_error("Neighbor table empty");
+    }
+    std::vector<int> ret_list;
+    for(auto neighbor: neigh_list) {
+        ret_list.push_back(neighbor.first);
+    }
+    return ret_list;
+}
+
 void hdmrp::bufferForAck(hdmrpPacket *pkt) {
     trace()<<"Buffered packet: "<<pkt->getL_seq()<<" Total of: "<<wf_ack_buffer.size();
     wf_ack_buffer[pkt->getL_seq()]=pkt;
@@ -718,7 +778,7 @@ void hdmrp::timerFiredCallback(int index) {
                     hdmrp_path path;
 
                    if(pkt->getRep_count() >= rep_limit && pkt->getResel_count() >=resel_limit ) {
-                       trace()<<"Path failure";
+                       trace()<<"Path failure: "<<pkt->getPath_id();
                        collectOutput("Data packets","Dropped",1);
                        if(send_path_failure) {
                            collectOutput("Path failure","",1);
@@ -726,7 +786,7 @@ void hdmrp::timerFiredCallback(int index) {
                            sendPathFailure(pkt->getPath_id());
                        }
                        removeBufferedPkt(index);
-                       break;
+                       return;
                    } else if(pkt->getRep_count() >= rep_limit && pkt->getResel_count() <resel_limit) {
                       pkt->setRep_count(1);
                       pkt->setResel_count(pkt->getResel_count()+1);
@@ -735,7 +795,7 @@ void hdmrp::timerFiredCallback(int index) {
                       } catch (exception &e) {
                           trace()<<e.what();
                           removeBufferedPkt(index);
-                          break;
+                          return;
                       }
                    } else {
                     if(isRoot()) {
@@ -746,7 +806,7 @@ void hdmrp::timerFiredCallback(int index) {
                         } catch (exception &e) {
                             trace()<<e.what();
                             removeBufferedPkt(index);
-                            break;
+                            return;
                         }
                     }
 
@@ -764,7 +824,7 @@ void hdmrp::timerFiredCallback(int index) {
                     if(pkt->getRep_count() >= rep_limit) {
                         collectOutput("Data packets","Dropped conf",1);
                        removeBufferedPkt(index);
-                       break;
+                       return;
 
                     } else {
                         pkt->setRep_count(pkt->getRep_count());
@@ -825,6 +885,8 @@ void hdmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             ++event_pkt_counter;
             ack_req=0==event_pkt_counter%event_ack_req_period;
         }
+    } else {
+        ack_req=default_ack;
     }
 
     netPacket->setSource(SELF_NETWORK_ADDRESS);
@@ -1022,6 +1084,8 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"Packet arrived on path: "<<netPacket->getPath_id()<<" From: "<<netPacket->getSource();
                     trace()<<"Orig source: "<<netPacket->getOrig()<<" Sequence number: "<<netPacket->getSequenceNumber();
                 collectOutput("Path_pkt_recv",to_string(netPacket->getPath_id()).c_str(),1);
+                std::string tmp = std::to_string(netPacket->getOrig());
+                netPacket->setSource(tmp.c_str());
 
 toApplicationLayer(decapsulatePacket(netPacket));
 
@@ -1090,6 +1154,7 @@ toApplicationLayer(decapsulatePacket(netPacket));
                        setRound(netPacket->getRound());
                        clearRREQ();
                        clearRoutes();
+                       clearRootTable();
                        addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), string(netPacket->getSource()), 0, 0}  );
                        sendRREQ(getRound(),getRoute());
                     }
@@ -1098,8 +1163,15 @@ toApplicationLayer(decapsulatePacket(netPacket));
                         setMinorRound(netPacket->getMinor_round());
                         clearRREQ();
                         clearRoutes();
+                        clearRootTable();
                         addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), string(netPacket->getSource()), 0, 0}  );
                         sendMinorRREQ(getRound(),getMinorRound(),getRoute(),getPath_filter_array(netPacket));
+                    } else if(isSameRound(netPacket) && !isSameRoot(srcMacAddress)) {
+                        addRoot(srcMacAddress);
+                        auto new_root=selectRoot();
+                        trace()<<"Selected root: "<<new_root;
+                        clearRoutes();
+                        addRoute(hdmrp_path{resolveNetworkAddress(SELF_NETWORK_ADDRESS), string(netPacket->getSource()), 0, 0} );
                     } 
                      else {
                         trace()<<"Old round. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
@@ -1133,6 +1205,9 @@ toApplicationLayer(decapsulatePacket(netPacket));
                             trace()<<"Old round. Current round: "<<getRound()<<" Received round: "<<netPacket->getRound();
                         }
                     } else {
+                        if(no_role_change) {
+                            break;
+                        }
                         // once switched to sub-root, some guard timer is needed??
                         trace()<<"RREQ with 0 Path_id received";
                         if(netPacket->getRound() > getRound()) {
@@ -1173,6 +1248,9 @@ toApplicationLayer(decapsulatePacket(netPacket));
             if(isSink()) {
                 trace()<<"SRREQ discarded by sink";
             }
+            if((isNonRoot() || isSubRoot()) && no_role_change) {
+                break;
+            }
             else if(isNonRoot() || isRoot()) {
                 trace()<<"SRREQ received by non-root or root";
                 if(isNonRoot()) {
@@ -1211,9 +1289,30 @@ toApplicationLayer(decapsulatePacket(netPacket));
     }
 }
 
+std::string hdmrp::roleToStr(hdmrpRoleDef role) {
+    switch (role) {
+        case hdmrpRoleDef::SINK: {
+            return "sink";
+        }
+        case hdmrpRoleDef::ROOT: {
+            return "root";
+        }
+        case hdmrpRoleDef::SUB_ROOT: {
+            return "sub-root"; 
+        }
+        case hdmrpRoleDef::NON_ROOT: {
+            return "non-root";
+        }
+    }
+    return "undefined";
+}
+
+
 void hdmrp::finishSpecific() {
-    declareOutput("Paths");
-    collectOutput("Paths","",routing_table.size());
+    if(!(isRoot() || isSink() || isSubRoot())) {
+        declareOutput("Paths");
+        collectOutput("Paths","",routing_table.size());
+    }
     
 
     declareOutput("Role");
@@ -1238,10 +1337,19 @@ void hdmrp::finishSpecific() {
         topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
         
         set<int> paths;
+        ofstream g_out("graph.py"), p_out("pos.py"),n_out("neigh.py"),r_out("role.py");
+        g_out<<"edges=[";
+        p_out<<"pos={";
+        n_out<<"neighs=[";
+        r_out<<"role={";
+        auto sink_pos=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"))->getLocation();
+        p_out<<"'0':["<<sink_pos.x<<","<<sink_pos.y<<"],";
+        r_out<<"'0':'Sink',";
 
         for (int i = 1; i < topo->getNumNodes(); ++i) {
             hdmrp *hdmrp_instance = dynamic_cast<hdmrp*>
                 (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+            auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(i)->getModule()->getSubmodule("MobilityManager"));
             set<int> tmp_paths=hdmrp_instance->getPaths();
             trace()<<"Node: "<<i;
             trace()<<"Number of paths at node: "<<tmp_paths.size();
@@ -1251,7 +1359,55 @@ void hdmrp::finishSpecific() {
                     trace()<<"Path: "<<*it;
                 }
             }
+
+            map<int,string> routes;
+            try {
+                routes=hdmrp_instance->getPathsAndHops();
+            } catch(std::length_error &e) {
+                trace()<<"Can't retrieve paths and hops: "<<e.what();
+                continue;
+            }
+
+
+
+            r_out<<"'"<<i<<"':'"<<roleToStr(hdmrp_instance->getRole())<<"',";
+
+            vector<int> neighs;
+            try {
+                neighs=hdmrp_instance->getNeighbors();
+            } catch(std::length_error &e) {
+                trace()<<"Can't reteive neighbors: "<<e.what();
+                continue;
+            }
+
+            for(auto route: routes) {
+                // Format: [('Node1', 'Node2',{ 'path': 1}),
+                //          ('Node1','Node3', {'path': 2})]
+                g_out<<"('"<<i<<"','"<<route.second<<"',{'path':"<<route.first<<"}),";
+
+
+                // Format: {'Node1': [0,0], 'Node2': [0,10],'Node3':[10,0]}
+                auto loc=mob_mgr->getLocation();
+                p_out<<"'"<<i<<"':["<<loc.x<<","<<loc.y<<"],";
+
+            }
+
+            for(auto neighbor: neighs) {
+                n_out<<"('"<<i<<"','"<<neighbor<<"'),";
+            }
+            // seek back one character
+
         }
+        g_out.seekp(g_out.tellp()-static_cast<long int>(1));
+        p_out.seekp(p_out.tellp()-static_cast<long int>(1));
+        n_out.seekp(n_out.tellp()-static_cast<long int>(1));
+        r_out.seekp(r_out.tellp()-static_cast<long int>(1));
+
+        g_out<<"]"<<std::endl;
+        p_out<<"}"<<std::endl;
+        n_out<<"]"<<std::endl;
+        r_out<<"}"<<std::endl;
+
         
         delete(topo);
         collectOutput("Number of Paths", "", paths.size());
