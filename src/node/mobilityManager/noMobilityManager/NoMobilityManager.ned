@@ -14,5 +14,6 @@ package node.mobilityManager.noMobilityManager;
 
 simple NoMobilityManager like node.mobilityManager.iMobilityManager {
  parameters:
+    bool positionOverride = default (false);
 	bool collectTraceInfo = default (false);
 }

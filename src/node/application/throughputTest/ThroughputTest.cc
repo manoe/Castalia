@@ -95,7 +95,6 @@ void ThroughputTest::finishSpecific() {
 	cTopology *topo;	// temp variable to access packets received by other nodes
 	topo = new cTopology("topo");
 	topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
-
 	long bytesDelivered = 0;
 	for (int i = 0; i < numNodes; i++) {
 		ThroughputTest *appModule = dynamic_cast<ThroughputTest*>
@@ -103,9 +102,10 @@ void ThroughputTest::finishSpecific() {
 		if (appModule) {
 			int packetsSent = appModule->getPacketsSent(self);
 			if (packetsSent > 0) { // this node sent us some packets
-				float rate = (float)packetsReceived[i]/packetsSent;
+				float rate = (float)packetsReceived[i]/(float)packetsSent;
 				collectOutput("Packets reception rate", i, "total", rate);
 				collectOutput("Packets loss rate", i, "total", 1-rate);
+                trace()<<"Pkt received: "<<packetsReceived[i]<<" sent: "<<packetsSent;
 			}
 
 			bytesDelivered += appModule->getBytesReceived(self);

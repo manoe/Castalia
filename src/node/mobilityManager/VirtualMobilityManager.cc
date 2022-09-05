@@ -85,12 +85,12 @@ void VirtualMobilityManager::parseDeployment() {
 			nodeLocation.x = uniform(0, xlen);
 			nodeLocation.y = uniform(0, ylen);
 			nodeLocation.z = uniform(0, zlen);
-			return;
+			break;
 		} else if (strncmp(c, "center", strlen("center")) == 0) {
 			nodeLocation.x = xlen/2;
 			nodeLocation.y = ylen/2;
 			nodeLocation.z = zlen/2;
-			return; 			
+			break; 			
 		} else if (strncmp(c, "randomized_", strlen("randomized_")) == 0) {
 			c += strlen("randomized_");
 			random_flag = 1;
@@ -144,11 +144,13 @@ void VirtualMobilityManager::parseDeployment() {
 					nodeLocation.z = 0;
 			}
 		}
-		return;
+		break;
 	}
-	nodeLocation.x = node->par("xCoor");
-	nodeLocation.y = node->par("yCoor");
-	nodeLocation.z = node->par("zCoor");
+    if(par("positionOverride")) {
+    	nodeLocation.x = node->par("xCoor");
+    	nodeLocation.y = node->par("yCoor");
+        nodeLocation.z = node->par("zCoor");
+    }
 }
 
 void VirtualMobilityManager::setLocation(double x, double y, double z, double phi, double theta)
