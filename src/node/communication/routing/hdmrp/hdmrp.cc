@@ -263,7 +263,7 @@ bool hdmrp::matchPathFilter(hdmrpPacket *pkt) {
     for(int i=0 ; i < paths.size() ; ++i) {
         try {
             getRoute(paths[i]);
-            trace()<<"matched";
+            trace()<<paths[i]<< "matched";
             return true;
         } catch (std::exception e) {}
     }
@@ -435,6 +435,7 @@ void hdmrp::confirmPaths() {
         PathPkt->setOrig(resolveNetworkAddress(path.second.next_hop.c_str()));
         PathPkt->setPath_id(path.second.path_id);
         PathPkt->setAck_req(true);
+        PathPkt->setRep_count(1);
         PathPkt->setSequenceNumber(currentSequenceNumber++);
         PathPkt->setL_seq(d_pkt_seq);
         bufferForAck(PathPkt->dup());
@@ -827,7 +828,7 @@ void hdmrp::timerFiredCallback(int index) {
                        return;
 
                     } else {
-                        pkt->setRep_count(pkt->getRep_count());
+                        pkt->setRep_count(1+pkt->getRep_count());
                     }
                     trace()<<"Resend path confirm packet to: "<<pkt->getDestination()<<" with l_seq: "<<index;
                     toMacLayer(pkt->dup(),resolveNetworkAddress(pkt->getDestination()));
@@ -963,7 +964,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             try {
                 trace()<<"Ack packet received for Orig: "<<netPacket->getOrig()<<" L_seq: "<<netPacket->getL_seq();
                 cancelTimer(netPacket->getL_seq());
-                if(wf_ack_buffer.find(netPacket->getL_seq()) == wf_ack_buffer.end()) {
+                if(!bufferedPktExists(netPacket->getL_seq())) {
                     trace()<<"No such packet waiting for ack";
                     break;
                 }
@@ -1350,6 +1351,7 @@ void hdmrp::finishSpecific() {
             hdmrp *hdmrp_instance = dynamic_cast<hdmrp*>
                 (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
             auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(i)->getModule()->getSubmodule("MobilityManager"));
+            
             set<int> tmp_paths=hdmrp_instance->getPaths();
             trace()<<"Node: "<<i;
             trace()<<"Number of paths at node: "<<tmp_paths.size();
@@ -1368,9 +1370,12 @@ void hdmrp::finishSpecific() {
                 continue;
             }
 
-
-
-            r_out<<"'"<<i<<"':'"<<roleToStr(hdmrp_instance->getRole())<<"',";
+            auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
+            if(res_mgr->isDead()) {
+                r_out<<"'"<<i<<"':'"<<"dead',";
+            } else {
+                r_out<<"'"<<i<<"':'"<<roleToStr(hdmrp_instance->getRole())<<"',";
+            }
 
             vector<int> neighs;
             try {
@@ -1386,11 +1391,13 @@ void hdmrp::finishSpecific() {
                 g_out<<"('"<<i<<"','"<<route.second<<"',{'path':"<<route.first<<"}),";
 
 
-                // Format: {'Node1': [0,0], 'Node2': [0,10],'Node3':[10,0]}
-                auto loc=mob_mgr->getLocation();
-                p_out<<"'"<<i<<"':["<<loc.x<<","<<loc.y<<"],";
-
+                
+                                
             }
+
+            // Format: {'Node1': [0,0], 'Node2': [0,10],'Node3':[10,0]}
+            auto loc=mob_mgr->getLocation();
+            p_out<<"'"<<i<<"':["<<loc.x<<","<<loc.y<<"],";
 
             for(auto neighbor: neighs) {
                 n_out<<"('"<<i<<"','"<<neighbor<<"'),";

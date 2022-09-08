@@ -36,6 +36,7 @@ simple ThroughputTest like node.application.iApplication {
 	double latencyHistogramMax = default (200.0);
 	int latencyHistogramBuckets = default (10);
     bool isSink = default (false);
+    bool isMaster = default (false);
     string Role = default("NonRoot"); // NonRoot, SubRoot, Root
     bool noRoleChange = default(false);
 

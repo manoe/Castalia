@@ -58,6 +58,7 @@ class ResourceManager: public CastaliaModule {
 	double getSpentEnergy(void);
 	double estimateLifetime();
 	void destroyNode(void);
+    bool isDead();
 	int RamStore(int numBytes);
 	void RamFree(int numBytes);
 };
