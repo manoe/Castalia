@@ -185,6 +185,11 @@ void ResourceManager::destroyNode(void)
 	collectOutput("Dead Node", "time", SIMTIME_DBL(simTime()));
 }
 
+bool ResourceManager::isDead() {
+    return disabled;
+}
+
+
 int ResourceManager::RamStore(int numBytes)
 {
 	Enter_Method("RamStore(int numBytes)");

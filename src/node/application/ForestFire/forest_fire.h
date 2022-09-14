@@ -36,7 +36,7 @@ enum ForestFireTimers {
     REPORT_PERIOD       = 4
 };
 
-class ForestFire :public VirtualApplication {
+class ForestFire : public VirtualApplication {
  private:
 	double reportTreshold;
 	double sampleInterval;

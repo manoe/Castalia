@@ -61,7 +61,7 @@ void WildFirePhysicalProcess::initialize()
     }
 
 
-    trace() << "Firt CA step at: "<<ca_start_timer<<" seconds";
+    trace() << "First CA step at: "<<ca_start_timer<<" seconds";
     scheduleAt(SimTime()+static_cast<double>(ca_start_timer), new cMessage("CA step timer expired", TIMER_SERVICE));
     first_step=true;
 }
