@@ -29,6 +29,7 @@ struct hdmrp_path {
     int nmas;
     int len;
     std::vector<int> path_filter;
+    int fail_counter;
 };
 
 struct pkt_hist_entry {
@@ -74,6 +75,8 @@ class hdmrp: public VirtualRouting {
      bool failing;
      int resel_limit;
      bool default_ack;
+     int fail_limit;
+
      map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
      std::map<int, hdmrp_path> routing_table;
@@ -113,7 +116,12 @@ class hdmrp: public VirtualRouting {
 
      hdmrp_path getRoute(const int);
      hdmrp_path getRoute();
+     bool isRouteFailing(const int);
+     void incRouteFailure(const int);
+     void decRouteFailure(const int);
+     void resetRouteFailure(const int);
      bool RouteExists() const;
+     bool RouteExists(int) const;
      void confirmPaths();
 
      void sendAck(hdmrpPacket*, int);
@@ -154,7 +162,7 @@ class hdmrp: public VirtualRouting {
 
      std::vector<int> getPath_filter_array(hdmrpPacket *);
      void setPath_filter(hdmrpPacket *, vector<int>);
-     std::vector<int> collectPath_filter();
+     std::vector<int> collectPath_filter(int);
      bool matchPathFilter(hdmrpPacket *);
      void sendMinorSRREQ(vector<int>);
      void sendMinorRREQ(int round, int minor_round, int path_id, int nmas, int len, vector<int> path_array);
@@ -169,6 +177,8 @@ class hdmrp: public VirtualRouting {
 
      void sendPathFailure(int);
      int getBackupDestination(int);
+     void reselectPathFailureBackupDest(hdmrpPacket *);
+
 
      void incrementSeqNum();
      bool findPktHistEntry(pkt_hist_entry);

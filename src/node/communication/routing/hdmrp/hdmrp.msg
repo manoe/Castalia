@@ -55,6 +55,7 @@ packet hdmrpPacket extends RoutingPacket {
     int minor_round; // 2 byte?
     int path_id;    // 2 byte
     int path_filter[]; // x byte
+    bool orig_err; // 1 byte
     int len;        // 1 byte?
     int nmas;       // 1 byte?
     bool ack_req;
