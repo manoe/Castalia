@@ -50,6 +50,9 @@ simple hdmrp like node.communication.routing.iRouting
     int  resel_limit       = default(3);
     bool default_ack       = default(false);
     int  fail_limit        = default(10);
+    bool static_route      = default(false);
+    int  static_next_hop   = default(0);
+    int  static_path       = default(0);
 
  gates:
 	output toCommunicationModule;

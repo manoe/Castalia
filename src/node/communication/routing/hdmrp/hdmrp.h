@@ -77,7 +77,11 @@ class hdmrp: public VirtualRouting {
      bool default_ack;
      int fail_limit;
 
-     map<int, hdmrp_path> rreq_table;
+     bool static_route;
+     int  static_next_hop;
+     int  static_path;
+
+     std::map<int, hdmrp_path> rreq_table;
      std::mt19937 gen(std::random_device());
      std::map<int, hdmrp_path> routing_table;
      std::map<unsigned int, hdmrpPacket *> wf_ack_buffer;

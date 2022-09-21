@@ -14,6 +14,10 @@
 
 Define_Module(flooding);
 
+void flooding::startup() {
+    repeat = par("repeat");
+}
+
 void flooding::fromApplicationLayer(cPacket * pkt, const char *destination)
 {
 	FloodingPacket *netPacket = new FloodingPacket("BypassRouting packet", NETWORK_LAYER_PACKET);
@@ -32,15 +36,22 @@ void flooding::fromApplicationLayer(cPacket * pkt, const char *destination)
  */
 void flooding::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
 	RoutingPacket *netPacket = dynamic_cast <RoutingPacket*>(pkt);
-	if (netPacket) {
+    trace()<<"From: "<<srcMacAddress;
+    if(netPacket && isNotDuplicatePacket(pkt)) {
 		string destination(netPacket->getDestination());
+        trace()<<"Destination: "<<destination;
 		if (destination.compare(SELF_NETWORK_ADDRESS) == 0 ||
 		    destination.compare(BROADCAST_NETWORK_ADDRESS) == 0) {
 			toApplicationLayer(decapsulatePacket(pkt));
-        } else if(isNotDuplicatePacket(pkt)) {
-            trace()<<"Broadcasting packet "<<netPacket->getSequenceNumber()<<" destined to "<<destination;
-            toMacLayer(netPacket->dup(), resolveNetworkAddress(BROADCAST_NETWORK_ADDRESS));
-        }
+            trace()<<"Forwarding to application layer";
+        } else {
+            trace()<<"Broadcasting packet "<<netPacket->getSequenceNumber()<<" destined to "<<destination<<" Size: "<<netPacket->getByteLength();
+            for(int i=0 ; i < repeat ; ++i) {
+                toMacLayer(netPacket->dup(), resolveNetworkAddress(BROADCAST_NETWORK_ADDRESS));
+            }
+        }     
+    } else {
+        trace()<<"Duplicate packet: "<<netPacket->getSequenceNumber()<<" from: "<<netPacket->getSource();
     }
 }
 

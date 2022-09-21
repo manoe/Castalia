@@ -62,6 +62,7 @@ class ForestFire : public VirtualApplication {
 	string reportDestination;
     bool report_timer_offset;
 
+    map<int,set<int>> packetsSeen;
  protected:
 	virtual void startup();
 	void finishSpecific();
@@ -74,6 +75,8 @@ class ForestFire : public VirtualApplication {
     void sendEvent();
     void sendReport();
     void sendEmergencyBroadcast();
+    bool isPacketSeen(int source, int sn);
+
 };
 
 #endif				// _FOREST_FIRE_H_
