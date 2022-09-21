@@ -91,6 +91,20 @@ void ForestFire::sendEmergencyBroadcast() {
 }
 
 
+bool ForestFire::isPacketSeen(int source, int sn) {
+    if(packetsSeen.find(source) == packetsSeen.end()) {
+        packetsSeen[source].insert(sn);
+        return false;
+    }
+    if(packetsSeen[source].find(sn) == packetsSeen[source].end()) {
+        packetsSeen[source].insert(sn);
+        return false;
+    }
+    return true;
+}
+
+
+
 void ForestFire::timerFiredCallback(int timer)
 {
 	switch (timer) {
@@ -139,8 +153,9 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
             sendEvent();
         }
     }
+    if(!isPacketSeen(atoi(source),rcvPacket->getSequenceNumber() )) {
 
-    else	if (packetName.compare(REPORT_PACKET_NAME) == 0) {
+    if (packetName.compare(REPORT_PACKET_NAME) == 0) {
         collectOutput("Report packet","Received");
 		// this is report packet which contains sensor reading information
 		// NOTE that data field is used to store source address instead of using char *source
@@ -171,6 +186,9 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
 		else {
 		trace() << "unknown packet received: [" << packetName << "]";
 	}
+    } else {
+        trace()<<"Duplicated packet";
+    }
 }
 
 void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)

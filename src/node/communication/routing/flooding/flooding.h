@@ -19,9 +19,12 @@
 using namespace std;
 
 class flooding: public VirtualRouting {
+    private:
+        int repeat;
  protected:
-	void fromApplicationLayer(cPacket *, const char *);
-	void fromMacLayer(cPacket *, int, double, double);
+    virtual void startup();
+	virtual void fromApplicationLayer(cPacket *, const char *);
+	virtual void fromMacLayer(cPacket *, int, double, double);
 };
 
 #endif				//BYPASSROUTINGMODULE

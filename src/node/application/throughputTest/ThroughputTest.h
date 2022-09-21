@@ -37,6 +37,7 @@ class ThroughputTest: public VirtualApplication {
 	map<long,int> packetsReceived;
 	map<long,int> bytesReceived;
 	map<long,int> packetsSent;
+    map<int,set<int>> packetsSeen;
 
  protected:
 	void startup();
@@ -44,6 +45,7 @@ class ThroughputTest: public VirtualApplication {
 	void handleRadioControlMessage(RadioControlMessage *);
 	void timerFiredCallback(int);
 	void finishSpecific();
+    bool isPacketSeen(int source, int sn);
 
  public:
 	int getPacketsSent(int addr) { return packetsSent[addr]; }

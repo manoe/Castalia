@@ -27,7 +27,7 @@
 
 #define SELF_NETWORK_ADDRESS selfAddress.c_str()
 #define ROUTE_DEST_DELIMITER "#"
-#define PACKET_HISTORY_SIZE 5
+#define PACKET_HISTORY_SIZE 20
 
 using namespace std;
 

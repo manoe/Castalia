@@ -29,12 +29,26 @@ void ThroughputTest::startup()
 	packetsReceived.clear();
 	bytesReceived.clear();
 
+
+
 	if (packet_spacing > 0 && recipientAddress.compare(SELF_NETWORK_ADDRESS) != 0)
 		setTimer(SEND_PACKET, packet_spacing + startupDelay);
 	else
 		trace() << "Not sending packets";
 
 	declareOutput("Packets received per node");
+}
+
+bool ThroughputTest::isPacketSeen(int source, int sn) {
+    if(packetsSeen.find(source) == packetsSeen.end()) {
+        packetsSeen[source].insert(sn);
+        return false;
+    }
+    if(packetsSeen[source].find(sn) == packetsSeen[source].end()) {
+        packetsSeen[source].insert(sn);
+        return false;
+    }
+    return true;
 }
 
 void ThroughputTest::fromNetworkLayer(ApplicationPacket * rcvPacket,
@@ -48,8 +62,12 @@ void ThroughputTest::fromNetworkLayer(ApplicationPacket * rcvPacket,
 		if (delayLimit == 0 || (simTime() - rcvPacket->getCreationTime()) <= delayLimit) { 
 			trace() << "Received packet #" << sequenceNumber << " from node " << source;
 			collectOutput("Packets received per node", sourceId);
+            if(!isPacketSeen(sourceId,sequenceNumber)) {
 			packetsReceived[sourceId]++;
 			bytesReceived[sourceId] += rcvPacket->getByteLength();
+            } else {
+                trace()<<"Packet already received";
+            }
 		} else {
 			trace() << "Packet #" << sequenceNumber << " from node " << source <<
 				" exceeded delay limit of " << delayLimit << "s";
