@@ -52,6 +52,19 @@ void ForestFire::startup()
     emergency=false;
 	declareOutput("Report packet");
 	declareOutput("Event packet");
+
+    event_sent=0;
+    report_sent=0;
+    reportRecv.clear();
+    eventRecv.clear();
+}
+
+int ForestFire::getEventSent() {
+    return event_sent;
+}
+
+int ForestFire::getReportSent() {
+    return report_sent;
 }
 
 void ForestFire::sendEvent() {
@@ -64,6 +77,7 @@ void ForestFire::sendEvent() {
 	toNetworkLayer(newPkt, reportDestination.c_str());
 	currSampleSN++;
     collectOutput("Event packet","Sent");
+    event_sent++;
 }
 
 void ForestFire::sendReport() {
@@ -76,6 +90,7 @@ void ForestFire::sendReport() {
 	toNetworkLayer(newPkt, reportDestination.c_str());
 	currSampleSN++;
     collectOutput("Report packet","Sent");
+    report_sent++;
 }
 
 void ForestFire::sendEmergencyBroadcast() {
@@ -157,6 +172,7 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
 
     if (packetName.compare(REPORT_PACKET_NAME) == 0) {
         collectOutput("Report packet","Received");
+        reportRecv[atoi(source)]++;
 		// this is report packet which contains sensor reading information
 		// NOTE that data field is used to store source address instead of using char *source
 		// this is done because some routing and flooding is done on the application layer
@@ -182,6 +198,8 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
 //	}
     else    if(0==packetName.compare(EVENT_PACKET_NAME)) {
         collectOutput("Event packet","Received");
+        eventRecv[atoi(source)]++;
+
     }
 		else {
 		trace() << "unknown packet received: [" << packetName << "]";
@@ -230,6 +248,34 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 
 void ForestFire::finishSpecific()
 {
+	declareOutput("Event reception rate");
+	declareOutput("Report reception rate");
+    if(isSink) {
+	int numNodes = getParentModule()->getParentModule()->par("numNodes");
+
+	cTopology *topo;	// temp variable to access packets received by other nodes
+	topo = new cTopology("topo");
+	topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+	for (int i = 0; i < numNodes; i++) {
+		ForestFire *appModule = dynamic_cast<ForestFire*>
+			(topo->getNode(i)->getModule()->getSubmodule("Application"));
+		if (appModule) {
+			int reportSent = appModule->getReportSent();
+            int eventSent  = appModule->getEventSent();
+			if (reportSent > 0 ) { // this node sent us some packets
+				float rate = (float)reportRecv[i]/(float)reportSent;
+				collectOutput("Report reception rate", i, "total", rate);
+			}
+            if (eventSent > 0) {
+                float rate = (float)eventRecv[i] / (float)eventSent;
+				collectOutput("Event reception rate", i, "total", rate);
+            }
+
+		}
+	}
+	delete(topo);
+    }
+
 	if (isSink) {
 		declareOutput("Report reception");
 		for (int i = 0; i < (int)report_info_table.size(); i++) {
