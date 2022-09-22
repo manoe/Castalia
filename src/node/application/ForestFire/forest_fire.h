@@ -58,11 +58,15 @@ class ForestFire : public VirtualApplication {
 	int routingLevel;
 	vector<version_info> version_info_table;
 	vector<report_info> report_info_table;
+    int event_sent;
+    int report_sent;
 
 	string reportDestination;
     bool report_timer_offset;
 
     map<int,set<int>> packetsSeen;
+    map<int,int> reportRecv;
+    map<int,int> eventRecv;
  protected:
 	virtual void startup();
 	void finishSpecific();
@@ -76,7 +80,9 @@ class ForestFire : public VirtualApplication {
     void sendReport();
     void sendEmergencyBroadcast();
     bool isPacketSeen(int source, int sn);
-
+ public:
+    int getReportSent();
+    int getEventSent();
 };
 
 #endif				// _FOREST_FIRE_H_
