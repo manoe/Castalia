@@ -45,6 +45,7 @@ class ResourceManager: public CastaliaModule {
 
 	cMessage *energyMsg;
 	bool disabled;
+    bool master;
 
  protected:
 	virtual void initialize();
@@ -61,6 +62,7 @@ class ResourceManager: public CastaliaModule {
     bool isDead();
 	int RamStore(int numBytes);
 	void RamFree(int numBytes);
+    bool isMaster();
 };
 
 #endif				// _RESOURCEGENERICMANAGER_H_

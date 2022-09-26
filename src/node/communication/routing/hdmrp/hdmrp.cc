@@ -87,6 +87,8 @@ void hdmrp::startup() {
 
     fail_limit=par("fail_limit");
 
+    reset_fail=par("reset_fail");
+
     static_route=par("static_route");
     if(static_route) {
         trace()<<"Static route - path: "<<static_path<<" next hop: "<<static_next_hop;
@@ -513,7 +515,12 @@ void hdmrp::decRouteFailure(const int path_id) {
     trace()<<"Decrement failure counter for path "<<path_id;
     if(RouteExists()) {
         if(routing_table[path_id].fail_counter > 0) {
+            if(reset_fail) {
             routing_table[path_id].fail_counter--;
+            } else {
+            routing_table[path_id].fail_counter=0;
+
+            }
             trace()<<"Next hop: "<<routing_table[path_id].next_hop; 
 
         }
@@ -878,8 +885,7 @@ void hdmrp::timerFiredCallback(int index) {
                     }
 
 
-                    if(send_path_failure && !missing_path) {
-                        collectOutput("Path failure","",1);
+                    if(send_path_failure && !missing_path && !isRoot() ) {
                         int path_id;
                         if(!isSink()) { failing=true;}
                         try {
@@ -889,10 +895,13 @@ void hdmrp::timerFiredCallback(int index) {
                                 } else {
                                     path_id=pkt->getPath_id();
                                 }
+                                if(pkt->getHdmrpPacketKind() != hdmrpPacketDef::PATH_FAILURE_PACKET && pkt->getRep_count() >= rep_limit) { 
                                 incRouteFailure(path_id);
                                 if(isRouteFailing(path_id)) {
                                     sendPathFailure(path_id);
+                                    collectOutput("Path failure","",1);
                                     resetRouteFailure(path_id);
+                                }
                                 }
                             }
                         } catch (exception &e) {
@@ -1142,7 +1151,7 @@ void hdmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 hdmrp_path path;
                 bool backward=false;
                 int dest;
-                if(isSink()) {
+                if(isSink() && send_path_failure ) {
                     if(minor_rreq) {
                         auto pf=getPath_filter_array(netPacket);
                         trace()<<"Path filter received: ";

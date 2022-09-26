@@ -76,6 +76,7 @@ class hdmrp: public VirtualRouting {
      int resel_limit;
      bool default_ack;
      int fail_limit;
+     bool reset_fail;
 
      bool static_route;
      int  static_next_hop;

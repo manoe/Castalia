@@ -43,6 +43,15 @@ void ResourceManager::initialize()
 	remainingEnergy = initialEnergy;
 	totalRamData = 0;
 	disabled = true;
+     
+    cModule *appModule = getParentModule()->getSubmodule("Application");
+    if(appModule->hasPar("isMaster")) {
+        master=appModule->par("isMaster");
+        trace()<<"Master node: "<<master;
+
+    } else {
+        master=false;
+    }
 }
 
 void ResourceManager::calculateEnergySpent()
@@ -111,10 +120,12 @@ void ResourceManager::handleMessage(cMessage * msg)
 void ResourceManager::finishSpecific()
 {
 	calculateEnergySpent();
-	declareOutput("Consumed Energy");
-	collectOutput("Consumed Energy", "", initialEnergy - remainingEnergy);
-	declareOutput("Remaining Energy");
-	collectOutput("Remaining Energy", "", remainingEnergy);
+    if(!master) {
+    	declareOutput("Consumed Energy");
+	    collectOutput("Consumed Energy", "", initialEnergy - remainingEnergy);
+    	declareOutput("Remaining Energy");
+    	collectOutput("Remaining Energy", "", remainingEnergy);
+    }
 
 	if (getParentModule()->getIndex() == 0) {
 		cTopology *topo;	// temp variable to access energy spent by other nodes
@@ -125,7 +136,8 @@ void ResourceManager::finishSpecific()
 		for (int i = 1; i < topo->getNumNodes(); i++) {
 			ResourceManager *resMng = dynamic_cast<ResourceManager*>
 				(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
-			if (minLifetime > resMng->estimateLifetime()) 
+
+			if (!resMng->isMaster() && minLifetime > resMng->estimateLifetime()) 
 				minLifetime = resMng->estimateLifetime();
 		}
 		declareOutput("Estimated network lifetime (days)");
@@ -211,3 +223,4 @@ void ResourceManager::RamFree(int numBytes)
 	totalRamData = (totalRamData < 0) ? 0 : totalRamData;
 }
 
+bool ResourceManager::isMaster() { return master; }
