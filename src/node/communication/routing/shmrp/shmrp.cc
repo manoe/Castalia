@@ -19,6 +19,12 @@ void shmrp::startup() {
         g_is_sink=false;
     }
 
+    if(hasPar("sink_address")) {
+        g_sink_addr.assign(par("sink_address").stringValue());
+    } else {
+        trace()<<"[error] No sink address provisioned";
+    }
+
     if(isSink()) {
         setHop(0);
         setRound(1);
@@ -58,7 +64,30 @@ int shmrp::getRound() const {
 }
 
 void shmrp::setState(shmrpStateDef state) {
+    trace()<<"[info] State change from "<<stateToStr(g_state)<<" to "<<stateToStr(state);
     g_state=state;
+}
+
+string shmrp::stateToStr(shmrpStateDef state) const {
+    switch (state) {
+        case shmrpStateDef::UNDEF: {
+            return "UNDEF";
+        }
+        case shmrpStateDef::WORK: {
+            return "WORK";
+        }
+        case shmrpStateDef::INIT: {
+            return "INIT";
+        }
+        case shmrpStateDef::LEARN: {
+            return "LEARN";
+        }
+        case shmrpStateDef::RELAY: {
+            return "RELAY";
+        }
+    }
+    return "UNKNOWN";
+       
 }
 
 shmrpStateDef shmrp::getState() const {
