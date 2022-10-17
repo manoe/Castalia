@@ -33,6 +33,7 @@
 //
 
 enum shmrpStateDef {
+    UNDEF   = 0,
     WORK    = 1,
     INIT    = 2,
     LEARN   = 3,
@@ -79,6 +80,7 @@ class shmrp: public VirtualRouting {
 
         void setState(shmrpStateDef);
         shmrpStateDef getState() const;
+        string stateToStr(shmrpStateDef) const;
 
     public:
 };

@@ -30,14 +30,17 @@ simple shmrp like node.communication.routing.iRouting
 {
  parameters:
 	bool collectTraceInfo = default (false);
-	int maxNetFrameSize = default (0);	// bytes
-	int netDataFrameOverhead = default (10);	// bytes
-	int netBufferSize = default (32);	// number of messages
-    int t_l = default (1); // Tl timer, default 1 sec
-    double t_relay = default(0.1); // relay timer
+	int maxNetFrameSize = default (0);	     // bytes
+	int netDataFrameOverhead = default (10); // bytes
+	int netBufferSize = default (32);	     // number of messages
+    double t_l = default (1);                // Tl timer, default 1 sec
+    double t_relay = default(0.1);           // relay timer
+    double t_start = default (1);            // sink start timer
+    string sink_address = default("0");           // sink's networ  address
+
+
     int t_rreq = default (10); // Trreq timer, default 10 sec
-    int t_start = default (1); // sink start timer
-    double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
+        double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
     int t_pkt_hist  = default (5); // keep pkt history entry at least this long
     double t_rsnd = default(1); // Resend timer
     int rep_limit = default(3); // give after rep_limit and send path failure // give after rep_limit and send path failure
