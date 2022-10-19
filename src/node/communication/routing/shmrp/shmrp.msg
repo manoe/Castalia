@@ -37,7 +37,7 @@ packet shmrpRinvPacket extends shmrpPacket {
 packet shmrpRreqPacket extends shmrpPacket {
     int round;      // 2 byte
     int pathid;     // 1 byte
-    int hop;        // 2 byte
+//    int hop;        // 2 byte probably makes no sense
 }
 
 packet shmrpRrespPacket extends shmrpPacket {
