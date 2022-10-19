@@ -33,22 +33,35 @@
 //
 
 enum shmrpStateDef {
-    UNDEF   = 0,
-    WORK    = 1,
-    INIT    = 2,
-    LEARN   = 3,
-    RELAY   = 4
+    UNDEF     = 0,
+    WORK      = 1,
+    INIT      = 2,
+    LEARN     = 3,
+    ESTABLISH = 4
 };
 
 enum shmrpTimerDef {
     SINK_START       = 1,
     T_L              = 2,
+    T_ESTABLISH      = 3,
     NEW_ROUND        = 5,
     T_RELAY          = 6,
     ACK_HIST_PURGE   = 7,
     PACKET_TIMER_1   = 8
 };
 
+enum shmrpRingDef {
+//    UNDEF    = 0,
+    INTERNAL = 1,
+    BORDER   = 2,
+    EXTERNAL = 3
+};
+
+struct node_entry {
+    string nw_address;
+    int pathid;
+    int hop;
+};
 
 class shmrp: public VirtualRouting {
     private:
@@ -56,7 +69,12 @@ class shmrp: public VirtualRouting {
         string g_sink_addr;
         int g_hop;
         int g_round;
+        double g_t_l;
+        int g_ring_radius;
         shmrpStateDef g_state;
+        std::map<std::string,node_entry> rinv_table;
+        std::map<std::string,node_entry> rreq_table;
+        std::map<std::string,node_entry> route_table; 
 
     protected:
         void startup();
@@ -74,13 +92,20 @@ class shmrp: public VirtualRouting {
 
         void setHop(int);
         int getHop() const;
+        void calculateHop();
 
         void setRound(int);
         int  getRound() const;
 
         void setState(shmrpStateDef);
         shmrpStateDef getState() const;
-        string stateToStr(shmrpStateDef) const;
+        std::string stateToStr(shmrpStateDef) const;
+
+        void clearRinvTable();
+        void addToRinvTable(shmrpRinvPacket *);
+
+        void clearRreqTable();
+        void constructRreqTable(shmrpRingDef);
 
     public:
 };

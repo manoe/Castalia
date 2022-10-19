@@ -29,10 +29,16 @@ void shmrp::startup() {
         setHop(0);
         setRound(1);
         setTimer(shmrpTimerDef::SINK_START,par("t_start"));
+        setState(shmrpStateDef::WORK);
     } else {
         setHop(std::numeric_limits<int>::max());
         setRound(0);
+        setState(shmrpStateDef::INIT);
     }
+
+    g_t_l=par("t_l");
+    g_ring_radius=par("ring_radius");
+
 }
 
 bool shmrp::isSink() const {
@@ -48,6 +54,7 @@ std::string shmrp::getSinkAddress() const {
 }
 
 void shmrp::setHop(int hop) {
+    trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
     g_hop=hop;
 }
 
@@ -55,7 +62,22 @@ int shmrp::getHop() const {
     return g_hop;
 }
 
+void shmrp::calculateHop() {
+    trace()<<"[info] Entering shmrp::calculateHop()";
+    if(rinv_table.empty()) {
+        throw std::length_error("[error] RINV table empty");
+    }
+    int hop=std::numeric_limits<int>::max();
+    for(auto ne: rinv_table) {
+        if(hop > ne.second.hop) {
+            hop=ne.second.hop;
+        }
+    }
+    setHop(hop+1);
+}
+
 void shmrp::setRound(int round) {
+    trace()<<"[info] Changing round "<<g_round<<" to "<<round;
     g_round=round;
 }
 
@@ -82,8 +104,8 @@ string shmrp::stateToStr(shmrpStateDef state) const {
         case shmrpStateDef::LEARN: {
             return "LEARN";
         }
-        case shmrpStateDef::RELAY: {
-            return "RELAY";
+        case shmrpStateDef::ESTABLISH: {
+            return "ESTABLISH";
         }
     }
     return "UNKNOWN";
@@ -113,6 +135,57 @@ void shmrp::sendRinv(int round) {
     sendRinv(round,0);
 }
 
+void shmrp::clearRinvTable() {
+    trace()<<"[info] RINV table erased";
+    rinv_table.clear();
+}
+
+void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
+    trace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid: "<<rinv_pkt->getPathid()<<" hop: "<<rinv_pkt->getHop();
+    node_entry ne;
+    ne.nw_address.assign(rinv_pkt->getSource());
+    ne.pathid = rinv_pkt->getPathid();
+    ne.hop = rinv_pkt->getHop();
+    if(rinv_table.find(ne.nw_address) != rinv_table.end()) {
+        trace()<<"[info] Entry already exists, overriding";
+    }
+    rinv_table.insert({ne.nw_address, ne});
+}
+
+void shmrp::clearRreqTable() {
+    trace()<<"[info] RREQ table erased";
+    rreq_table.clear();
+}
+
+void shmrp::constructRreqTable(shmrpRingDef ring) {
+    trace()<<"[info] Entering shmrp::constructRreqTable(ring = "<<ring<<" )";
+    if(rinv_table.empty()) {
+        throw std::length_error("[error] RINV table empty");
+    }
+    if(!rreq_table.empty()) {
+        throw std::length_error("[error] RREQ table not empty");
+    }
+
+    switch (ring) {
+        case shmrpRingDef::INTERNAL:
+        case shmrpRingDef::BORDER: {
+            for(auto ne: rinv_table) {
+                if(ne.second.hop < getHop()) {
+                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                    rreq_table.insert(ne);
+                }
+            }
+            break;
+        }
+        case shmrpRingDef::EXTERNAL: {
+            break;
+        }
+        default: {
+            trace()<<"[error] Unknown ring level";
+            break;
+        }
+    }
+}
 
 void shmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -120,6 +193,31 @@ void shmrp::timerFiredCallback(int index) {
             trace()<<"[timer] SINK_START timer expired";
             sendRinv(getRound());
             setRound(1+getRound());
+            break;
+        }
+        case shmrpTimerDef::T_L: {
+            trace()<<"[timer] T_L timer expired";
+            if(shmrpStateDef::LEARN != getState()) {
+                trace()<<"[error] State is not LEARN: "<<stateToStr(getState());
+                break;
+            }
+            setState(shmrpStateDef::ESTABLISH);
+            calculateHop();
+            clearRreqTable();
+            if(getHop() <= g_ring_radius) {
+                trace()<<"[info] Node inside mesh ring";
+                try {
+                    constructRreqTable(shmrpRingDef::INTERNAL);
+                } catch (std::exception &e) {
+                    trace()<<e.what();
+                    break;
+                }
+//                sendRreqs();
+//                sendRinv(getRound());
+            }
+            break;
+        }
+        case shmrpTimerDef::T_ESTABLISH: {
             break;
         }
         default: {
@@ -153,7 +251,17 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
 
             if(rinv_pkt->getRound() > getRound()) {
-                setState(shmrpStateDef::LEARN);
+                setRound(rinv_pkt->getRound());
+                clearRinvTable();
+                if(shmrpStateDef::LEARN != getState()) {
+                    setState(shmrpStateDef::LEARN);
+                } else {
+                    cancelTimer(shmrpTimerDef::T_L);
+                }                    
+                setTimer(shmrpTimerDef::T_L,g_t_l);
+
+                addToRinvTable(rinv_pkt);
+
                 /* start learning process */
             }
 
