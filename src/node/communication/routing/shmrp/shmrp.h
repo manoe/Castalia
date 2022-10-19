@@ -61,6 +61,7 @@ struct node_entry {
     string nw_address;
     int pathid;
     int hop;
+    bool rresp = false;
 };
 
 class shmrp: public VirtualRouting {
@@ -70,11 +71,12 @@ class shmrp: public VirtualRouting {
         int g_hop;
         int g_round;
         double g_t_l;
+        double g_t_est;
         int g_ring_radius;
         shmrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
         std::map<std::string,node_entry> rreq_table;
-        std::map<std::string,node_entry> route_table; 
+        std::map<std::string,node_entry> routing_table; 
 
     protected:
         void startup();
@@ -105,7 +107,18 @@ class shmrp: public VirtualRouting {
         void addToRinvTable(shmrpRinvPacket *);
 
         void clearRreqTable();
+        bool isRreqTableEmpty() const;
         void constructRreqTable(shmrpRingDef);
+        bool rreqEntryExists(const char *, int);
+        void updateRreqTableWithRresp(const char *, int);
+
+
+        void clearRoutingTable();
+        void constructRoutingTable();
+
+        void sendRreqs();
+
+        void sendRresp(const char *,int, int);
 
     public:
 };

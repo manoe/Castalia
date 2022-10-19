@@ -38,6 +38,7 @@ void shmrp::startup() {
 
     g_t_l=par("t_l");
     g_ring_radius=par("ring_radius");
+    g_t_est=par("t_est");
 
 }
 
@@ -120,6 +121,7 @@ shmrpStateDef shmrp::getState() const {
 void shmrp::sendRinv(int round, int pathid) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<", pathid = "<<pathid<<")";
     shmrpRinvPacket *rinv_pkt=new shmrpRinvPacket("SHMRP RINV packet", NETWORK_LAYER_PACKET);
+    rinv_pkt->setByteLength(netDataFrameOverhead);
     rinv_pkt->setShmrpPacketKind(shmrpPacketDef::RINV_PACKET);
     rinv_pkt->setSource(SELF_NETWORK_ADDRESS);
     rinv_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
@@ -157,6 +159,10 @@ void shmrp::clearRreqTable() {
     rreq_table.clear();
 }
 
+bool shmrp::isRreqTableEmpty() const {
+    return rreq_table.empty();
+}
+
 void shmrp::constructRreqTable(shmrpRingDef ring) {
     trace()<<"[info] Entering shmrp::constructRreqTable(ring = "<<ring<<" )";
     if(rinv_table.empty()) {
@@ -187,6 +193,66 @@ void shmrp::constructRreqTable(shmrpRingDef ring) {
     }
 }
 
+bool shmrp::rreqEntryExists(const char *addr, int pathid) {
+    if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid == pathid) {
+        return true;
+    }
+    return false;
+}
+
+void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
+    trace()<<"[info] Entering shmrp::UpdateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
+    if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid == pathid) {
+        rreq_table[string(addr)].rresp=true;
+    } else {
+        throw std::length_error("[error] Entry not found");
+    }
+}
+
+
+void shmrp::sendRreqs() {
+    trace()<<"[info] Entering shmrp::sendRreqs()";
+    if(rreq_table.empty()) {
+       throw std::length_error("[error] RREQ table empty");
+    }
+    for(auto ne: rreq_table) {
+        shmrpRreqPacket* rreq_pkt=new shmrpRreqPacket("SHMRP RREQ packet",NETWORK_LAYER_PACKET);
+        rreq_pkt->setByteLength(netDataFrameOverhead);
+        rreq_pkt->setShmrpPacketKind(shmrpPacketDef::RREQ_PACKET);
+        rreq_pkt->setSource(SELF_NETWORK_ADDRESS);
+        rreq_pkt->setDestination(ne.second.nw_address.c_str());
+        rreq_pkt->setRound(getRound());
+        rreq_pkt->setPathid(ne.second.pathid);
+        rreq_pkt->setSequenceNumber(currentSequenceNumber++);
+        trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
+        toMacLayer(rreq_pkt, resolveNetworkAddress(ne.second.nw_address.c_str()));
+    }
+}
+
+void shmrp::sendRresp(const char *dest, int round, int pathid) {
+    trace()<<"[info] Sending RRESP to "<<dest<<" with round "<<round<<" and pathid "<<pathid;
+    shmrpRrespPacket* rresp_pkt=new shmrpRrespPacket("SHMRP RRESP packet",NETWORK_LAYER_PACKET);
+    rresp_pkt->setByteLength(netDataFrameOverhead);
+    rresp_pkt->setShmrpPacketKind(shmrpPacketDef::RRESP_PACKET);
+    rresp_pkt->setSource(SELF_NETWORK_ADDRESS);
+    rresp_pkt->setDestination(dest);
+    rresp_pkt->setRound(round);
+    rresp_pkt->setPathid(pathid);
+    rresp_pkt->setSequenceNumber(currentSequenceNumber++);
+    toMacLayer(rresp_pkt, resolveNetworkAddress(dest));
+}
+
+
+void shmrp::clearRoutingTable() {
+    trace()<<"[info] Routing table erased";
+    routing_table.clear();
+}
+
+void shmrp::constructRoutingTable() {
+    trace()<<"[info] Entering shmrp::constructRoutingTable()";
+
+}
+
 void shmrp::timerFiredCallback(int index) {
     switch (index) {
         case shmrpTimerDef::SINK_START: {
@@ -212,12 +278,42 @@ void shmrp::timerFiredCallback(int index) {
                     trace()<<e.what();
                     break;
                 }
-//                sendRreqs();
+                sendRreqs();
+                setTimer(shmrpTimerDef::T_ESTABLISH,g_t_est);
 //                sendRinv(getRound());
             }
             break;
         }
         case shmrpTimerDef::T_ESTABLISH: {
+            trace()<<"[timer] T_ESTABLISH timer expired";
+            setState(shmrpStateDef::WORK);
+            
+            if(isRreqTableEmpty()) {
+                trace()<<"[error] RREQ table empty";
+                break;
+            }
+
+            clearRoutingTable();
+
+            try {
+                constructRoutingTable();
+            } catch (std::exception &e) {
+                trace()<<e.what();
+                break;
+            }
+
+            if(getHop() < g_ring_radius) {
+                trace()<<"[info] Node inside mesh ring";
+                sendRinv(getRound());
+
+            } else if(getHop() == g_ring_radius) {
+                trace()<<"[info] Node at mesh ring border";
+                sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+            }
+            else {
+                trace()<<"[info] Node outside mesh ring";
+            }
+
             break;
         }
         default: {
@@ -269,10 +365,27 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         }
         case shmrpPacketDef::RREQ_PACKET: {
             trace()<<"[info] RREQ_PACKET received";
+            auto rreq_pkt=dynamic_cast<shmrpRreqPacket *>(pkt);
+            if(rreq_pkt->getRound() != getRound()) {
+                trace()<<"[error] RREQ_PACKET's round: "<<rreq_pkt->getRound()<<" does not equal local round: "<<getRound();
+                break;
+            }
+            if(getHop()<g_ring_radius) {
+                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
+            } else if(getHop()==g_ring_radius) {
+
+            }
             break;
         }
         case shmrpPacketDef::RRESP_PACKET: {
             trace()<<"[info] RRESP_PACKET received";
+            auto rresp_pkt=dynamic_cast<shmrpRrespPacket *>(pkt);
+            if(rreqEntryExists(rresp_pkt->getSource(),rresp_pkt->getPathid())) {
+                updateRreqTableWithRresp(rresp_pkt->getSource(),rresp_pkt->getPathid());
+            } else {
+                trace()<<"[error] No entry in RREQ table with address "<<rresp_pkt->getSource()<<" and pathid: "<<rresp_pkt->getPathid();
+                break;
+            }
             break;
         }
         case shmrpPacketDef::DATA_PACKET: {
