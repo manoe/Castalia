@@ -27,15 +27,13 @@ void shmrp::startup() {
 
     if(isSink()) {
         setHop(0);
-        setRound(1);
         setTimer(shmrpTimerDef::SINK_START,par("t_start"));
         setState(shmrpStateDef::WORK);
     } else {
         setHop(std::numeric_limits<int>::max());
-        setRound(0);
         setState(shmrpStateDef::INIT);
     }
-
+    setRound(0);
     g_t_l=par("t_l");
     g_ring_radius=par("ring_radius");
     g_t_est=par("t_est");
@@ -126,7 +124,7 @@ void shmrp::sendRinv(int round, int pathid) {
     rinv_pkt->setSource(SELF_NETWORK_ADDRESS);
     rinv_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     rinv_pkt->setRound(round);
-    rinv_pkt->setPathid(0);
+    rinv_pkt->setPathid(pathid);
     rinv_pkt->setHop(getHop());
     rinv_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
@@ -184,6 +182,23 @@ void shmrp::constructRreqTable(shmrpRingDef ring) {
             break;
         }
         case shmrpRingDef::EXTERNAL: {
+            std::map<int, std::vector<node_entry>> candidate_list;
+            for(auto ne: rinv_table) {
+                if(ne.second.hop < getHop()) {
+                    if(candidate_list.find(ne.second.pathid) == candidate_list.end()) {
+                        trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                        candidate_list.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
+                    } else {
+                        trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                        candidate_list[ne.second.pathid].push_back(ne.second);
+                    }
+                }
+            }
+            for(auto cl: candidate_list) {
+                auto i=getRNG(0)->intRand(cl.second.size());
+                trace()<<"[info] Selecting node "<<cl.second[i].nw_address <<" with pathid "<<cl.second[i].pathid<<" from "<<cl.second.size()<<" nodes";
+                rreq_table.insert({cl.second[i].nw_address,cl.second[i]});
+            }
             break;
         }
         default: {
@@ -201,7 +216,7 @@ bool shmrp::rreqEntryExists(const char *addr, int pathid) {
 }
 
 void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
-    trace()<<"[info] Entering shmrp::UpdateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
+    trace()<<"[info] Entering shmrp::updateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
     if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid == pathid) {
         rreq_table[string(addr)].rresp=true;
     } else {
@@ -250,15 +265,32 @@ void shmrp::clearRoutingTable() {
 
 void shmrp::constructRoutingTable() {
     trace()<<"[info] Entering shmrp::constructRoutingTable()";
-
+    for(auto ne: rreq_table) {
+        if(ne.second.rresp) {
+            trace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<ne.second.pathid;
+            routing_table.insert(ne);
+        }
+    }
 }
+
+int shmrp::selectPathid() {
+    trace()<<"[info] Entering shmrp::selectPathid()";
+    if(routing_table.empty()) {
+        throw std::length_error("[error] Routing table empty");
+    }
+    auto i=getRNG(0)->intRand(routing_table.size());
+    auto it=routing_table.begin();
+    std::advance(it,i);
+    trace()<<"[info] Selected pathid: "<<it->second.pathid;
+    return it->second.pathid;
+} 
 
 void shmrp::timerFiredCallback(int index) {
     switch (index) {
         case shmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
-            sendRinv(getRound());
             setRound(1+getRound());
+            sendRinv(getRound());
             break;
         }
         case shmrpTimerDef::T_L: {
@@ -281,6 +313,16 @@ void shmrp::timerFiredCallback(int index) {
                 sendRreqs();
                 setTimer(shmrpTimerDef::T_ESTABLISH,g_t_est);
 //                sendRinv(getRound());
+            } else {
+                trace()<<"[info] Node outside mesh ring";
+                try {
+                    constructRreqTable(shmrpRingDef::EXTERNAL);
+                } catch (std::exception &e) {
+                    trace()<<e.what();
+                    break;
+                }
+                sendRreqs();
+                setTimer(shmrpTimerDef::T_ESTABLISH,g_t_est);
             }
             break;
         }
@@ -312,6 +354,14 @@ void shmrp::timerFiredCallback(int index) {
             }
             else {
                 trace()<<"[info] Node outside mesh ring";
+                int pathid;
+                try {
+                    pathid=selectPathid();
+                } catch (std::exception &e) {
+                    trace()<<e.what();
+                    break;
+                }
+                sendRinv(getRound(), pathid);
             }
 
             break;
@@ -342,13 +392,14 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             auto rinv_pkt=dynamic_cast<shmrpRinvPacket *>(pkt);
 
             if(isSink()) {
-                trace()<<"[info] RINV_PACKET rejected by Sink";
+                trace()<<"[info] RINV_PACKET discarded by Sink";
                 break;
             }
 
             if(rinv_pkt->getRound() > getRound()) {
                 setRound(rinv_pkt->getRound());
                 clearRinvTable();
+                // What if it is in ESTABLISH state?
                 if(shmrpStateDef::LEARN != getState()) {
                     setState(shmrpStateDef::LEARN);
                 } else {
@@ -359,6 +410,16 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 addToRinvTable(rinv_pkt);
 
                 /* start learning process */
+            }
+            else if(rinv_pkt->getRound() == getRound()) {
+                if(shmrpStateDef::LEARN != getState()) {
+                    trace()<<"[info] RINV packet discarded by node, not in learning state anymore";
+                    break;
+                }
+                addToRinvTable(rinv_pkt);
+            }
+            else {
+                trace()<<"[info] RINV_PACKET with round "<<rinv_pkt->getRound()<<" discarded by node with round "<<getRound();
             }
 
             break;
@@ -373,7 +434,13 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             if(getHop()<g_ring_radius) {
                 sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
             } else if(getHop()==g_ring_radius) {
-
+                if(resolveNetworkAddress(SELF_NETWORK_ADDRESS)!=rreq_pkt->getPathid()) {
+                    trace()<<"[error] RREQ packet's pathid "<<rreq_pkt->getPathid()<<" does not match node's network address: "<<SELF_NETWORK_ADDRESS;
+                    break;
+                }
+                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
+            } else {
+                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
             }
             break;
         }
@@ -403,6 +470,83 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
     }
 }
 
+
+map<int,string> shmrp::getPathsAndHops() {
+    map<int,string> ret;
+    if(0==routing_table.size()) {
+        throw std::length_error("Routing table empty");
+    }
+    for(auto it=routing_table.begin(); it != routing_table.end(); ++it) {
+        ret.insert(std::pair<int,string>(it->second.pathid,it->second.nw_address));
+    }
+    return ret;
+}
+
+
 void shmrp::finishSpecific() {
+    if (getParentModule()->getIndex() == 0) {
+        cTopology *topo;        // temp variable to access energy spent by other nodes
+        topo = new cTopology("topo");
+        topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+        
+        set<int> paths;
+        ofstream g_out("graph.py"), p_out("pos.py"),r_out("role.py");
+        g_out<<"edges=[";
+        p_out<<"pos={";
+        r_out<<"role={";
+        auto sink_pos=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"))->getLocation();
+        p_out<<"'0':["<<sink_pos.x<<","<<sink_pos.y<<"],";
+        r_out<<"'0':'Sink',";
+
+        for (int i = 1; i < topo->getNumNodes(); ++i) {
+            shmrp *shmrp_instance = dynamic_cast<shmrp*>
+                (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+            auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(i)->getModule()->getSubmodule("MobilityManager"));
+            
+
+            map<int,string> routes;
+            try {
+                routes=shmrp_instance->getPathsAndHops();
+            } catch(std::length_error &e) {
+                trace()<<"[error] Can't retrieve paths and hops for node "<<i<<": "<<e.what();
+                continue;
+            }
+
+            auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
+            if(res_mgr->isDead()) {
+                r_out<<"'"<<i<<"':'"<<"dead',";
+            } else {
+                r_out<<"'"<<i<<"':'"<<"Node"<<"',";
+            }
+
+
+            for(auto route: routes) {
+                // Format: [('Node1', 'Node2',{ 'path': 1}),
+                //          ('Node1','Node3', {'path': 2})]
+                g_out<<"('"<<i<<"','"<<route.second<<"',{'path':"<<route.first<<"}),";
+
+
+                
+                                
+            }
+
+            // Format: {'Node1': [0,0], 'Node2': [0,10],'Node3':[10,0]}
+            auto loc=mob_mgr->getLocation();
+            p_out<<"'"<<i<<"':["<<loc.x<<","<<loc.y<<"],";
+
+            // seek back one character
+
+        }
+        g_out.seekp(g_out.tellp()-static_cast<long int>(1));
+        p_out.seekp(p_out.tellp()-static_cast<long int>(1));
+        r_out.seekp(r_out.tellp()-static_cast<long int>(1));
+
+        g_out<<"]"<<std::endl;
+        p_out<<"}"<<std::endl;
+        r_out<<"}"<<std::endl;
+
+        
+        delete(topo);
+    }
     return;
 }

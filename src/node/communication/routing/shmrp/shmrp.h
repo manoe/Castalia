@@ -115,11 +115,14 @@ class shmrp: public VirtualRouting {
 
         void clearRoutingTable();
         void constructRoutingTable();
+        int  selectPathid();
 
         void sendRreqs();
 
         void sendRresp(const char *,int, int);
 
+
+        map<int,string> getPathsAndHops();
     public:
 };
 
