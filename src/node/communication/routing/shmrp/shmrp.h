@@ -64,15 +64,21 @@ struct node_entry {
     bool rresp = false;
 };
 
+struct feat_par {
+        int    ring_radius;
+        double t_l;
+        double t_est;
+        bool   rresp_req;
+        bool   rst_learn;
+};
+
 class shmrp: public VirtualRouting {
     private:
         bool g_is_sink;
         string g_sink_addr;
         int g_hop;
         int g_round;
-        double g_t_l;
-        double g_t_est;
-        int g_ring_radius;
+        feat_par fp;
         shmrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
         std::map<std::string,node_entry> rreq_table;
