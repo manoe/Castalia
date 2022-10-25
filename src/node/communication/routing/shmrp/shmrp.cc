@@ -224,6 +224,16 @@ void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
     }
 }
 
+bool shmrp::rrespReceived() const {
+    for(auto ne: rreq_table) {
+        if(ne.second.rresp) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 
 void shmrp::sendRreqs() {
     trace()<<"[info] Entering shmrp::sendRreqs()";
@@ -335,6 +345,9 @@ void shmrp::timerFiredCallback(int index) {
                 break;
             }
 
+            if(!rrespReceived()) {
+                trace()<<"[error] No RRESP packet received";
+            }
             clearRoutingTable();
 
             try {
@@ -484,7 +497,7 @@ map<int,string> shmrp::getPathsAndHops() {
 
 
 void shmrp::finishSpecific() {
-    if (getParentModule()->getIndex() == 0) {
+    if (isSink()) { // && getParentModule()->getIndex() == 0 ) {
         cTopology *topo;        // temp variable to access energy spent by other nodes
         topo = new cTopology("topo");
         topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
