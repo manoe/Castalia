@@ -111,6 +111,7 @@ class shmrp: public VirtualRouting {
         void constructRreqTable(shmrpRingDef);
         bool rreqEntryExists(const char *, int);
         void updateRreqTableWithRresp(const char *, int);
+        bool rrespReceived() const;
 
 
         void clearRoutingTable();
