@@ -51,11 +51,32 @@ enum shmrpTimerDef {
 };
 
 enum shmrpRingDef {
-//    UNDEF    = 0,
+    UNKNOWN  = 0,
     INTERNAL = 1,
     BORDER   = 2,
     EXTERNAL = 3
 };
+
+
+//namespace shmrp {
+    class rreq_table_empty : public std::runtime_error {
+        public:
+            rreq_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+            rreq_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+    };
+
+    class rinv_table_empty : public std::runtime_error {
+        public:
+            rinv_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+            rinv_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+    };
+    class rreq_table_non_empty : public std::runtime_error {
+        public:
+            rreq_table_non_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+            rreq_table_non_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+    };
+
+//}
 
 struct node_entry {
     string nw_address;
