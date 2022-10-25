@@ -64,7 +64,7 @@ int shmrp::getHop() const {
 void shmrp::calculateHop() {
     trace()<<"[info] Entering shmrp::calculateHop()";
     if(rinv_table.empty()) {
-        throw std::length_error("[error] RINV table empty");
+        throw rinv_table_empty("[error] RINV table empty");
     }
     int hop=std::numeric_limits<int>::max();
     for(auto ne: rinv_table) {
@@ -164,10 +164,10 @@ bool shmrp::isRreqTableEmpty() const {
 void shmrp::constructRreqTable(shmrpRingDef ring) {
     trace()<<"[info] Entering shmrp::constructRreqTable(ring = "<<ring<<" )";
     if(rinv_table.empty()) {
-        throw std::length_error("[error] RINV table empty");
+        throw rinv_table_empty("[error] RINV table empty");
     }
     if(!rreq_table.empty()) {
-        throw std::length_error("[error] RREQ table not empty");
+        throw rreq_table_non_empty("[error] RREQ table not empty");
     }
 
     switch (ring) {
@@ -312,28 +312,27 @@ void shmrp::timerFiredCallback(int index) {
             setState(shmrpStateDef::ESTABLISH);
             calculateHop();
             clearRreqTable();
+            shmrpRingDef pos=shmrpRingDef::UNKNOWN;
             if(getHop() <= fp.ring_radius) {
                 trace()<<"[info] Node inside mesh ring";
-                try {
-                    constructRreqTable(shmrpRingDef::INTERNAL);
-                } catch (std::exception &e) {
-                    trace()<<e.what();
-                    break;
-                }
-                sendRreqs();
-                setTimer(shmrpTimerDef::T_ESTABLISH,fp.t_est);
-//                sendRinv(getRound());
-            } else {
+                pos=shmrpRingDef::INTERNAL;
+            } else{
                 trace()<<"[info] Node outside mesh ring";
-                try {
-                    constructRreqTable(shmrpRingDef::EXTERNAL);
-                } catch (std::exception &e) {
-                    trace()<<e.what();
-                    break;
-                }
-                sendRreqs();
-                setTimer(shmrpTimerDef::T_ESTABLISH,fp.t_est);
+                pos=shmrpRingDef::EXTERNAL;
             }
+
+            try {
+                constructRreqTable(pos);
+            } catch (rinv_table_empty &e) {
+                trace()<<e.what();
+                trace()<<"[info] Empty RINV table after LEARNING state - most probably due to re-learn";
+                setState(shmrpStateDef::INIT); // could be also work, if routing table is not empty
+            } catch (std::exception &e) {
+                trace()<<e.what();
+                break;
+            }
+            sendRreqs();
+            setTimer(shmrpTimerDef::T_ESTABLISH,fp.t_est);
             break;
         }
         case shmrpTimerDef::T_ESTABLISH: {
@@ -341,12 +340,19 @@ void shmrp::timerFiredCallback(int index) {
             setState(shmrpStateDef::WORK);
             
             if(isRreqTableEmpty()) {
-                trace()<<"[error] RREQ table empty";
-                break;
+                trace()<<"[error] RREQ table empty, impossibru";
+                throw rreq_table_empty("[error] RREQ table empty");
             }
 
-            if(!rrespReceived()) {
+            if(!rrespReceived() && fp.rresp_req) {
                 trace()<<"[error] No RRESP packet received";
+                if(fp.rst_learn) {
+                    trace()<<"[info] Returning to learning state, resetting round and clearing RINV table";
+                    setState(shmrpStateDef::LEARN);
+                    setRound(getRound()-1);
+                    setTimer(shmrpTimerDef::T_L,fp.t_l);
+                    clearRinvTable();
+                }
 
             }
             clearRoutingTable();
