@@ -34,9 +34,9 @@ void shmrp::startup() {
         setState(shmrpStateDef::INIT);
     }
     setRound(0);
-    g_t_l=par("t_l");
-    g_ring_radius=par("ring_radius");
-    g_t_est=par("t_est");
+    fp.t_l=par("t_l");
+    fp.ring_radius=par("ring_radius");
+    fp.t_est=par("t_est");
 
 }
 
@@ -312,7 +312,7 @@ void shmrp::timerFiredCallback(int index) {
             setState(shmrpStateDef::ESTABLISH);
             calculateHop();
             clearRreqTable();
-            if(getHop() <= g_ring_radius) {
+            if(getHop() <= fp.ring_radius) {
                 trace()<<"[info] Node inside mesh ring";
                 try {
                     constructRreqTable(shmrpRingDef::INTERNAL);
@@ -321,7 +321,7 @@ void shmrp::timerFiredCallback(int index) {
                     break;
                 }
                 sendRreqs();
-                setTimer(shmrpTimerDef::T_ESTABLISH,g_t_est);
+                setTimer(shmrpTimerDef::T_ESTABLISH,fp.t_est);
 //                sendRinv(getRound());
             } else {
                 trace()<<"[info] Node outside mesh ring";
@@ -332,7 +332,7 @@ void shmrp::timerFiredCallback(int index) {
                     break;
                 }
                 sendRreqs();
-                setTimer(shmrpTimerDef::T_ESTABLISH,g_t_est);
+                setTimer(shmrpTimerDef::T_ESTABLISH,fp.t_est);
             }
             break;
         }
@@ -347,6 +347,7 @@ void shmrp::timerFiredCallback(int index) {
 
             if(!rrespReceived()) {
                 trace()<<"[error] No RRESP packet received";
+
             }
             clearRoutingTable();
 
@@ -357,11 +358,11 @@ void shmrp::timerFiredCallback(int index) {
                 break;
             }
 
-            if(getHop() < g_ring_radius) {
+            if(getHop() < fp.ring_radius) {
                 trace()<<"[info] Node inside mesh ring";
                 sendRinv(getRound());
 
-            } else if(getHop() == g_ring_radius) {
+            } else if(getHop() == fp.ring_radius) {
                 trace()<<"[info] Node at mesh ring border";
                 sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS));
             }
@@ -418,7 +419,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 } else {
                     cancelTimer(shmrpTimerDef::T_L);
                 }                    
-                setTimer(shmrpTimerDef::T_L,g_t_l);
+                setTimer(shmrpTimerDef::T_L,fp.t_l);
 
                 addToRinvTable(rinv_pkt);
 
@@ -444,9 +445,9 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] RREQ_PACKET's round: "<<rreq_pkt->getRound()<<" does not equal local round: "<<getRound();
                 break;
             }
-            if(getHop()<g_ring_radius) {
+            if(getHop()<fp.ring_radius) {
                 sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
-            } else if(getHop()==g_ring_radius) {
+            } else if(getHop()==fp.ring_radius) {
                 if(resolveNetworkAddress(SELF_NETWORK_ADDRESS)!=rreq_pkt->getPathid()) {
                     trace()<<"[error] RREQ packet's pathid "<<rreq_pkt->getPathid()<<" does not match node's network address: "<<SELF_NETWORK_ADDRESS;
                     break;

@@ -39,7 +39,10 @@ simple shmrp like node.communication.routing.iRouting
 
     double t_relay = default(0.1);           // relay timer
     double t_start = default (1);            // sink start timer
-    string sink_address = default("0");           // sink's networ  address
+    string sink_address = default("0");           // sink's network address
+
+    bool f_rresp_required = default(false);   // Expect RRESP to use route
+    bool f_restart_learning = default(false); // Restart learning if isolated
 
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
