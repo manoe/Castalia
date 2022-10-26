@@ -58,9 +58,10 @@ enum shmrpRingDef {
 };
 
 enum shmrpCostFuncDef {
-    NOT_DEFINED    = 0,
-    HOP            = 1,
-    HOP_AND_INTERF = 2
+    NOT_DEFINED          = 0,
+    HOP                  = 1,
+    HOP_AND_INTERF       = 2,
+    HOP_EMERG_AND_INTERF = 3,
 };
 
 
@@ -95,6 +96,7 @@ struct node_entry {
     int hop;
     bool rresp = false;
     int interf;
+    int emerg;
 };
 
 struct feat_par {
@@ -150,6 +152,7 @@ class shmrp: public VirtualRouting {
 
         void clearRinvTable();
         void addToRinvTable(shmrpRinvPacket *);
+        int  getRinvTableSize() const;
 
         void clearRreqTable();
         bool isRreqTableEmpty() const;

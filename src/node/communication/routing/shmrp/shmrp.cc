@@ -60,8 +60,10 @@ std::string shmrp::getSinkAddress() const {
 shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
     if("hop" == str) {
         return shmrpCostFuncDef::HOP;
-    } else if("hopandinterf" == str) {
+    } else if("hop_and_interf" == str) {
         return shmrpCostFuncDef::HOP_AND_INTERF;
+    } else if("hop_emerg_and_interf" == str) {
+        return shmrpCostFuncDef::HOP_EMERG_AND_INTERF;
     }
     throw std::invalid_argument("[error] Unkown cost function");
     return shmrpCostFuncDef::NOT_DEFINED; 
@@ -141,6 +143,7 @@ void shmrp::sendRinv(int round, int pathid) {
     rinv_pkt->setRound(round);
     rinv_pkt->setPathid(pathid);
     rinv_pkt->setHop(getHop());
+    rinv_pkt->setInterf(getRinvTableSize());
     rinv_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
 }
@@ -161,10 +164,15 @@ void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
     ne.nw_address.assign(rinv_pkt->getSource());
     ne.pathid = rinv_pkt->getPathid();
     ne.hop = rinv_pkt->getHop();
+    ne.interf = rinv_pkt->getInterf();
     if(rinv_table.find(ne.nw_address) != rinv_table.end()) {
         trace()<<"[info] Entry already exists, overriding";
     }
     rinv_table.insert({ne.nw_address, ne});
+}
+
+int shmrp::getRinvTableSize() const {
+    return rinv_table.size();
 }
 
 void shmrp::clearRreqTable() {
@@ -179,12 +187,16 @@ bool shmrp::isRreqTableEmpty() const {
 double shmrp::routeCostFunction(node_entry ne) const {
     switch (fp.cost_func) {
         case shmrpCostFuncDef::HOP: {
-            return pow(ne.hop,fp.cost_func_alpha);
+            return ne.hop;
         }
         case shmrpCostFuncDef::HOP_AND_INTERF: {
-            return pow(ne.hop,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta);
+            return ne.hop * pow(ne.interf,fp.cost_func_beta);
+        }
+        case shmrpCostFuncDef::HOP_EMERG_AND_INTERF: {
+            return ne.hop * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta); 
         }
     }
+    // WTF?
     return ne.hop;
 }
 

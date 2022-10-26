@@ -32,7 +32,8 @@ packet shmrpRinvPacket extends shmrpPacket {
     int round;      // 2 byte
     int pathid;     // 1 byte
     int hop;        // 2 byte
-    int interf;      // 1 byte
+    int interf;     // 1 byte
+    int emerg;      // 1 byte
 }
 
 packet shmrpRreqPacket extends shmrpPacket {
