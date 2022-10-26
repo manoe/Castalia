@@ -44,10 +44,11 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_rresp_required   = default(false); // Expect RRESP to use route
     bool   f_restart_learning = default(false); // Restart learning if isolated
     bool   f_replay_rinv      = default(false); // Ask neighbours to re-send RINVs within round
-    string f_cost_function    = default("hop"); // Cost Functions, available: hop, hopandinterf
-    double f_cost_func_alpha  = default(1.0);   // Alpha coeff. in cost function,  controls hop term
+    string f_cost_function    = default("hop"); // Cost Functions, available: hop, hop_and_interf, hop_emerg_and_interf
+    double f_cost_func_alpha  = default(1.0);   // Alpha coeff. in cost function,  controls emerg term
     double f_cost_func_beta   = default(1.0);   // Beta coeff. in cost function, controls interference term
-
+    bool   f_random_t_l       = default(false); // Randomize Tl timer
+    double f_random_t_l_sigma = default(0.2);   // Sigma parameter of random Tl timer, where Tl is mu
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
