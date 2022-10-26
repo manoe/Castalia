@@ -57,23 +57,34 @@ enum shmrpRingDef {
     EXTERNAL = 3
 };
 
+enum shmrpCostFuncDef {
+    NOT_DEFINED    = 0,
+    HOP            = 1,
+    HOP_AND_INTERF = 2
+};
+
 
 //namespace shmrp {
     class rreq_table_empty : public std::runtime_error {
         public:
-            rreq_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
-            rreq_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+            explicit rreq_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+            explicit rreq_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
     };
 
     class rinv_table_empty : public std::runtime_error {
         public:
-            rinv_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
-            rinv_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+            explicit rinv_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+            explicit rinv_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
     };
     class rreq_table_non_empty : public std::runtime_error {
         public:
-            rreq_table_non_empty(const string &what_arg) : std::runtime_error(what_arg) {};
-            rreq_table_non_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+            explicit rreq_table_non_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+            explicit rreq_table_non_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+    };
+    class routing_table_empty : public std::runtime_error {
+        public:
+            explicit routing_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+            explicit routing_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
     };
 
 //}
@@ -83,6 +94,7 @@ struct node_entry {
     int pathid;
     int hop;
     bool rresp = false;
+    int interf;
 };
 
 struct feat_par {
@@ -91,6 +103,10 @@ struct feat_par {
         double t_est;
         bool   rresp_req;
         bool   rst_learn;
+        bool   replay_rinv;
+        shmrpCostFuncDef cost_func;
+        double cost_func_alpha;
+        double cost_func_beta;
 };
 
 class shmrp: public VirtualRouting {
@@ -111,6 +127,8 @@ class shmrp: public VirtualRouting {
         void fromMacLayer(cPacket *, int, double, double);
         void timerFiredCallback(int);
         void finishSpecific();
+
+        shmrpCostFuncDef strToCostFunc(string) const;
 
         bool isSink() const;
         void setSinkAddress(const char *);
@@ -140,9 +158,11 @@ class shmrp: public VirtualRouting {
         void updateRreqTableWithRresp(const char *, int);
         bool rrespReceived() const;
 
+        double routeCostFunction(node_entry) const;
+
 
         void clearRoutingTable();
-        void constructRoutingTable();
+        void constructRoutingTable(bool);
         int  selectPathid();
 
         void sendRreqs();

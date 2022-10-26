@@ -34,10 +34,15 @@ void shmrp::startup() {
         setState(shmrpStateDef::INIT);
     }
     setRound(0);
-    fp.t_l=par("t_l");
-    fp.ring_radius=par("ring_radius");
-    fp.t_est=par("t_est");
-
+    fp.t_l             = par("t_l");
+    fp.ring_radius     = par("ring_radius");
+    fp.t_est           = par("t_est");
+    fp.rresp_req       = par("f_rresp_required");
+    fp.rst_learn       = par("f_restart_learning");
+    fp .replay_rinv    = par("f_replay_rinv");
+    fp.cost_func       = strToCostFunc(par("f_cost_function").stringValue());
+    fp.cost_func_alpha = par("f_cost_func_alpha");
+    fp.cost_func_beta  = par("f_cost_func_beta");
 }
 
 bool shmrp::isSink() const {
@@ -51,6 +56,16 @@ void shmrp::setSinkAddress(const char *p_sink_addr) {
 std::string shmrp::getSinkAddress() const {
     return g_sink_addr;
 }
+
+shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
+    if("hop" == str) {
+        return shmrpCostFuncDef::HOP;
+    } else if("hopandinterf" == str) {
+        return shmrpCostFuncDef::HOP_AND_INTERF;
+    }
+    throw std::invalid_argument("[error] Unkown cost function");
+    return shmrpCostFuncDef::NOT_DEFINED; 
+} 
 
 void shmrp::setHop(int hop) {
     trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
@@ -161,6 +176,19 @@ bool shmrp::isRreqTableEmpty() const {
     return rreq_table.empty();
 }
 
+double shmrp::routeCostFunction(node_entry ne) const {
+    switch (fp.cost_func) {
+        case shmrpCostFuncDef::HOP: {
+            return pow(ne.hop,fp.cost_func_alpha);
+        }
+        case shmrpCostFuncDef::HOP_AND_INTERF: {
+            return pow(ne.hop,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta);
+        }
+    }
+    return ne.hop;
+}
+
+
 void shmrp::constructRreqTable(shmrpRingDef ring) {
     trace()<<"[info] Entering shmrp::constructRreqTable(ring = "<<ring<<" )";
     if(rinv_table.empty()) {
@@ -225,10 +253,8 @@ void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
 }
 
 bool shmrp::rrespReceived() const {
-    for(auto ne: rreq_table) {
-        if(ne.second.rresp) {
-            return true;
-        }
+    if(std::any_of(rreq_table.begin(), rreq_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.rresp; } )) {
+        return true;
     }
     return false;
 }
@@ -273,20 +299,23 @@ void shmrp::clearRoutingTable() {
     routing_table.clear();
 }
 
-void shmrp::constructRoutingTable() {
+void shmrp::constructRoutingTable(bool rresp_req) {
     trace()<<"[info] Entering shmrp::constructRoutingTable()";
     for(auto ne: rreq_table) {
-        if(ne.second.rresp) {
+        if(ne.second.rresp || !rresp_req) {
             trace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<ne.second.pathid;
             routing_table.insert(ne);
         }
+    }
+    if(routing_table.empty()) {
+        throw routing_table_empty("[error] Routing table empty");
     }
 }
 
 int shmrp::selectPathid() {
     trace()<<"[info] Entering shmrp::selectPathid()";
     if(routing_table.empty()) {
-        throw std::length_error("[error] Routing table empty");
+        throw routing_table_empty("[error] Routing table empty");
     }
     auto i=getRNG(0)->intRand(routing_table.size());
     auto it=routing_table.begin();
@@ -352,14 +381,15 @@ void shmrp::timerFiredCallback(int index) {
                     setRound(getRound()-1);
                     setTimer(shmrpTimerDef::T_L,fp.t_l);
                     clearRinvTable();
+                    break;
                 }
-
             }
+
             clearRoutingTable();
 
             try {
-                constructRoutingTable();
-            } catch (std::exception &e) {
+                constructRoutingTable(fp.rresp_req);
+            } catch (routing_table_empty &e) {
                 trace()<<e.what();
                 break;
             }
