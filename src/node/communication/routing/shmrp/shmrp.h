@@ -110,6 +110,8 @@ struct feat_par {
         shmrpCostFuncDef cost_func;
         double cost_func_alpha;
         double cost_func_beta;
+        bool  random_t_l;
+        double random_t_l_sigma;
 };
 
 class shmrp: public VirtualRouting {
@@ -136,6 +138,7 @@ class shmrp: public VirtualRouting {
         bool isSink() const;
         void setSinkAddress(const char *);
         std::string getSinkAddress() const;
+        double getTl();
 
         void sendRinv(int);
         void sendRinv(int,int);
