@@ -85,6 +85,7 @@ void shmrp::calculateHop() {
     }
     int hop=std::numeric_limits<int>::max();
     for(auto ne: rinv_table) {
+        trace()<<"[info] Hop level for node "<<ne.second.nw_address<<" is "<<ne.second.hop;
         if(hop > ne.second.hop) {
             hop=ne.second.hop;
         }
