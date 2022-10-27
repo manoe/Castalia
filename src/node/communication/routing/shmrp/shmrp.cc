@@ -533,7 +533,6 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
     }
 }
 
-
 map<int,string> shmrp::getPathsAndHops() {
     map<int,string> ret;
     if(0==routing_table.size()) {
@@ -545,6 +544,34 @@ map<int,string> shmrp::getPathsAndHops() {
     return ret;
 }
 
+shmrpRingDef shmrp::getRingStatus() const {
+    if(0 == getHop()) {
+        return shmrpRingDef::CENTRAL;
+    } else if(fp.ring_radius > getHop()) {
+        return shmrpRingDef::INTERNAL;
+    } else if(fp.ring_radius == getHop()) {
+        return shmrpRingDef::BORDER;
+    }
+    return shmrpRingDef::EXTERNAL;
+}
+
+std::string shmrp::ringToStr(shmrpRingDef pos) const {
+    switch (pos) {
+        case shmrpRingDef::CENTRAL: {
+            return string("central");
+        }
+        case shmrpRingDef::INTERNAL: {
+            return string("internal");
+        }
+        case shmrpRingDef::BORDER: {
+            return string("border");
+        }
+        case shmrpRingDef::EXTERNAL: {
+            return string("external");
+        }
+    }
+    return string("unkown");
+}
 
 void shmrp::finishSpecific() {
     if (isSink()) { // && getParentModule()->getIndex() == 0 ) {
@@ -559,7 +586,7 @@ void shmrp::finishSpecific() {
         r_out<<"role={";
         auto sink_pos=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"))->getLocation();
         p_out<<"'0':["<<sink_pos.x<<","<<sink_pos.y<<"],";
-        r_out<<"'0':'Sink',";
+        r_out<<"'0':'"<<ringToStr(getRingStatus())<<"',";
 
         for (int i = 1; i < topo->getNumNodes(); ++i) {
             shmrp *shmrp_instance = dynamic_cast<shmrp*>
@@ -579,7 +606,7 @@ void shmrp::finishSpecific() {
             if(res_mgr->isDead()) {
                 r_out<<"'"<<i<<"':'"<<"dead',";
             } else {
-                r_out<<"'"<<i<<"':'"<<"Node"<<"',";
+                r_out<<"'"<<i<<"':'"<<ringToStr(shmrp_instance->getRingStatus())<<"',";
             }
 
 
