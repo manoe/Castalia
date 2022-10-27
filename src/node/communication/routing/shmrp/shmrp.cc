@@ -34,15 +34,17 @@ void shmrp::startup() {
         setState(shmrpStateDef::INIT);
     }
     setRound(0);
-    fp.t_l             = par("t_l");
-    fp.ring_radius     = par("ring_radius");
-    fp.t_est           = par("t_est");
-    fp.rresp_req       = par("f_rresp_required");
-    fp.rst_learn       = par("f_restart_learning");
-    fp .replay_rinv    = par("f_replay_rinv");
-    fp.cost_func       = strToCostFunc(par("f_cost_function").stringValue());
-    fp.cost_func_alpha = par("f_cost_func_alpha");
-    fp.cost_func_beta  = par("f_cost_func_beta");
+    fp.t_l              = par("t_l");
+    fp.ring_radius      = par("ring_radius");
+    fp.t_est            = par("t_est");
+    fp.rresp_req        = par("f_rresp_required");
+    fp.rst_learn        = par("f_restart_learning");
+    fp .replay_rinv     = par("f_replay_rinv");
+    fp.cost_func        = strToCostFunc(par("f_cost_function").stringValue());
+    fp.cost_func_alpha  = par("f_cost_func_alpha");
+    fp.cost_func_beta   = par("f_cost_func_beta");
+    fp.random_t_l       = par("f_random_t_l");
+    fp.random_t_l_sigma = par("f_random_t_l_sigma");
 }
 
 bool shmrp::isSink() const {
@@ -55,6 +57,15 @@ void shmrp::setSinkAddress(const char *p_sink_addr) {
 
 std::string shmrp::getSinkAddress() const {
     return g_sink_addr;
+}
+
+double shmrp::getTl() {
+    double t_l=fp.t_l;
+    if(fp.random_t_l) {
+        t_l=omnetpp::normal(getRNG(0),fp.t_l,fp.random_t_l_sigma);
+    }
+    trace()<<"[info] T_l timer's value: "<<t_l;
+    return t_l;
 }
 
 shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
@@ -392,7 +403,7 @@ void shmrp::timerFiredCallback(int index) {
                     trace()<<"[info] Returning to learning state, resetting round and clearing RINV table";
                     setState(shmrpStateDef::LEARN);
                     setRound(getRound()-1);
-                    setTimer(shmrpTimerDef::T_L,fp.t_l);
+                    setTimer(shmrpTimerDef::T_L,getTl());
                     clearRinvTable();
                     break;
                 }
@@ -468,7 +479,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 } else {
                     cancelTimer(shmrpTimerDef::T_L);
                 }                    
-                setTimer(shmrpTimerDef::T_L,fp.t_l);
+                setTimer(shmrpTimerDef::T_L,getTl());
 
                 addToRinvTable(rinv_pkt);
 
