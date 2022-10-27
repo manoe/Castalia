@@ -111,7 +111,7 @@ struct feat_par {
         double cost_func_alpha;
         double cost_func_beta;
         bool  random_t_l;
-        bool  random_t_l_sigma;
+        double random_t_l_sigma;
 };
 
 class shmrp: public VirtualRouting {
