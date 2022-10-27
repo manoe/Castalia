@@ -65,6 +65,13 @@ enum shmrpCostFuncDef {
     HOP_EMERG_AND_INTERF = 3,
 };
 
+enum shmrpRinvTblAdminDef {
+    UNDEF_ADMIN    = 0,
+    ERASE_ON_LEARN = 1,
+    ERASE_ON_ROUND = 2,
+    NEVER_ERASE    = 3 
+};
+
 
 //namespace shmrp {
     class rreq_table_empty : public std::runtime_error {
@@ -112,6 +119,7 @@ struct feat_par {
         double cost_func_beta;
         bool  random_t_l;
         double random_t_l_sigma;
+        shmrpRinvTblAdminDef rinv_tbl_admin;
 };
 
 class shmrp: public VirtualRouting {
@@ -132,7 +140,8 @@ class shmrp: public VirtualRouting {
         void fromMacLayer(cPacket *, int, double, double);
         void timerFiredCallback(int);
         void finishSpecific();
-
+        
+        shmrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         shmrpCostFuncDef strToCostFunc(string) const;
 
         bool isSink() const;

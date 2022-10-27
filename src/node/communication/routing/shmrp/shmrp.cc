@@ -45,6 +45,7 @@ void shmrp::startup() {
     fp.cost_func_beta   = par("f_cost_func_beta");
     fp.random_t_l       = par("f_random_t_l");
     fp.random_t_l_sigma = par("f_random_t_l_sigma");
+    fp.rinv_tbl_admin   = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
 }
 
 bool shmrp::isSink() const {
@@ -78,7 +79,19 @@ shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
     }
     throw std::invalid_argument("[error] Unkown cost function");
     return shmrpCostFuncDef::NOT_DEFINED; 
-} 
+}
+
+shmrpRinvTblAdminDef shmrp::strToRinvTblAdmin(string str) const {
+    if("erase_on_learn" == str) {
+        return shmrpRinvTblAdminDef::ERASE_ON_LEARN;
+    } else if("erase_on_round" == str) {
+        return shmrpRinvTblAdminDef::ERASE_ON_ROUND;
+    } else if(" never_erase" == str) {
+        return shmrpRinvTblAdminDef::NEVER_ERASE;
+    }
+    throw std::invalid_argument("[error] Unkown RINV table admin");
+    return shmrpRinvTblAdminDef::UNDEF_ADMIN;
+}
 
 void shmrp::setHop(int hop) {
     trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
@@ -404,7 +417,9 @@ void shmrp::timerFiredCallback(int index) {
                     setState(shmrpStateDef::LEARN);
                     setRound(getRound()-1);
                     setTimer(shmrpTimerDef::T_L,getTl());
-                    clearRinvTable();
+                    if(shmrpRinvTblAdminDef::ERASE_ON_LEARN ==fp.rinv_tbl_admin) {
+                        clearRinvTable();
+                    }
                     break;
                 }
             }
@@ -472,7 +487,9 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
             if(rinv_pkt->getRound() > getRound()) {
                 setRound(rinv_pkt->getRound());
-                clearRinvTable();
+                if(shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin || shmrpRinvTblAdminDef::ERASE_ON_ROUND==fp.rinv_tbl_admin) {
+                    clearRinvTable();
+                }
                 // What if it is in ESTABLISH state?
                 if(shmrpStateDef::LEARN != getState()) {
                     setState(shmrpStateDef::LEARN);
