@@ -52,9 +52,10 @@ enum shmrpTimerDef {
 
 enum shmrpRingDef {
     UNKNOWN  = 0,
-    INTERNAL = 1,
-    BORDER   = 2,
-    EXTERNAL = 3
+    CENTRAL  = 1,
+    INTERNAL = 2,
+    BORDER   = 3,
+    EXTERNAL = 4
 };
 
 enum shmrpCostFuncDef {
@@ -172,9 +173,11 @@ class shmrp: public VirtualRouting {
 
         void sendRresp(const char *,int, int);
 
+        std::string ringToStr(shmrpRingDef pos) const; 
 
         map<int,string> getPathsAndHops();
     public:
+        shmrpRingDef getRingStatus() const;
 };
 
 #endif // _SHMRP_H_
