@@ -49,6 +49,7 @@ simple shmrp like node.communication.routing.iRouting
     double f_cost_func_beta   = default(1.0);   // Beta coeff. in cost function, controls interference term
     bool   f_random_t_l       = default(false); // Randomize Tl timer
     double f_random_t_l_sigma = default(0.2);   // Sigma parameter of random Tl timer, where Tl is mu
+    string f_rinv_table_admin = default("erase_on_learn"); // How to handle RINV table, available: erase_on_learn, erase_on_round, never_erase 
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
