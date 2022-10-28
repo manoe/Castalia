@@ -102,7 +102,7 @@ int shmrp::getHop() const {
     return g_hop;
 }
 
-void shmrp::calculateHop() {
+int shmrp::calculateHop() {
     trace()<<"[info] Entering shmrp::calculateHop()";
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
@@ -114,7 +114,7 @@ void shmrp::calculateHop() {
             hop=ne.second.hop;
         }
     }
-    setHop(hop+1);
+    return hop+1;
 }
 
 void shmrp::setRound(int round) {
@@ -209,7 +209,7 @@ bool shmrp::isRreqTableEmpty() const {
     return rreq_table.empty();
 }
 
-double shmrp::routeCostFunction(node_entry ne) const {
+double shmrp::calculateCostFunction(node_entry ne) const {
     switch (fp.cost_func) {
         case shmrpCostFuncDef::HOP: {
             return ne.hop;
@@ -226,8 +226,8 @@ double shmrp::routeCostFunction(node_entry ne) const {
 }
 
 
-void shmrp::constructRreqTable(shmrpRingDef ring) {
-    trace()<<"[info] Entering shmrp::constructRreqTable(ring = "<<ring<<" )";
+void shmrp::constructRreqTable() {
+    trace()<<"[info] Entering shmrp::constructRreqTable()";
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
@@ -235,18 +235,23 @@ void shmrp::constructRreqTable(shmrpRingDef ring) {
         throw rreq_table_non_empty("[error] RREQ table not empty");
     }
 
-    switch (ring) {
-        case shmrpRingDef::INTERNAL:
-        case shmrpRingDef::BORDER: {
-            for(auto ne: rinv_table) {
-                if(ne.second.hop < getHop()) {
-                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                    rreq_table.insert(ne);
-                }
+    auto hop=calculateHop();
+
+    if(hop <= fp.ring_radius) {
+        trace()<<"[info] Node inside mesh ring";
+        for(auto ne: rinv_table) {
+            if(ne.second.hop < getHop()) {
+                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                rreq_table.insert(ne);
             }
-            break;
         }
-        case shmrpRingDef::EXTERNAL: {
+    } else {
+        trace()<<"[info] Node outside mesh ring";
+        std::vector<node_entry> nv;
+        std::for_each(rinv_table.begin(),rinv_table.end(),[&nv](std::pair<std::string,node_entry> ne){nv.push_back(ne.second);});
+        std::sort(nv.begin(),nv.end(),[&](node_entry lh, node_entry rh) { return calculateCostFunction(lh) < calculateCostFunction(rh);});
+    }
+
             std::map<int, std::vector<node_entry>> candidate_list;
             for(auto ne: rinv_table) {
                 if(ne.second.hop < getHop()) {
@@ -264,13 +269,6 @@ void shmrp::constructRreqTable(shmrpRingDef ring) {
                 trace()<<"[info] Selecting node "<<cl.second[i].nw_address <<" with pathid "<<cl.second[i].pathid<<" from "<<cl.second.size()<<" nodes";
                 rreq_table.insert({cl.second[i].nw_address,cl.second[i]});
             }
-            break;
-        }
-        default: {
-            trace()<<"[error] Unknown ring level";
-            break;
-        }
-    }
 }
 
 bool shmrp::rreqEntryExists(const char *addr, int pathid) {
@@ -376,19 +374,11 @@ void shmrp::timerFiredCallback(int index) {
                 break;
             }
             setState(shmrpStateDef::ESTABLISH);
-            calculateHop();
             clearRreqTable();
-            shmrpRingDef pos=shmrpRingDef::UNKNOWN;
-            if(getHop() <= fp.ring_radius) {
-                trace()<<"[info] Node inside mesh ring";
-                pos=shmrpRingDef::INTERNAL;
-            } else{
-                trace()<<"[info] Node outside mesh ring";
-                pos=shmrpRingDef::EXTERNAL;
-            }
+
 
             try {
-                constructRreqTable(pos);
+                constructRreqTable();
             } catch (rinv_table_empty &e) {
                 trace()<<e.what();
                 trace()<<"[info] Empty RINV table after LEARNING state - most probably due to re-learn";
