@@ -105,6 +105,7 @@ struct node_entry {
     bool rresp = false;
     int interf;
     int emerg;
+    bool used = false;
 };
 
 struct feat_par {
@@ -154,7 +155,7 @@ class shmrp: public VirtualRouting {
 
         void setHop(int);
         int getHop() const;
-        void calculateHop();
+        int calculateHop();
 
         void setRound(int);
         int  getRound() const;
@@ -169,13 +170,12 @@ class shmrp: public VirtualRouting {
 
         void clearRreqTable();
         bool isRreqTableEmpty() const;
-        void constructRreqTable(shmrpRingDef);
+        void constructRreqTable();
         bool rreqEntryExists(const char *, int);
         void updateRreqTableWithRresp(const char *, int);
         bool rrespReceived() const;
 
-        double routeCostFunction(node_entry) const;
-
+        double calculateCostFunction(node_entry) const;
 
         void clearRoutingTable();
         void constructRoutingTable(bool);
