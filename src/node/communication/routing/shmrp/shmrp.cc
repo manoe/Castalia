@@ -188,7 +188,7 @@ void shmrp::clearRinvTable() {
 }
 
 void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
-    trace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid: "<<rinv_pkt->getPathid()<<" hop: "<<rinv_pkt->getHop();
+    trace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid: "<<rinv_pkt->getPathid()<<" hop: "<<rinv_pkt->getHop()<<" interf: "<<rinv_pkt->getInterf();
     node_entry ne;
     ne.nw_address.assign(rinv_pkt->getSource());
     ne.pathid = rinv_pkt->getPathid();
