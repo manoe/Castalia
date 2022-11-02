@@ -95,6 +95,16 @@ enum shmrpRinvTblAdminDef {
             explicit routing_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
             explicit routing_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
     };
+    class unknown_cost_function : public std::runtime_error {
+        public:
+            explicit unknown_cost_function(const string &what_arg) : std::runtime_error(what_arg) {};
+            explicit unknown_cost_function(const char   *what_arg) : std::runtime_error(what_arg) {};
+    };
+    class no_available_entry : public std::runtime_error {
+        public:
+            explicit no_available_entry(const string &what_arg) : std::runtime_error(what_arg) {};
+            explicit no_available_entry(const char   *what_arg) : std::runtime_error(what_arg) {};
+    };
 
 //}
 
@@ -175,7 +185,7 @@ class shmrp: public VirtualRouting {
         void updateRreqTableWithRresp(const char *, int);
         bool rrespReceived() const;
 
-        double calculateCostFunction(node_entry) const;
+        double calculateCostFunction(node_entry);
 
         void clearRoutingTable();
         void constructRoutingTable(bool);

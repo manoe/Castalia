@@ -107,10 +107,14 @@ int shmrp::calculateHop() {
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
+    if(std::all_of(rinv_table.begin(), rinv_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.used; } )) {
+        throw no_available_entry("[error] All RINV table entry used");
+    }
+
     int hop=std::numeric_limits<int>::max();
     for(auto ne: rinv_table) {
         trace()<<"[info] Hop level for node "<<ne.second.nw_address<<" is "<<ne.second.hop;
-        if(hop > ne.second.hop) {
+        if(hop > ne.second.hop && !ne.second.used) {
             hop=ne.second.hop;
         }
     }
@@ -209,20 +213,28 @@ bool shmrp::isRreqTableEmpty() const {
     return rreq_table.empty();
 }
 
-double shmrp::calculateCostFunction(node_entry ne) const {
+double shmrp::calculateCostFunction(node_entry ne) {
+    double ret_val;
     switch (fp.cost_func) {
         case shmrpCostFuncDef::HOP: {
-            return ne.hop;
+            ret_val=static_cast<double>(ne.hop);
+            break;
         }
         case shmrpCostFuncDef::HOP_AND_INTERF: {
-            return ne.hop * pow(ne.interf,fp.cost_func_beta);
+            ret_val=static_cast<double>(ne.hop) * pow(ne.interf,fp.cost_func_beta);
+            break;
         }
         case shmrpCostFuncDef::HOP_EMERG_AND_INTERF: {
-            return ne.hop * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta); 
+            ret_val=static_cast<double>(ne.hop) * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta);
+            break;
+        }
+        default: {
+            trace()<<"[error] Unknown cost function: "<<fp.cost_func;
+            throw unknown_cost_function("[error] Unknown cost function");
         }
     }
-    // WTF?
-    return ne.hop;
+    trace()<<"[info] Cost function for node entry "<<ne.nw_address<<": "<<ret_val;
+    return ret_val;
 }
 
 
@@ -236,39 +248,57 @@ void shmrp::constructRreqTable() {
     }
 
     auto hop=calculateHop();
+    setHop(hop);
 
     if(hop <= fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rinv_table) {
-            if(ne.second.hop < getHop()) {
+            if(ne.second.hop < getHop() && !ne.second.used) {
                 trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
                 rreq_table.insert(ne);
+                rinv_table[ne.second.nw_address].used=true;
             }
         }
     } else {
         trace()<<"[info] Node outside mesh ring";
-        std::vector<node_entry> nv;
-        std::for_each(rinv_table.begin(),rinv_table.end(),[&nv](std::pair<std::string,node_entry> ne){nv.push_back(ne.second);});
-        std::sort(nv.begin(),nv.end(),[&](node_entry lh, node_entry rh) { return calculateCostFunction(lh) < calculateCostFunction(rh);});
-    }
-
-            std::map<int, std::vector<node_entry>> candidate_list;
-            for(auto ne: rinv_table) {
-                if(ne.second.hop < getHop()) {
-                    if(candidate_list.find(ne.second.pathid) == candidate_list.end()) {
-                        trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                        candidate_list.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-                    } else {
-                        trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                        candidate_list[ne.second.pathid].push_back(ne.second);
-                    }
+        std::map<int, std::vector<node_entry>> cl;
+        std::for_each(rinv_table.begin(),rinv_table.end(),[&](std::pair<std::string,node_entry> ne){
+            if(ne.second.hop < getHop() && !ne.second.used) {
+                if(cl.find(ne.second.pathid) == cl.end()) {
+                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                    cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
+                } else {
+                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                    cl[ne.second.pathid].push_back(ne.second);
                 }
             }
-            for(auto cl: candidate_list) {
-                auto i=getRNG(0)->intRand(cl.second.size());
-                trace()<<"[info] Selecting node "<<cl.second[i].nw_address <<" with pathid "<<cl.second[i].pathid<<" from "<<cl.second.size()<<" nodes";
-                rreq_table.insert({cl.second[i].nw_address,cl.second[i]});
+        });
+
+        for(auto l: cl) {
+            node_entry c_ne=l.second[0];
+            trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
+            for(auto ne: l.second) {
+                if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
+                    trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
+                    c_ne=ne;
+                }
             }
+            trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
+            rreq_table.insert({c_ne.nw_address,c_ne});
+
+            rinv_table[c_ne.nw_address].used=true;
+        }
+    }
+    if(rreq_table.empty()) {
+        throw rreq_table_empty("[error] RREQ table empty after constructRreqTable()");
+    }
+
+
+//            for(auto cl: candidate_list) {
+//                auto i=getRNG(0)->intRand(cl.second.size());
+//                trace()<<"[info] Selecting node "<<cl.second[i].nw_address <<" with pathid "<<cl.second[i].pathid<<" from "<<cl.second.size()<<" nodes";
+//                rreq_table.insert({cl.second[i].nw_address,cl.second[i]});
+//            }
 }
 
 bool shmrp::rreqEntryExists(const char *addr, int pathid) {
@@ -382,7 +412,21 @@ void shmrp::timerFiredCallback(int index) {
             } catch (rinv_table_empty &e) {
                 trace()<<e.what();
                 trace()<<"[info] Empty RINV table after LEARNING state - most probably due to re-learn";
+                setRound(getRound()-1);
                 setState(shmrpStateDef::INIT); // could be also work, if routing table is not empty
+                break;
+            } catch (rreq_table_empty &e) {
+                trace()<<e.what();
+                trace()<<"[info] Empty RREQ table after LEARNING state - returning to INIT";
+                setRound(getRound()-1);
+                setState(shmrpStateDef::INIT);
+                break;
+            } catch (no_available_entry &e) {
+                trace()<<e.what();
+                trace()<<"[info] No node to connect to - returning to INIT";
+                setRound(getRound()-1);
+                setState(shmrpStateDef::INIT);
+                break;
             } catch (std::exception &e) {
                 trace()<<e.what();
                 break;
@@ -403,11 +447,12 @@ void shmrp::timerFiredCallback(int index) {
             if(!rrespReceived() && fp.rresp_req) {
                 trace()<<"[error] No RRESP packet received";
                 if(fp.rst_learn) {
-                    trace()<<"[info] Returning to learning state, resetting round and clearing RINV table";
+                    trace()<<"[info] Returning to learning state, resetting round";
                     setState(shmrpStateDef::LEARN);
-                    setRound(getRound()-1);
+                    //setRound(getRound()-1);
                     setTimer(shmrpTimerDef::T_L,getTl());
-                    if(shmrpRinvTblAdminDef::ERASE_ON_LEARN ==fp.rinv_tbl_admin) {
+                    if(shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
+                        trace()<<"[info] Clearing RINV table";
                         clearRinvTable();
                     }
                     break;
@@ -430,8 +475,7 @@ void shmrp::timerFiredCallback(int index) {
             } else if(getHop() == fp.ring_radius) {
                 trace()<<"[info] Node at mesh ring border";
                 sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS));
-            }
-            else {
+            } else {
                 trace()<<"[info] Node outside mesh ring";
                 int pathid;
                 try {
@@ -493,7 +537,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 /* start learning process */
             }
             else if(rinv_pkt->getRound() == getRound()) {
-                if(shmrpStateDef::LEARN != getState()) {
+                if(shmrpStateDef::LEARN != getState() && shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
                     trace()<<"[info] RINV packet discarded by node, not in learning state anymore";
                     break;
                 }
