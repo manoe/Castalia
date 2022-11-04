@@ -35,6 +35,7 @@ simple shmrp like node.communication.routing.iRouting
 	int    netBufferSize = default (32);	    // number of messages
     double t_l = default (1);                   // Tl timer, default 1 sec
     double t_est = default(2);                  // Test timer, default 2 sec
+    double t_meas = default(2);                 // Tmeas timer, default 2 sec
     int    ring_radius = default(2);            // Root radius in hops
 
     double t_relay = default(0.1);              // relay timer
@@ -50,6 +51,7 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_random_t_l       = default(false); // Randomize Tl timer
     double f_random_t_l_sigma = default(0.2);   // Sigma parameter of random Tl timer, where Tl is mu
     string f_rinv_table_admin = default("erase_on_learn"); // How to handle RINV table, available: erase_on_learn, erase_on_round, never_erase 
+    bool   f_interf_ping      = default(false);
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
