@@ -37,15 +37,17 @@ void shmrp::startup() {
     fp.t_l              = par("t_l");
     fp.ring_radius      = par("ring_radius");
     fp.t_est            = par("t_est");
+    fp.t_meas           = par("t_meas");
     fp.rresp_req        = par("f_rresp_required");
     fp.rst_learn        = par("f_restart_learning");
-    fp .replay_rinv     = par("f_replay_rinv");
+    fp.replay_rinv      = par("f_replay_rinv");
     fp.cost_func        = strToCostFunc(par("f_cost_function").stringValue());
     fp.cost_func_alpha  = par("f_cost_func_alpha");
     fp.cost_func_beta   = par("f_cost_func_beta");
     fp.random_t_l       = par("f_random_t_l");
     fp.random_t_l_sigma = par("f_random_t_l_sigma");
     fp.rinv_tbl_admin   = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
+    fp.interf_ping      = par("f_interf_ping");
 }
 
 bool shmrp::isSink() const {
@@ -67,6 +69,11 @@ double shmrp::getTl() {
     }
     trace()<<"[info] T_l timer's value: "<<t_l;
     return t_l;
+}
+
+
+double shmrp::getTmeas() {
+    return fp.t_meas;
 }
 
 shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
@@ -152,6 +159,9 @@ string shmrp::stateToStr(shmrpStateDef state) const {
         case shmrpStateDef::ESTABLISH: {
             return "ESTABLISH";
         }
+        case shmrpStateDef::MEASURE: {
+            return "MEASURE";
+        }
     }
     return "UNKNOWN";
        
@@ -159,6 +169,31 @@ string shmrp::stateToStr(shmrpStateDef state) const {
 
 shmrpStateDef shmrp::getState() const {
     return g_state;
+}
+
+void shmrp::sendPing(int round) {
+    trace()<<"[info] Entering shmrp::sendPing(round = "<<round<<")";
+    shmrpPingPacket *ping_pkt=new shmrpPingPacket("SHMRP PING packet", NETWORK_LAYER_PACKET);
+    ping_pkt->setByteLength(netDataFrameOverhead);
+    ping_pkt->setShmrpPacketKind(shmrpPacketDef::PING_PACKET);
+    ping_pkt->setSource(SELF_NETWORK_ADDRESS);
+    ping_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+    ping_pkt->setRound(round);
+    ping_pkt->setSequenceNumber(currentSequenceNumber++);
+    toMacLayer(ping_pkt, BROADCAST_MAC_ADDRESS);
+}
+
+void shmrp::sendPong(int round) {
+    trace()<<"[info] Entering shmrp::sendPong(round = "<<round<<")";
+    shmrpPongPacket *pong_pkt=new shmrpPongPacket("SHMRP PONG packet", NETWORK_LAYER_PACKET);
+    pong_pkt->setByteLength(netDataFrameOverhead);
+    pong_pkt->setShmrpPacketKind(shmrpPacketDef::PONG_PACKET);
+    pong_pkt->setSource(SELF_NETWORK_ADDRESS);
+    pong_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+    pong_pkt->setRound(round);
+    pong_pkt->setSequenceNumber(currentSequenceNumber++);
+    toMacLayer(pong_pkt, BROADCAST_MAC_ADDRESS);
+
 }
 
 
@@ -501,6 +536,8 @@ void shmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         trace()<<"[error] Packet's destination not sink: "<<destination;
         return;
     }
+
+    
 }
 
 void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
@@ -510,6 +547,11 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
     }
 
     switch (net_pkt->getShmrpPacketKind()) {
+        case shmrpPacketDef::PING_PACKET: {
+            trace()<<"[info] PING_PACKET received";
+            sendPong(dynamic_cast<shmrpPingPacket *>(pkt)->getRound());
+            break;
+        }
         case shmrpPacketDef::RINV_PACKET: {
             trace()<<"[info] RINV_PACKET received";
             auto rinv_pkt=dynamic_cast<shmrpRinvPacket *>(pkt);
@@ -521,6 +563,26 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
             if(rinv_pkt->getRound() > getRound()) {
                 setRound(rinv_pkt->getRound());
+                if(fp.interf_ping) {
+                    trace()<<"[info] Executing PING based interference measurement";
+                    switch (getState()) {
+                        case shmrpStateDef::LEARN: {
+                            cancelTimer(shmrpTimerDef::T_L);
+                            break;
+                        }
+                        case shmrpStateDef::ESTABLISH: {
+                            cancelTimer(shmrpTimerDef::T_ESTABLISH);
+                            break;
+                        }
+                        case shmrpStateDef::MEASURE: {
+                            cancelTimer(shmrpTimerDef::T_MEASURE);
+                            break;
+                        }
+                    }
+                    setState(shmrpStateDef::MEASURE);
+                    setTimer(shmrpTimerDef::T_MEASURE,getTmeas());
+
+                }
                 if(shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin || shmrpRinvTblAdminDef::ERASE_ON_ROUND==fp.rinv_tbl_admin) {
                     clearRinvTable();
                 }

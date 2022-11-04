@@ -20,6 +20,8 @@ enum shmrpPacketDef {
     RINV_PACKET         = 2;
     RREQ_PACKET         = 4;
     RRESP_PACKET        = 8;
+    PING_PACKET         = 16;
+    PONG_PACKET         = 32;
 }
 
 
@@ -52,4 +54,12 @@ packet shmrpDataPacket extends shmrpPacket {
     int pathid;
     int hop;
     double data;
+}
+
+packet shmrpPingPacket extends shmrpPacket {
+    int round;
+}
+
+packet shmrpPongPacket extends shmrpPacket {
+    int round;
 }

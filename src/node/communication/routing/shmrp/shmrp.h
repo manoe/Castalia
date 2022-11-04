@@ -37,13 +37,15 @@ enum shmrpStateDef {
     WORK      = 1,
     INIT      = 2,
     LEARN     = 3,
-    ESTABLISH = 4
+    ESTABLISH = 4,
+    MEASURE   = 5
 };
 
 enum shmrpTimerDef {
     SINK_START       = 1,
     T_L              = 2,
     T_ESTABLISH      = 3,
+    T_MEASURE        = 4,
     NEW_ROUND        = 5,
     T_RELAY          = 6,
     ACK_HIST_PURGE   = 7,
@@ -122,15 +124,17 @@ struct feat_par {
         int    ring_radius;
         double t_l;
         double t_est;
+        double t_meas;
         bool   rresp_req;
         bool   rst_learn;
         bool   replay_rinv;
         shmrpCostFuncDef cost_func;
         double cost_func_alpha;
         double cost_func_beta;
-        bool  random_t_l;
+        bool   random_t_l;
         double random_t_l_sigma;
         shmrpRinvTblAdminDef rinv_tbl_admin;
+        bool   interf_ping; 
 };
 
 class shmrp: public VirtualRouting {
@@ -143,7 +147,8 @@ class shmrp: public VirtualRouting {
         shmrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
         std::map<std::string,node_entry> rreq_table;
-        std::map<std::string,node_entry> routing_table; 
+        std::map<std::string,node_entry> routing_table;
+        std::map<std::string,node_entry> ping_table; 
 
     protected:
         void startup();
@@ -159,6 +164,11 @@ class shmrp: public VirtualRouting {
         void setSinkAddress(const char *);
         std::string getSinkAddress() const;
         double getTl();
+        double getTmeas();
+
+
+        void sendPing(int);
+        void sendPong(int);
 
         void sendRinv(int);
         void sendRinv(int,int);
