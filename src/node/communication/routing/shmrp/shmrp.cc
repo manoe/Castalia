@@ -196,6 +196,18 @@ void shmrp::sendPong(int round) {
 
 }
 
+void shmrp::storePong(shmrpPongPacket *pong_pkt) {
+    trace()<<"[info] Entering shmrp::storePong(pong_pkt.source="<<pong_pkt->getSource();
+    pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),0,0,false,0,0,false}});
+}
+
+void shmrp::clearPongTable() {
+    pong_table.clear();
+}
+
+int shmrp::getPongTableSize() const {
+    return pong_table.size();
+}
 
 void shmrp::sendRinv(int round, int pathid) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<", pathid = "<<pathid<<")";
@@ -207,7 +219,7 @@ void shmrp::sendRinv(int round, int pathid) {
     rinv_pkt->setRound(round);
     rinv_pkt->setPathid(pathid);
     rinv_pkt->setHop(getHop());
-    rinv_pkt->setInterf(getRinvTableSize());
+    rinv_pkt->setInterf(getPongTableSize());
     rinv_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
 }
@@ -216,6 +228,28 @@ void shmrp::sendRinv(int round) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<")";
     sendRinv(round,0);
 }
+
+void shmrp::sendRinvBasedOnHop() {
+    trace()<<"[info] Entering sendRinvBasedOnHop()";
+    if(getHop() < fp.ring_radius) {
+        trace()<<"[info] Node inside mesh ring";
+        sendRinv(getRound());
+    } else if(getHop() == fp.ring_radius) {
+        trace()<<"[info] Node at mesh ring border";
+        sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+    } else {
+        trace()<<"[info] Node outside mesh ring";
+        int pathid;
+        try {
+            pathid=selectPathid();
+        } catch (std::exception &e) {
+            trace()<<e.what();
+            throw e;
+        }
+        sendRinv(getRound(), pathid);
+    }
+}
+
 
 void shmrp::clearRinvTable() {
     trace()<<"[info] RINV table erased";
@@ -431,13 +465,6 @@ void shmrp::timerFiredCallback(int index) {
             sendRinv(getRound());
             break;
         }
-        case shmrpTimerDef::T_MEASURE: {
-            trace()<<"[timer] T_MEASURE timer expired";
-            // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
-            setState(shmrpStateDef::LEARN);
-            setTimer(shmrpTimerDef::T_L,getTl());
-            break;
-        }
         case shmrpTimerDef::T_L: {
             trace()<<"[timer] T_L timer expired";
             if(shmrpStateDef::LEARN != getState()) {
@@ -478,7 +505,6 @@ void shmrp::timerFiredCallback(int index) {
         }
         case shmrpTimerDef::T_ESTABLISH: {
             trace()<<"[timer] T_ESTABLISH timer expired";
-            setState(shmrpStateDef::WORK);
             
             if(isRreqTableEmpty()) {
                 trace()<<"[error] RREQ table empty, impossibru";
@@ -509,25 +535,25 @@ void shmrp::timerFiredCallback(int index) {
                 break;
             }
 
-            if(getHop() < fp.ring_radius) {
-                trace()<<"[info] Node inside mesh ring";
-                sendRinv(getRound());
+            if(fp.interf_ping) {
+                trace()<<"[info] Performing PING based interference measurement";
+                setState(shmrpStateDef::MEASURE);
+                setTimer(shmrpTimerDef::T_MEASURE,getTmeas());
+                clearPongTable();
+                sendPing(getRound());
 
-            } else if(getHop() == fp.ring_radius) {
-                trace()<<"[info] Node at mesh ring border";
-                sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS));
             } else {
-                trace()<<"[info] Node outside mesh ring";
-                int pathid;
-                try {
-                    pathid=selectPathid();
-                } catch (std::exception &e) {
-                    trace()<<e.what();
-                    break;
-                }
-                sendRinv(getRound(), pathid);
+                trace()<<"[info] Establishment done, transitioning to WORK state";
+                setState(shmrpStateDef::WORK);
+                sendRinvBasedOnHop();
             }
-
+            break;
+        }
+        case shmrpTimerDef::T_MEASURE: {
+            trace()<<"[timer] T_MEASURE timer expired, PONG table size: "<<getPongTableSize();
+            // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
+            setState(shmrpStateDef::WORK);
+            sendRinvBasedOnHop();
             break;
         }
         default: {
@@ -553,11 +579,6 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
     }
 
     switch (net_pkt->getShmrpPacketKind()) {
-        case shmrpPacketDef::PING_PACKET: {
-            trace()<<"[info] PING_PACKET received";
-            sendPong(dynamic_cast<shmrpPingPacket *>(pkt)->getRound());
-            break;
-        }
         case shmrpPacketDef::RINV_PACKET: {
             trace()<<"[info] RINV_PACKET received";
             auto rinv_pkt=dynamic_cast<shmrpRinvPacket *>(pkt);
@@ -589,19 +610,10 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
                 addToRinvTable(rinv_pkt);
 
-                if(fp.interf_ping) {
-                    trace()<<"[info] Executing PING based interference measurement";
-                    setState(shmrpStateDef::MEASURE);
-                    setTimer(shmrpTimerDef::T_MEASURE,getTmeas());
-                    sendPing(getRound());
-                    break;
-
-                } else {
-                   trace()<<"[info] Start LEARNING process"; 
-                    // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
-                    setState(shmrpStateDef::LEARN);
-                    setTimer(shmrpTimerDef::T_L,getTl());
-                }
+                trace()<<"[info] Start LEARNING process"; 
+                // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
+                setState(shmrpStateDef::LEARN);
+                setTimer(shmrpTimerDef::T_L,getTl());
 
             } else if(rinv_pkt->getRound() == getRound()) {
                 if(shmrpStateDef::LEARN != getState() && shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
@@ -644,6 +656,16 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] No entry in RREQ table with address "<<rresp_pkt->getSource()<<" and pathid: "<<rresp_pkt->getPathid();
                 break;
             }
+            break;
+        }
+        case shmrpPacketDef::PING_PACKET: {
+            trace()<<"[info] PING_PACKET received";
+            sendPong(dynamic_cast<shmrpPingPacket *>(pkt)->getRound());
+            break;
+        }
+        case shmrpPacketDef::PONG_PACKET: {
+            trace()<<"[info] PONG_PACKET received";
+            storePong(dynamic_cast<shmrpPongPacket *>(pkt));
             break;
         }
         case shmrpPacketDef::DATA_PACKET: {

@@ -148,7 +148,7 @@ class shmrp: public VirtualRouting {
         std::map<std::string,node_entry> rinv_table;
         std::map<std::string,node_entry> rreq_table;
         std::map<std::string,node_entry> routing_table;
-        std::map<std::string,node_entry> ping_table; 
+        std::map<std::string,node_entry> pong_table; 
 
     protected:
         void startup();
@@ -169,9 +169,13 @@ class shmrp: public VirtualRouting {
 
         void sendPing(int);
         void sendPong(int);
+        void storePong(shmrpPongPacket *);
+        int getPongTableSize() const;
+        void clearPongTable();
 
         void sendRinv(int);
         void sendRinv(int,int);
+        void sendRinvBasedOnHop(); 
 
         void setHop(int);
         int getHop() const;
@@ -196,6 +200,7 @@ class shmrp: public VirtualRouting {
         bool rrespReceived() const;
 
         double calculateCostFunction(node_entry);
+
 
         void clearRoutingTable();
         void constructRoutingTable(bool);
