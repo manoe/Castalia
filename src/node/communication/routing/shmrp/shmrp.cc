@@ -431,6 +431,13 @@ void shmrp::timerFiredCallback(int index) {
             sendRinv(getRound());
             break;
         }
+        case shmrpTimerDef::T_MEASURE: {
+            trace()<<"[timer] T_MEASURE timer expired";
+            // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
+            setState(shmrpStateDef::LEARN);
+            setTimer(shmrpTimerDef::T_L,getTl());
+            break;
+        }
         case shmrpTimerDef::T_L: {
             trace()<<"[timer] T_L timer expired";
             if(shmrpStateDef::LEARN != getState()) {
