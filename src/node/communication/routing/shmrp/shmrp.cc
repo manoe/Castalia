@@ -360,7 +360,6 @@ bool shmrp::rrespReceived() const {
 }
 
 
-
 void shmrp::sendRreqs() {
     trace()<<"[info] Entering shmrp::sendRreqs()";
     if(rreq_table.empty()) {
@@ -563,49 +562,47 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
             if(rinv_pkt->getRound() > getRound()) {
                 setRound(rinv_pkt->getRound());
-                if(fp.interf_ping) {
-                    trace()<<"[info] Executing PING based interference measurement";
-                    switch (getState()) {
-                        case shmrpStateDef::LEARN: {
-                            cancelTimer(shmrpTimerDef::T_L);
-                            break;
-                        }
-                        case shmrpStateDef::ESTABLISH: {
-                            cancelTimer(shmrpTimerDef::T_ESTABLISH);
-                            break;
-                        }
-                        case shmrpStateDef::MEASURE: {
-                            cancelTimer(shmrpTimerDef::T_MEASURE);
-                            break;
-                        }
+                switch (getState()) {
+                    case shmrpStateDef::LEARN: {
+                        cancelTimer(shmrpTimerDef::T_L);
+                        break;
                     }
-                    setState(shmrpStateDef::MEASURE);
-                    setTimer(shmrpTimerDef::T_MEASURE,getTmeas());
-
+                    case shmrpStateDef::ESTABLISH: {
+                        cancelTimer(shmrpTimerDef::T_ESTABLISH);
+                        break;
+                    }
+                    case shmrpStateDef::MEASURE: {
+                        cancelTimer(shmrpTimerDef::T_MEASURE);
+                        break;
+                    }
                 }
                 if(shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin || shmrpRinvTblAdminDef::ERASE_ON_ROUND==fp.rinv_tbl_admin) {
                     clearRinvTable();
                 }
-                // What if it is in ESTABLISH state?
-                if(shmrpStateDef::LEARN != getState()) {
-                    setState(shmrpStateDef::LEARN);
-                } else {
-                    cancelTimer(shmrpTimerDef::T_L);
-                }                    
-                setTimer(shmrpTimerDef::T_L,getTl());
 
                 addToRinvTable(rinv_pkt);
 
-                /* start learning process */
-            }
-            else if(rinv_pkt->getRound() == getRound()) {
+                if(fp.interf_ping) {
+                    trace()<<"[info] Executing PING based interference measurement";
+                    setState(shmrpStateDef::MEASURE);
+                    setTimer(shmrpTimerDef::T_MEASURE,getTmeas());
+                    sendPing(getRound());
+                    break;
+
+                } else {
+                   trace()<<"[info] Start LEARNING process"; 
+                    // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
+                    setState(shmrpStateDef::LEARN);
+                    setTimer(shmrpTimerDef::T_L,getTl());
+                }
+
+            } else if(rinv_pkt->getRound() == getRound()) {
                 if(shmrpStateDef::LEARN != getState() && shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
                     trace()<<"[info] RINV packet discarded by node, not in learning state anymore";
                     break;
                 }
                 addToRinvTable(rinv_pkt);
-            }
-            else {
+            } else {
                 trace()<<"[info] RINV_PACKET with round "<<rinv_pkt->getRound()<<" discarded by node with round "<<getRound();
             }
 
