@@ -164,7 +164,8 @@ class shmrp: public VirtualRouting {
         void setSinkAddress(const char *);
         std::string getSinkAddress() const;
         double getTl();
-        double getTmeas();
+        double getTmeas() const;
+        double getTest() const;
 
 
         void sendPing(int);

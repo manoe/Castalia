@@ -72,8 +72,12 @@ double shmrp::getTl() {
 }
 
 
-double shmrp::getTmeas() {
+double shmrp::getTmeas() const {
     return fp.t_meas;
+}
+
+double shmrp::getTest() const {
+    return fp.t_est;
 }
 
 shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
@@ -500,7 +504,7 @@ void shmrp::timerFiredCallback(int index) {
                 break;
             }
             sendRreqs();
-            setTimer(shmrpTimerDef::T_ESTABLISH,fp.t_est);
+            setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
             break;
         }
         case shmrpTimerDef::T_ESTABLISH: {
