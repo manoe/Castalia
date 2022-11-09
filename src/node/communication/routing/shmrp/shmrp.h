@@ -205,12 +205,17 @@ class shmrp: public VirtualRouting {
 
         void clearRoutingTable();
         void constructRoutingTable(bool);
+        bool isRoutingTableEmpty() const;
         int  selectPathid();
+        std::string getNextHop(int);
 
         void sendRreqs();
 
         void sendRresp(const char *,int, int);
 
+        void sendData(cPacket *, std::string, int); 
+        void forwardData(shmrpDataPacket *, std::string, int);
+        void forwardData(shmrpDataPacket *, std::string);
         std::string ringToStr(shmrpRingDef pos) const; 
 
         map<int,string> getPathsAndHops();
