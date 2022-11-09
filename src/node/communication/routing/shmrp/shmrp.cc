@@ -430,10 +430,40 @@ void shmrp::sendRresp(const char *dest, int round, int pathid) {
     toMacLayer(rresp_pkt, resolveNetworkAddress(dest));
 }
 
+void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
+    trace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
+    shmrpDataPacket *data_pkt=new shmrpDataPacket("SHMRP DATA packet",NETWORK_LAYER_PACKET);
+    data_pkt->setByteLength(netDataFrameOverhead);
+    data_pkt->setShmrpPacketKind(shmrpPacketDef::DATA_PACKET);
+    data_pkt->setSource(SELF_NETWORK_ADDRESS);
+    data_pkt->setDestination(dest.c_str());
+    data_pkt->setPathid(pathid);
+    data_pkt->setSequenceNumber(currentSequenceNumber++);
+    data_pkt->encapsulate(pkt);
+    toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
+}
+
+void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest) {
+    trace()<<"[info] Entering forwardData(dest="<<dest<<")";
+    forwardData(data_pkt, dest, data_pkt->getPathid());
+}
+
+void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest, int pathid) {
+    trace()<<"[info] Entering forwardData(dest="<<dest<<", pathid="<<pathid<<")";
+    data_pkt->setSource(SELF_NETWORK_ADDRESS);
+    data_pkt->setDestination(dest.c_str());
+    data_pkt->setPathid(pathid);
+    data_pkt->setSequenceNumber(currentSequenceNumber++);
+    toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
+}
 
 void shmrp::clearRoutingTable() {
     trace()<<"[info] Routing table erased";
     routing_table.clear();
+}
+
+bool shmrp::isRoutingTableEmpty() const {
+    return routing_table.empty();
 }
 
 void shmrp::constructRoutingTable(bool rresp_req) {
@@ -459,7 +489,24 @@ int shmrp::selectPathid() {
     std::advance(it,i);
     trace()<<"[info] Selected pathid: "<<it->second.pathid;
     return it->second.pathid;
-} 
+}
+
+std::string shmrp::getNextHop(int pathid) {
+    trace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
+    node_entry next_hop;
+    bool found=false;
+    std::for_each(routing_table.begin(),routing_table.end(),
+        [&](std::pair<std::string,node_entry> ne){
+            if(pathid==ne.second.pathid) {
+                found=true;
+                next_hop=ne.second;
+        }
+    });
+    if(!found) {
+        throw no_available_entry("Next hop not available");
+    }
+    return next_hop.nw_address;
+}
 
 void shmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -573,7 +620,17 @@ void shmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         return;
     }
 
-    
+    // Shouldn't we buffer?
+    if(isRoutingTableEmpty()) {
+        trace()<<"[error] Routing table empty, can't route packet";
+        return;
+    }
+
+    auto pathid=selectPathid();
+    auto next_hop=getNextHop(pathid);
+
+    sendData(pkt,next_hop,pathid);
+
 }
 
 void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
@@ -674,6 +731,26 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         }
         case shmrpPacketDef::DATA_PACKET: {
             trace()<<"[info] DATA_PACKET received";
+            shmrpDataPacket *data_pkt=dynamic_cast<shmrpDataPacket *>(pkt);
+            if(isSink()) {
+                trace()<<"[info] DATA packet arrived, forwarding to Application layer";
+                toApplicationLayer(decapsulatePacket(data_pkt));
+                break;
+            } else {
+                trace()<<"[info] DATA packet at interim node, routing forward";
+                std::string next_hop;
+                try {
+                    if(shmrpRingDef::EXTERNAL==getRingStatus()) {
+                        next_hop=getNextHop(data_pkt->getPathid());
+                    } else {
+                        next_hop=getNextHop(selectPathid());
+                    }
+                } catch (no_available_entry &e) {
+                    trace()<<"[error] Next hop not available for pathid: "<<data_pkt->getPathid();
+                    break;
+                }
+                forwardData(data_pkt->dup(),next_hop);
+            }
             break;
         }
         case shmrpPacketDef::UNDEF_PACKET: {
