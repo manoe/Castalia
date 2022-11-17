@@ -28,6 +28,7 @@ enum shmrpPacketDef {
 // RREQ = { R, S, P, len, nmas }
 packet shmrpPacket extends RoutingPacket {
     int shmrpPacketKind enum (shmrpPacketDef); // 1 byte
+    string origin;
 }
 
 packet shmrpRinvPacket extends shmrpPacket {

@@ -436,6 +436,7 @@ void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
     data_pkt->setByteLength(netDataFrameOverhead);
     data_pkt->setShmrpPacketKind(shmrpPacketDef::DATA_PACKET);
     data_pkt->setSource(SELF_NETWORK_ADDRESS);
+    data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
     data_pkt->setDestination(dest.c_str());
     data_pkt->setPathid(pathid);
     data_pkt->setSequenceNumber(currentSequenceNumber++);
@@ -732,8 +733,9 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         case shmrpPacketDef::DATA_PACKET: {
             trace()<<"[info] DATA_PACKET received";
             shmrpDataPacket *data_pkt=dynamic_cast<shmrpDataPacket *>(pkt);
-            if(isSink()) {
+            if(isSink() && 0==std::strcmp(data_pkt->getDestination(),SELF_NETWORK_ADDRESS)) {
                 trace()<<"[info] DATA packet arrived, forwarding to Application layer";
+                data_pkt->setSource(data_pkt->getOrigin());
                 toApplicationLayer(decapsulatePacket(data_pkt));
                 break;
             } else {
