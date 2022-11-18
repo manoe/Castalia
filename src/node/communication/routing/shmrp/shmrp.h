@@ -17,6 +17,7 @@
 #include <unordered_set>
 #include <ctime>
 #include <cstring>
+#include <yaml-cpp/yaml.h>
 
 #include "node/communication/routing/VirtualRouting.h"
 #include "node/communication/routing/shmrp/shmrp_m.h"

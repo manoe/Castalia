@@ -48,6 +48,7 @@ void shmrp::startup() {
     fp.random_t_l_sigma = par("f_random_t_l_sigma");
     fp.rinv_tbl_admin   = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
     fp.interf_ping      = par("f_interf_ping");
+    YAML::Emitter out;
 }
 
 bool shmrp::isSink() const {
