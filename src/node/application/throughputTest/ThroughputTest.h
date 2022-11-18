@@ -15,11 +15,18 @@
 
 #include "node/application/VirtualApplication.h"
 #include <map>
+#include <deque>
 
 using namespace std;
 
 enum ThroughputTestTimers {
-	SEND_PACKET = 1
+	SEND_PACKET = 1,
+    PERIODIC_MEAS = 2
+};
+
+struct pkt_stat {
+    int sn;
+    double time;
 };
 
 class ThroughputTest: public VirtualApplication {
@@ -31,6 +38,9 @@ class ThroughputTest: public VirtualApplication {
 	int dataSN;
 	int recipientId;
 	string recipientAddress;
+    bool periodic_measurement;
+    double meas_period;
+    int meas_queue_length;
 	
 	//variables below are used to determine the packet delivery rates.	
 	int numNodes;
@@ -38,6 +48,8 @@ class ThroughputTest: public VirtualApplication {
 	map<long,int> bytesReceived;
 	map<long,int> packetsSent;
     map<int,set<int>> packetsSeen;
+    map<int,deque<int>> measQueues;
+    deque<pkt_stat> sentQueue;
 
  protected:
 	void startup();
@@ -46,11 +58,17 @@ class ThroughputTest: public VirtualApplication {
 	void timerFiredCallback(int);
 	void finishSpecific();
     bool isPacketSeen(int source, int sn);
+    void addToMeasQueue(int source, int sn);
+    void addToSentQueue(int sn, double time);
+    int countPackets(deque<int> recv_queue, deque<pkt_stat> sent_queue);
+    deque<pkt_stat> getSentQueueFromNode(int node);
+
 
  public:
 	int getPacketsSent(int addr) { return packetsSent[addr]; }
 	int getPacketsReceived(int addr) { return packetsReceived[addr]; }
 	int getBytesReceived(int addr) { return bytesReceived[addr]; }
+    deque<pkt_stat> getSentQueue() { return sentQueue; };
 	
 };
 

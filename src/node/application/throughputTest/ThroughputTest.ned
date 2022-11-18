@@ -39,6 +39,9 @@ simple ThroughputTest like node.application.iApplication {
     bool isMaster = default (false);
     string Role = default("NonRoot"); // NonRoot, SubRoot, Root
     bool noRoleChange = default(false);
+    bool periodic_measurement = default(false);
+    double meas_period = default(60.0);
+    int  meas_queue_length = default(10);
 
 
  gates:
