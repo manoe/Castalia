@@ -12,7 +12,7 @@ cleanall: checkmakefiles
 	@cd src && $(MAKE) MODE=debug clean
 	@rm -f src/Makefile
 
-MAKEMAKE_OPTIONS := -f --deep -o CastaliaBin -O out -I. -DAUTOIMPORT_OMNETPP_NAMESPACE
+MAKEMAKE_OPTIONS := -f --deep -o CastaliaBin -O out -I. -DAUTOIMPORT_OMNETPP_NAMESPACE -lyaml-cpp
 
 makefiles: makefiles-exe
 
