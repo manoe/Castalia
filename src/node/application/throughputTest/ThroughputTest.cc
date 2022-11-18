@@ -24,10 +24,18 @@ void ThroughputTest::startup()
 	packet_spacing = packet_rate > 0 ? 1 / float (packet_rate) : -1;
 	dataSN = 0;
 	
+    periodic_measurement = par("periodic_measurement");
+    meas_period = par("meas_period");
+    meas_queue_length = par("meas_queue_length");
+
 	numNodes = getParentModule()->getParentModule()->par("numNodes");
 	packetsSent.clear();
 	packetsReceived.clear();
 	bytesReceived.clear();
+
+    if(isSink && periodic_measurement) {
+        setTimer(PERIODIC_MEAS, meas_period);
+    }
 
 
 
@@ -51,6 +59,20 @@ bool ThroughputTest::isPacketSeen(int source, int sn) {
     return true;
 }
 
+void ThroughputTest::addToMeasQueue(int source, int sn) {
+    measQueues[source].push_back(sn);
+    if(measQueues[source].size() > meas_queue_length) {
+        measQueues[source].pop_front();
+    } 
+}
+
+void ThroughputTest::addToSentQueue(int sn, double time) {
+    sentQueue.push_back({sn,time});
+    if(sentQueue.size() > meas_queue_length) {
+        sentQueue.pop_front();
+    }
+}
+
 void ThroughputTest::fromNetworkLayer(ApplicationPacket * rcvPacket,
 		const char *source, double rssi, double lqi)
 {
@@ -63,11 +85,15 @@ void ThroughputTest::fromNetworkLayer(ApplicationPacket * rcvPacket,
 			trace() << "Received packet #" << sequenceNumber << " from node " << source;
 			collectOutput("Packets received per node", sourceId);
             if(!isPacketSeen(sourceId,sequenceNumber)) {
-			packetsReceived[sourceId]++;
-			bytesReceived[sourceId] += rcvPacket->getByteLength();
+                if(periodic_measurement) {
+                    addToMeasQueue(sourceId,sequenceNumber);
+                }
+    			packetsReceived[sourceId]++;
+	    		bytesReceived[sourceId] += rcvPacket->getByteLength();
             } else {
                 trace()<<"Packet already received";
             }
+
 		} else {
 			trace() << "Packet #" << sequenceNumber << " from node " << source <<
 				" exceeded delay limit of " << delayLimit << "s";
@@ -81,6 +107,29 @@ void ThroughputTest::fromNetworkLayer(ApplicationPacket * rcvPacket,
 	}
 }
 
+int ThroughputTest::countPackets(deque<int> recv_queue, deque<pkt_stat> sent_queue) {
+    int count=0;
+    for(auto it=sent_queue.begin() ; it != sent_queue.end() ; ++it) {
+        for(auto it2=recv_queue.begin() ; it2 != recv_queue.end() ; ++it2) {
+            if(it->sn==*it2) {
+                ++count;
+                break;
+            }
+        }
+    }
+    return count;
+}
+
+deque<pkt_stat> ThroughputTest::getSentQueueFromNode(int node) {
+	cTopology *topo;	// temp variable to access packets received by other nodes
+	topo = new cTopology("topo");
+	topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+	long bytesDelivered = 0;
+    ThroughputTest *appModule = dynamic_cast<ThroughputTest*>
+			(topo->getNode(node)->getModule()->getSubmodule("Application"));
+    return appModule->getSentQueue();
+}
+
 void ThroughputTest::timerFiredCallback(int index)
 {
 	switch (index) {
@@ -88,10 +137,18 @@ void ThroughputTest::timerFiredCallback(int index)
 			trace() << "Sending packet #" << dataSN;
 			toNetworkLayer(createGenericDataPacket(0, dataSN), recipientAddress.c_str());
 			packetsSent[recipientId]++;
+            addToSentQueue(dataSN,simTime().dbl());
 			dataSN++;
 			setTimer(SEND_PACKET, packet_spacing);
 			break;
-		}
+		} case PERIODIC_MEAS: {
+
+            for(auto queue : measQueues) {
+                trace()<<"[info] Counted packets for node "<<queue.first<<": "<<countPackets(queue.second,getSentQueueFromNode(queue.first));
+            }
+            setTimer(PERIODIC_MEAS, meas_period);
+            break;
+        }
 	}
 }
 
