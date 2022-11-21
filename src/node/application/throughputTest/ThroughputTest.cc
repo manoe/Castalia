@@ -167,6 +167,24 @@ void ThroughputTest::finishSpecific() {
 	declareOutput("Packets reception rate");
 	declareOutput("Packets loss rate");
 
+    YAML::Emitter y_out;
+
+    // YAML structure
+    // seed: seednum
+    // pdr:
+    //      node: pdrval
+    //      node2: pdrval
+    if(isSink) {
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"seed";
+        auto env_mod=getEnvir();
+        auto conf_mod=env_mod->getConfig();
+        y_out<<YAML::Value<<conf_mod->getConfigValue("seed-set");
+        y_out<<YAML::Key<<"pdr";
+        y_out<<YAML::BeginMap;
+    }
+
+
 	cTopology *topo;	// temp variable to access packets received by other nodes
 	topo = new cTopology("topo");
 	topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
@@ -176,17 +194,35 @@ void ThroughputTest::finishSpecific() {
 			(topo->getNode(i)->getModule()->getSubmodule("Application"));
 		if (appModule) {
 			int packetsSent = appModule->getPacketsSent(self);
+            // else branch: write 0
 			if (packetsSent > 0) { // this node sent us some packets
 				float rate = (float)packetsReceived[i]/(float)packetsSent;
 				collectOutput("Packets reception rate", i, "total", rate);
 				collectOutput("Packets loss rate", i, "total", 1-rate);
                 trace()<<"Pkt received: "<<packetsReceived[i]<<" sent: "<<packetsSent;
-			}
+
+                // write yaml
+                if(isSink) {
+                    y_out<<YAML::Key<<i<<YAML::Value<<rate;
+                }
+
+			} else {
+                if(isSink) {
+                    y_out<<YAML::Key<<i<<YAML::Value<<0;
+                }
+            }
 
 			bytesDelivered += appModule->getBytesReceived(self);
 		}
 	}
 	delete(topo);
+    if(isSink) {
+        y_out<<YAML::EndMap;
+        y_out<<YAML::EndMap;
+        ofstream pdr_file("pdr.yaml");
+        pdr_file<<y_out.c_str();
+        pdr_file.close();
+    }
 
 	if (packet_rate > 0 && bytesDelivered > 0) {
 		double energy = (resMgrModule->getSpentEnergy() * 1000000000)/(bytesDelivered * 8);	//in nanojoules/bit
