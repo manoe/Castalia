@@ -16,6 +16,7 @@
 #include "node/application/VirtualApplication.h"
 #include <map>
 #include <deque>
+#include <yaml-cpp/yaml.h>
 
 using namespace std;
 
