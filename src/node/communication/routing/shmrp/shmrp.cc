@@ -48,6 +48,7 @@ void shmrp::startup() {
     fp.random_t_l_sigma = par("f_random_t_l_sigma");
     fp.rinv_tbl_admin   = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
     fp.interf_ping      = par("f_interf_ping");
+    fp.round_keep_pong  = par("f_round_keep_pong");
     YAML::Emitter out;
 }
 
@@ -203,11 +204,20 @@ void shmrp::sendPong(int round) {
 
 void shmrp::storePong(shmrpPongPacket *pong_pkt) {
     trace()<<"[info] Entering shmrp::storePong(pong_pkt.source="<<pong_pkt->getSource();
-    pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),0,0,false,0,0,false}});
+    pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),0,0,false,0,0,false,pong_pkt->getRound()}});
 }
 
 void shmrp::clearPongTable() {
     pong_table.clear();
+}
+
+void shmrp::clearPongTable(int round) {
+    trace()<<"[info] Entering shmrp::clearPongTable(round="<<round<<")";
+    for(auto it=pong_table.begin() ; it != pong_table.end() ; ++it) {
+        if(it->second.round < round ) {
+            pong_table.erase(it);
+        }
+    }
 }
 
 int shmrp::getPongTableSize() const {
@@ -592,7 +602,11 @@ void shmrp::timerFiredCallback(int index) {
                 trace()<<"[info] Performing PING based interference measurement";
                 setState(shmrpStateDef::MEASURE);
                 setTimer(shmrpTimerDef::T_MEASURE,getTmeas());
-                clearPongTable();
+                if(fp.round_keep_pong) {
+                    clearPongTable(getRound());
+                } else {
+                    clearPongTable();
+                }
                 sendPing(getRound());
 
             } else {
