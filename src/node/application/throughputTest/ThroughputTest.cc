@@ -34,6 +34,8 @@ void ThroughputTest::startup()
 	bytesReceived.clear();
 
     if(isSink && periodic_measurement) {
+        y_per_out<<YAML::BeginSeq;
+        initMeasQueues();
         setTimer(PERIODIC_MEAS, meas_period);
     }
 
@@ -57,6 +59,12 @@ bool ThroughputTest::isPacketSeen(int source, int sn) {
         return false;
     }
     return true;
+}
+
+void ThroughputTest::initMeasQueues() {
+    for(int i=1 ; i < numNodes ; ++i) {
+        measQueues[i].clear();
+    }
 }
 
 void ThroughputTest::addToMeasQueue(int source, int sn) {
@@ -127,6 +135,7 @@ deque<pkt_stat> ThroughputTest::getSentQueueFromNode(int node) {
 	long bytesDelivered = 0;
     ThroughputTest *appModule = dynamic_cast<ThroughputTest*>
 			(topo->getNode(node)->getModule()->getSubmodule("Application"));
+    delete topo;
     return appModule->getSentQueue();
 }
 
@@ -142,10 +151,22 @@ void ThroughputTest::timerFiredCallback(int index)
 			setTimer(SEND_PACKET, packet_spacing);
 			break;
 		} case PERIODIC_MEAS: {
-
+            y_per_out<<YAML::BeginMap;
+            y_per_out<<YAML::Key<<"timestamp";
+            y_per_out<<YAML::Value<<simTime().dbl();
+            y_per_out<<YAML::Key<<"pdr";
+            y_per_out<<YAML::Value<<YAML::BeginSeq;
             for(auto queue : measQueues) {
+                y_per_out<<YAML::BeginMap;
+                y_per_out<<YAML::Key<<"node";
+                y_per_out<<YAML::Value<<queue.first;
+                y_per_out<<YAML::Key<<"pdr";
+                y_per_out<<YAML::Value<<static_cast<double>(countPackets(queue.second,getSentQueueFromNode(queue.first)))/static_cast<double>(getSentQueueFromNode(queue.first).size());
+                y_per_out<<YAML::EndMap;
                 trace()<<"[info] Counted packets for node "<<queue.first<<": "<<countPackets(queue.second,getSentQueueFromNode(queue.first));
             }
+            y_per_out<<YAML::EndSeq;
+            y_per_out<<YAML::EndMap;
             setTimer(PERIODIC_MEAS, meas_period);
             break;
         }
@@ -222,6 +243,13 @@ void ThroughputTest::finishSpecific() {
         ofstream pdr_file("pdr.yaml");
         pdr_file<<y_out.c_str();
         pdr_file.close();
+        if(periodic_measurement) {
+            y_per_out<<YAML::EndSeq;
+            ofstream periodic_file("per_pdr.yaml");
+            periodic_file<<y_per_out.c_str();
+            periodic_file.close();
+
+        }
     }
 
 	if (packet_rate > 0 && bytesDelivered > 0) {

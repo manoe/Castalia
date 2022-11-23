@@ -52,6 +52,8 @@ class ThroughputTest: public VirtualApplication {
     map<int,deque<int>> measQueues;
     deque<pkt_stat> sentQueue;
 
+    YAML::Emitter y_per_out;
+
  protected:
 	void startup();
 	void fromNetworkLayer(ApplicationPacket *, const char *, double, double);
@@ -59,6 +61,7 @@ class ThroughputTest: public VirtualApplication {
 	void timerFiredCallback(int);
 	void finishSpecific();
     bool isPacketSeen(int source, int sn);
+    void initMeasQueues();
     void addToMeasQueue(int source, int sn);
     void addToSentQueue(int sn, double time);
     int countPackets(deque<int> recv_queue, deque<pkt_stat> sent_queue);
