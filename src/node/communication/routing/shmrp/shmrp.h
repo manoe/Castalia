@@ -113,12 +113,13 @@ enum shmrpRinvTblAdminDef {
 
 struct node_entry {
     string nw_address;
-    int pathid;
-    int hop;
+    int  pathid;
+    int  hop;
     bool rresp = false;
-    int interf;
-    int emerg;
+    int  interf;
+    int  emerg;
     bool used = false;
+    int  round = 0;
 };
 
 struct feat_par {
@@ -135,7 +136,8 @@ struct feat_par {
         bool   random_t_l;
         double random_t_l_sigma;
         shmrpRinvTblAdminDef rinv_tbl_admin;
-        bool   interf_ping; 
+        bool   interf_ping;
+        bool   round_keep_pong;
 };
 
 class shmrp: public VirtualRouting {
@@ -174,6 +176,7 @@ class shmrp: public VirtualRouting {
         void storePong(shmrpPongPacket *);
         int getPongTableSize() const;
         void clearPongTable();
+        void clearPongTable(int);
 
         void sendRinv(int);
         void sendRinv(int,int);

@@ -52,6 +52,7 @@ simple shmrp like node.communication.routing.iRouting
     double f_random_t_l_sigma = default(0.2);   // Sigma parameter of random Tl timer, where Tl is mu
     string f_rinv_table_admin = default("erase_on_learn"); // How to handle RINV table, available: erase_on_learn, erase_on_round, never_erase 
     bool   f_interf_ping      = default(false);
+    bool   f_round_keep_pong  = default(false); // Keep PONG messages received in the same round
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
