@@ -98,6 +98,12 @@ enum shmrpRinvTblAdminDef {
             explicit routing_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
             explicit routing_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
     };
+    class recv_table_empty : public std::runtime_error {
+        public:
+            explicit recv_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+            explicit recv_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+    };
+
     class unknown_cost_function : public std::runtime_error {
         public:
             explicit unknown_cost_function(const string &what_arg) : std::runtime_error(what_arg) {};
@@ -120,6 +126,7 @@ struct node_entry {
     int  emerg;
     bool used = false;
     int  round = 0;
+    int  pkt_count = 0;
 };
 
 struct feat_par {
@@ -151,7 +158,9 @@ class shmrp: public VirtualRouting {
         std::map<std::string,node_entry> rinv_table;
         std::map<std::string,node_entry> rreq_table;
         std::map<std::string,node_entry> routing_table;
-        std::map<std::string,node_entry> pong_table; 
+        std::map<std::string,node_entry> pong_table;
+        std::map<std::string,node_entry> recv_table;
+        YAML::Emitter y_out;
 
     protected:
         void startup();
@@ -212,6 +221,10 @@ class shmrp: public VirtualRouting {
         bool isRoutingTableEmpty() const;
         int  selectPathid();
         std::string getNextHop(int);
+        void incPktCountInRoutingTable(std::string);
+
+        void incPktCountInRecvTable(std::string);
+
 
         void sendRreqs();
 
@@ -223,8 +236,28 @@ class shmrp: public VirtualRouting {
         std::string ringToStr(shmrpRingDef pos) const; 
 
         map<int,string> getPathsAndHops();
+
+        void serializeRoutingTable();
+        void serializeRoutingTable(std::map<std::string,node_entry>);
+
+        void serializeRecvTable();
+        void serializeRecvTable(std::map<std::string,node_entry>);
+ 
+
     public:
         shmrpRingDef getRingStatus() const;
+        std::map<std::string,node_entry> getRoutingTable() {
+            if(routing_table.empty()) {
+                throw routing_table_empty("[error] Routing table empty at node");
+            }
+            return routing_table;
+        };
+        std::map<std::string,node_entry> getRecvTable() {
+            if(recv_table.empty()) {
+                throw recv_table_empty("[error] Recv table empty at node");
+            }
+            return recv_table;
+        };
 };
 
 #endif // _SHMRP_H_
