@@ -49,7 +49,6 @@ void shmrp::startup() {
     fp.rinv_tbl_admin   = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
     fp.interf_ping      = par("f_interf_ping");
     fp.round_keep_pong  = par("f_round_keep_pong");
-    YAML::Emitter out;
 }
 
 bool shmrp::isSink() const {
@@ -520,6 +519,25 @@ std::string shmrp::getNextHop(int pathid) {
     return next_hop.nw_address;
 }
 
+void shmrp::incPktCountInRoutingTable(std::string next_hop) {
+    trace()<<"[info] Entering incPktCountInRoutingTable(next_hop="<<next_hop<<")";
+    if(routing_table.find(next_hop) == routing_table.end()) {
+        throw no_available_entry("[error] No available entry to update Pkt count"); 
+    }
+
+    routing_table[next_hop].pkt_count++;
+}
+
+void shmrp::incPktCountInRecvTable(std::string entry) {
+    trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
+    if(recv_table.find(entry) == recv_table.end()) {
+        recv_table[entry] = {entry,0,0,false,0,0,false,0,1};
+    } else {
+        recv_table[entry].pkt_count++;
+    }
+}
+
+
 void shmrp::timerFiredCallback(int index) {
     switch (index) {
         case shmrpTimerDef::SINK_START: {
@@ -645,6 +663,7 @@ void shmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     auto pathid=selectPathid();
     auto next_hop=getNextHop(pathid);
 
+    incPktCountInRoutingTable(next_hop);
     sendData(pkt,next_hop,pathid);
 
 }
@@ -748,6 +767,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         case shmrpPacketDef::DATA_PACKET: {
             trace()<<"[info] DATA_PACKET received";
             shmrpDataPacket *data_pkt=dynamic_cast<shmrpDataPacket *>(pkt);
+            incPktCountInRecvTable(std::string(data_pkt->getSource()));
             if(isSink() && 0==std::strcmp(data_pkt->getDestination(),SELF_NETWORK_ADDRESS)) {
                 trace()<<"[info] DATA packet arrived, forwarding to Application layer";
                 data_pkt->setSource(data_pkt->getOrigin());
@@ -755,6 +775,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 break;
             } else {
                 trace()<<"[info] DATA packet at interim node, routing forward";
+
                 std::string next_hop;
                 try {
                     if(shmrpRingDef::EXTERNAL==getRingStatus()) {
@@ -766,6 +787,8 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"[error] Next hop not available for pathid: "<<data_pkt->getPathid();
                     break;
                 }
+
+                incPktCountInRoutingTable(next_hop);
                 forwardData(data_pkt->dup(),next_hop);
             }
             break;
@@ -821,6 +844,43 @@ std::string shmrp::ringToStr(shmrpRingDef pos) const {
     return string("unkown");
 }
 
+void shmrp::serializeRoutingTable() {
+    serializeRoutingTable(routing_table);
+}
+void shmrp::serializeRoutingTable(std::map<std::string,node_entry> table) {
+    y_out<<YAML::BeginSeq;
+    for(auto i : table) {
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"node";
+        y_out<<YAML::Value<<i.second.nw_address;
+        y_out<<YAML::Key<<"pathid";
+        y_out<<YAML::Value<<i.second.pathid;
+        y_out<<YAML::Key<<"pkt_count";
+        y_out<<YAML::Value<<i.second.pkt_count;
+        y_out<<YAML::EndMap;
+    }
+    y_out<<YAML::EndSeq;
+}
+
+void shmrp::serializeRecvTable() {
+    serializeRecvTable(recv_table);
+}
+
+void shmrp::serializeRecvTable(std::map<std::string,node_entry> table) {
+    y_out<<YAML::BeginSeq;
+    for(auto i : table) {
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"node";
+        y_out<<YAML::Value<<i.second.nw_address;
+        y_out<<YAML::Key<<"pkt_count";
+        y_out<<YAML::Value<<i.second.pkt_count;
+        y_out<<YAML::EndMap;
+    }
+    y_out<<YAML::EndSeq;
+
+}
+
+
 void shmrp::finishSpecific() {
     if (isSink()) { // && getParentModule()->getIndex() == 0 ) {
         cTopology *topo;        // temp variable to access energy spent by other nodes
@@ -836,11 +896,42 @@ void shmrp::finishSpecific() {
         p_out<<"'0':["<<sink_pos.x<<","<<sink_pos.y<<"],";
         r_out<<"'0':'"<<ringToStr(getRingStatus())<<"',";
 
+        y_out<<YAML::BeginSeq;
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"node";
+        y_out<<YAML::Value<<"0";
+        y_out<<YAML::Key<<"recv_table";
+        y_out<<YAML::Value;
+        serializeRecvTable();
+        y_out<<YAML::EndMap;
+
         for (int i = 1; i < topo->getNumNodes(); ++i) {
             shmrp *shmrp_instance = dynamic_cast<shmrp*>
                 (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
             auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(i)->getModule()->getSubmodule("MobilityManager"));
-            
+           
+             y_out<<YAML::BeginMap;
+             y_out<<YAML::Key<<"node";
+             y_out<<YAML::Value<<i;
+             try {
+                auto table=shmrp_instance->getRecvTable();
+                 y_out<<YAML::Key<<"recv_table";
+                 y_out<<YAML::Value;
+                 serializeRecvTable(table);
+             } catch (exception &e) {
+                 trace()<<"[error] No recv table: "<<e.what();
+             }
+             try {
+                auto table=shmrp_instance->getRoutingTable();
+                 y_out<<YAML::Key<<"routing_table";
+                 y_out<<YAML::Value;
+                 serializeRoutingTable(table);
+             } catch (exception &e) {
+                 trace()<<"[error] No routing table: "<<e.what();
+             }
+             y_out<<YAML::EndMap;
+
+  
 
             map<int,string> routes;
             try {
@@ -875,6 +966,10 @@ void shmrp::finishSpecific() {
             // seek back one character
 
         }
+        y_out<<YAML::EndSeq;
+        ofstream loc_pdr_file("loc_pdr.yaml");
+        loc_pdr_file<<y_out.c_str();
+        loc_pdr_file.close();
         g_out.seekp(g_out.tellp()-static_cast<long int>(1));
         p_out.seekp(p_out.tellp()-static_cast<long int>(1));
         r_out.seekp(r_out.tellp()-static_cast<long int>(1));
