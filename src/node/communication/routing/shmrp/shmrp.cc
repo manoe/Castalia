@@ -940,9 +940,14 @@ void shmrp::finishSpecific() {
 
             auto loc=mob_mgr->getLocation();
             y_out<<YAML::Key<<"x";
+            y_out<<YAML::Value;
             y_out<<loc.x;
             y_out<<YAML::Key<<"y";
+            y_out<<YAML::Value;
             y_out<<loc.y;
+            y_out<<YAML::Key<<"role";
+            y_out<<YAML::Value;
+            y_out<<ringToStr(getRingStatus());
 
         y_out<<YAML::EndMap;
 
@@ -1008,6 +1013,10 @@ void shmrp::finishSpecific() {
             y_out<<loc.x;
             y_out<<YAML::Key<<"y";
             y_out<<loc.y;
+            y_out<<YAML::Key;
+            y_out<<"role";
+            y_out<<YAML::Value;
+            y_out<<(res_mgr->isDead()?"dead":ringToStr(shmrp_instance->getRingStatus()));
             y_out<<YAML::EndMap;
 
             // seek back one character
