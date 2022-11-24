@@ -199,7 +199,6 @@ class shmrp: public VirtualRouting {
         int  getRound() const;
 
         void setState(shmrpStateDef);
-        shmrpStateDef getState() const;
         std::string stateToStr(shmrpStateDef) const;
 
         void clearRinvTable();
@@ -246,6 +245,8 @@ class shmrp: public VirtualRouting {
 
     public:
         shmrpRingDef getRingStatus() const;
+        shmrpStateDef getState() const;
+
         std::map<std::string,node_entry> getRoutingTable() {
             if(routing_table.empty()) {
                 throw routing_table_empty("[error] Routing table empty at node");
