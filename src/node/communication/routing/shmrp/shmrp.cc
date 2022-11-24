@@ -903,6 +903,16 @@ void shmrp::finishSpecific() {
         y_out<<YAML::Key<<"recv_table";
         y_out<<YAML::Value;
         serializeRecvTable();
+
+
+            auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"));
+
+            auto loc=mob_mgr->getLocation();
+            y_out<<YAML::Key<<"x";
+            y_out<<loc.x;
+            y_out<<YAML::Key<<"y";
+            y_out<<loc.y;
+
         y_out<<YAML::EndMap;
 
         for (int i = 1; i < topo->getNumNodes(); ++i) {
@@ -929,7 +939,6 @@ void shmrp::finishSpecific() {
              } catch (exception &e) {
                  trace()<<"[error] No routing table: "<<e.what();
              }
-             y_out<<YAML::EndMap;
 
   
 
@@ -962,6 +971,11 @@ void shmrp::finishSpecific() {
             // Format: {'Node1': [0,0], 'Node2': [0,10],'Node3':[10,0]}
             auto loc=mob_mgr->getLocation();
             p_out<<"'"<<i<<"':["<<loc.x<<","<<loc.y<<"],";
+            y_out<<YAML::Key<<"x";
+            y_out<<loc.x;
+            y_out<<YAML::Key<<"y";
+            y_out<<loc.y;
+            y_out<<YAML::EndMap;
 
             // seek back one character
 
