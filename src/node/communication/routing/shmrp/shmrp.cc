@@ -202,7 +202,7 @@ void shmrp::sendPong(int round) {
 }
 
 void shmrp::storePong(shmrpPongPacket *pong_pkt) {
-    trace()<<"[info] Entering shmrp::storePong(pong_pkt.source="<<pong_pkt->getSource();
+    trace()<<"[info] Entering shmrp::storePong(pong_pkt.source="<<pong_pkt->getSource()<<")";
     pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),0,0,false,0,0,false,pong_pkt->getRound()}});
 }
 
@@ -519,6 +519,28 @@ std::string shmrp::getNextHop(int pathid) {
     return next_hop.nw_address;
 }
 
+std::string shmrp::getNextHop(int pathid, bool random_node) {
+    trace()<<"[info] Entering getNextHop(pathid="<<pathid<<", random_node="<<random_node<<")";
+    std::string next_hop;
+    if(random_node) {
+        std::vector<node_entry> nodes;
+        for(auto a : routing_table) {
+            if(a.second.pathid == pathid) {
+                nodes.push_back(a.second);
+            }
+        }
+        if(nodes.empty()) {
+            throw no_available_entry("[error] Next hop not available");
+        }
+        auto i=getRNG(0)->intRand(nodes.size());
+        next_hop=nodes[i].nw_address;
+        trace()<<"[info] Randomly selected node: "<<next_hop;    
+    } else {
+        next_hop=getNextHop(pathid);
+    }
+    return next_hop;
+}
+
 void shmrp::incPktCountInRoutingTable(std::string next_hop) {
     trace()<<"[info] Entering incPktCountInRoutingTable(next_hop="<<next_hop<<")";
     if(routing_table.find(next_hop) == routing_table.end()) {
@@ -661,8 +683,14 @@ void shmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     }
 
     auto pathid=selectPathid();
-    auto next_hop=getNextHop(pathid);
-
+    std::string next_hop;
+    
+    if(shmrpRingDef::EXTERNAL==getRingStatus()) {
+        next_hop=getNextHop(pathid);
+    } else {
+        next_hop=getNextHop(pathid,true);
+    }
+    
     incPktCountInRoutingTable(next_hop);
     sendData(pkt,next_hop,pathid);
 
@@ -781,7 +809,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     if(shmrpRingDef::EXTERNAL==getRingStatus()) {
                         next_hop=getNextHop(data_pkt->getPathid());
                     } else {
-                        next_hop=getNextHop(selectPathid());
+                        next_hop=getNextHop(selectPathid(), true);
                     }
                 } catch (no_available_entry &e) {
                     trace()<<"[error] Next hop not available for pathid: "<<data_pkt->getPathid();
@@ -903,15 +931,23 @@ void shmrp::finishSpecific() {
         y_out<<YAML::Key<<"recv_table";
         y_out<<YAML::Value;
         serializeRecvTable();
+        y_out<<YAML::Key<<"state";
+        y_out<<YAML::Value;
+        y_out<<stateToStr(getState());
 
 
             auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"));
 
             auto loc=mob_mgr->getLocation();
             y_out<<YAML::Key<<"x";
+            y_out<<YAML::Value;
             y_out<<loc.x;
             y_out<<YAML::Key<<"y";
+            y_out<<YAML::Value;
             y_out<<loc.y;
+            y_out<<YAML::Key<<"role";
+            y_out<<YAML::Value;
+            y_out<<ringToStr(getRingStatus());
 
         y_out<<YAML::EndMap;
 
@@ -939,6 +975,8 @@ void shmrp::finishSpecific() {
              } catch (exception &e) {
                  trace()<<"[error] No routing table: "<<e.what();
              }
+               y_out<<YAML::Key<<"state";
+               y_out<<YAML::Value<<stateToStr(shmrp_instance->getState());
 
   
 
@@ -975,6 +1013,10 @@ void shmrp::finishSpecific() {
             y_out<<loc.x;
             y_out<<YAML::Key<<"y";
             y_out<<loc.y;
+            y_out<<YAML::Key;
+            y_out<<"role";
+            y_out<<YAML::Value;
+            y_out<<(res_mgr->isDead()?"dead":ringToStr(shmrp_instance->getRingStatus()));
             y_out<<YAML::EndMap;
 
             // seek back one character

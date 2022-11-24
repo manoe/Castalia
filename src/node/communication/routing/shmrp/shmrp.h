@@ -220,6 +220,7 @@ class shmrp: public VirtualRouting {
         bool isRoutingTableEmpty() const;
         int  selectPathid();
         std::string getNextHop(int);
+        std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
 
         void incPktCountInRecvTable(std::string);
@@ -241,6 +242,7 @@ class shmrp: public VirtualRouting {
 
         void serializeRecvTable();
         void serializeRecvTable(std::map<std::string,node_entry>);
+        std::string StateToString(shmrpStateDef);
  
 
     public:
