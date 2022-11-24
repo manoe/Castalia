@@ -241,6 +241,7 @@ class shmrp: public VirtualRouting {
 
         void serializeRecvTable();
         void serializeRecvTable(std::map<std::string,node_entry>);
+        std::string StateToString(shmrpStateDef);
  
 
     public:

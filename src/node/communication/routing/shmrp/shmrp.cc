@@ -903,6 +903,9 @@ void shmrp::finishSpecific() {
         y_out<<YAML::Key<<"recv_table";
         y_out<<YAML::Value;
         serializeRecvTable();
+        y_out<<YAML::Key<<"state";
+        y_out<<YAML::Value;
+        y_out<<stateToStr(getState());
 
 
             auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"));
@@ -939,6 +942,8 @@ void shmrp::finishSpecific() {
              } catch (exception &e) {
                  trace()<<"[error] No routing table: "<<e.what();
              }
+               y_out<<YAML::Key<<"state";
+               y_out<<YAML::Value<<stateToStr(shmrp_instance->getState());
 
   
 

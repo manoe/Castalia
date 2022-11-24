@@ -7,7 +7,6 @@ import pos
 import role
 import numpy
 
-G=nx.DiGraph()
 
 G.add_edges_from(graph.edges)
 
