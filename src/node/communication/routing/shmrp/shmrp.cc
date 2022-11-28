@@ -49,6 +49,7 @@ void shmrp::startup() {
     fp.rinv_tbl_admin   = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
     fp.interf_ping      = par("f_interf_ping");
     fp.round_keep_pong  = par("f_round_keep_pong");
+    fp.rand_ring_hop    = par("f_rand_ring_hop");
 }
 
 bool shmrp::isSink() const {
@@ -688,7 +689,7 @@ void shmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     if(shmrpRingDef::EXTERNAL==getRingStatus()) {
         next_hop=getNextHop(pathid);
     } else {
-        next_hop=getNextHop(pathid,true);
+        next_hop=getNextHop(pathid,fp.rand_ring_hop);
     }
     
     incPktCountInRoutingTable(next_hop);
@@ -809,7 +810,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     if(shmrpRingDef::EXTERNAL==getRingStatus()) {
                         next_hop=getNextHop(data_pkt->getPathid());
                     } else {
-                        next_hop=getNextHop(selectPathid(), true);
+                        next_hop=getNextHop(selectPathid(),fp.rand_ring_hop );
                     }
                 } catch (no_available_entry &e) {
                     trace()<<"[error] Next hop not available for pathid: "<<data_pkt->getPathid();

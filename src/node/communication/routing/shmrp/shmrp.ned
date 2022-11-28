@@ -54,6 +54,8 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_interf_ping      = default(false);
     bool   f_round_keep_pong  = default(false); // Keep PONG messages received in the same round
 
+    bool   f_rand_ring_hop    = default(false); // Select random nextHop inside ring
+
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
     int t_pkt_hist  = default (5); // keep pkt history entry at least this long
