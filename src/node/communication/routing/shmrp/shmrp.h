@@ -145,6 +145,7 @@ struct feat_par {
         shmrpRinvTblAdminDef rinv_tbl_admin;
         bool   interf_ping;
         bool   round_keep_pong;
+        bool   rand_ring_hop;
 };
 
 class shmrp: public VirtualRouting {
