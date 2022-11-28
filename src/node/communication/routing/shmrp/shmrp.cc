@@ -986,7 +986,6 @@ void shmrp::finishSpecific() {
                 routes=shmrp_instance->getPathsAndHops();
             } catch(std::length_error &e) {
                 trace()<<"[error] Can't retrieve paths and hops for node "<<i<<": "<<e.what();
-                continue;
             }
 
             auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
