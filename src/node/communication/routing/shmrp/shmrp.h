@@ -140,6 +140,7 @@ struct feat_par {
         shmrpCostFuncDef cost_func;
         double cost_func_alpha;
         double cost_func_beta;
+        bool   cf_after_rresp;
         bool   random_t_l;
         double random_t_l_sigma;
         shmrpRinvTblAdminDef rinv_tbl_admin;
@@ -218,6 +219,7 @@ class shmrp: public VirtualRouting {
 
         void clearRoutingTable();
         void constructRoutingTable(bool);
+        void constructRoutingTable(bool,bool);
         bool isRoutingTableEmpty() const;
         int  selectPathid();
         std::string getNextHop(int);
