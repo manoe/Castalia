@@ -48,6 +48,8 @@ simple shmrp like node.communication.routing.iRouting
     string f_cost_function    = default("hop"); // Cost Functions, available: hop, hop_and_interf, hop_emerg_and_interf
     double f_cost_func_alpha  = default(1.0);   // Alpha coeff. in cost function,  controls emerg term
     double f_cost_func_beta   = default(1.0);   // Beta coeff. in cost function, controls interference term
+    bool   f_cf_after_rresp   = default(false); // Apply cost function based selection after RREQ/RRESP
+
     bool   f_random_t_l       = default(false); // Randomize Tl timer
     double f_random_t_l_sigma = default(0.2);   // Sigma parameter of random Tl timer, where Tl is mu
     string f_rinv_table_admin = default("erase_on_learn"); // How to handle RINV table, available: erase_on_learn, erase_on_round, never_erase 

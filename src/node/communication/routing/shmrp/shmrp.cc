@@ -44,6 +44,7 @@ void shmrp::startup() {
     fp.cost_func        = strToCostFunc(par("f_cost_function").stringValue());
     fp.cost_func_alpha  = par("f_cost_func_alpha");
     fp.cost_func_beta   = par("f_cost_func_beta");
+    fp.cf_after_rresp   = par("f_cf_after_rresp");
     fp.random_t_l       = par("f_random_t_l");
     fp.random_t_l_sigma = par("f_random_t_l_sigma");
     fp.rinv_tbl_admin   = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
@@ -357,20 +358,32 @@ void shmrp::constructRreqTable() {
                 }
             }
         });
-
-        for(auto l: cl) {
-            node_entry c_ne=l.second[0];
-            trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
-            for(auto ne: l.second) {
-                if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
-                    trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
-                    c_ne=ne;
+        if(fp.cf_after_rresp) {
+            trace()<<"[info] Selecting all RINV nodes to RREQ";
+            for(auto l: cl) {
+                for(auto n: l.second) {
+                    if(n.hop < getHop()) {
+                        rreq_table.insert({n.nw_address,n});
+                        rinv_table[n.nw_address].used = true;
+                    }
                 }
             }
-            trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
-            rreq_table.insert({c_ne.nw_address,c_ne});
-
-            rinv_table[c_ne.nw_address].used=true;
+        } else {
+           for(auto l: cl) {
+               trace()<<"[info] Selecting nodes per pathid to RREQ";
+               node_entry c_ne=l.second[0];
+               trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
+               for(auto ne: l.second) {
+                   if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
+                       trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
+                       c_ne=ne;
+                   }
+               }
+               trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
+               rreq_table.insert({c_ne.nw_address,c_ne});
+    
+               rinv_table[c_ne.nw_address].used=true;
+           }
         }
     }
     if(rreq_table.empty()) {
@@ -479,7 +492,7 @@ bool shmrp::isRoutingTableEmpty() const {
 }
 
 void shmrp::constructRoutingTable(bool rresp_req) {
-    trace()<<"[info] Entering shmrp::constructRoutingTable()";
+    trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<")";
     for(auto ne: rreq_table) {
         if(ne.second.rresp || !rresp_req) {
             trace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<ne.second.pathid;
@@ -488,6 +501,58 @@ void shmrp::constructRoutingTable(bool rresp_req) {
     }
     if(routing_table.empty()) {
         throw routing_table_empty("[error] Routing table empty");
+    }
+}
+
+void shmrp::constructRoutingTable(bool rresp_req, bool app_cf) {
+    trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<"app_cf="<<app_cf<<")";
+    if(!app_cf) {
+        constructRoutingTable(rresp_req);
+        return;
+    }
+
+    if(getHop() <= fp.ring_radius) {
+        trace()<<"[info] Node inside mesh ring";
+        for(auto ne: rreq_table) {
+            if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req )) {
+                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                routing_table.insert(ne);
+//                rinv_table[ne.second.nw_address].used=true;
+            }
+        }
+        return;
+    }
+
+    std::map<int, std::vector<node_entry>> cl;
+    std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
+        // Either select only hop-based, if rresp is not required or based on rresp received
+        if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req) ) {
+            if(cl.find(ne.second.pathid) == cl.end()) {
+                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
+            } else {
+                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                cl[ne.second.pathid].push_back(ne.second);
+            }
+        }
+    });
+    for(auto l: cl) {
+        trace()<<"[info] Selecting nodes per pathid to RREQ";
+        node_entry c_ne=l.second[0];
+        trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
+        for(auto ne: l.second) {
+            if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
+                trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
+                c_ne=ne;
+            }
+        }
+        trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
+        routing_table.insert({c_ne.nw_address,c_ne});
+
+//        rinv_table[c_ne.nw_address].used=true;
+    }
+    if(routing_table.empty()) {
+        throw rreq_table_empty("[error] routing table empty after constructRreqTable()");
     }
 }
 
@@ -603,7 +668,7 @@ void shmrp::timerFiredCallback(int index) {
                 trace()<<e.what();
                 break;
             }
-            sendRreqs();
+            sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
             setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
             break;
         }
@@ -633,7 +698,11 @@ void shmrp::timerFiredCallback(int index) {
             clearRoutingTable();
 
             try {
-                constructRoutingTable(fp.rresp_req);
+                if(fp.cf_after_rresp) {
+                    constructRoutingTable(fp.rresp_req, fp.cf_after_rresp);
+                } else {
+                    constructRoutingTable(fp.rresp_req);
+                }
             } catch (routing_table_empty &e) {
                 trace()<<e.what();
                 break;
