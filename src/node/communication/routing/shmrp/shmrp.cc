@@ -364,7 +364,7 @@ void shmrp::constructRreqTable() {
                 for(auto n: l.second) {
                     if(n.hop < getHop()) {
                         rreq_table.insert({n.nw_address,n});
-                        rinv_table[n.nw_address].used = true;
+//                        rinv_table[n.nw_address].used = true;
                     }
                 }
             }
@@ -505,7 +505,7 @@ void shmrp::constructRoutingTable(bool rresp_req) {
 }
 
 void shmrp::constructRoutingTable(bool rresp_req, bool app_cf) {
-    trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<"app_cf="<<app_cf<<")";
+    trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<")";
     if(!app_cf) {
         constructRoutingTable(rresp_req);
         return;
@@ -549,7 +549,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf) {
         trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
         routing_table.insert({c_ne.nw_address,c_ne});
 
-//        rinv_table[c_ne.nw_address].used=true;
+        rinv_table[c_ne.nw_address].used=true;
     }
     if(routing_table.empty()) {
         throw rreq_table_empty("[error] routing table empty after constructRreqTable()");
@@ -625,6 +625,15 @@ void shmrp::incPktCountInRecvTable(std::string entry) {
     }
 }
 
+void shmrp::updateRinvTableFromRreqTable() {
+    trace()<<"[info] Entering updateRinvTableFromRreqTable()";
+    for(auto ne: rreq_table) {
+        if(rinv_table.find(ne.first) != rinv_table.end()) {
+            trace()<<"[info] Updating node "<<ne.first<<" as used in RINV table";
+            rinv_table[ne.first].used = true;
+        }
+    }
+}
 
 void shmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -690,6 +699,10 @@ void shmrp::timerFiredCallback(int index) {
                     if(shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
                         trace()<<"[info] Clearing RINV table";
                         clearRinvTable();
+                    }
+                    if(fp.cf_after_rresp) {
+                        trace()<<"[info] Setting used flag in all RINV entries that are present in RREQ";
+                        updateRinvTableFromRreqTable();
                     }
                     break;
                 }

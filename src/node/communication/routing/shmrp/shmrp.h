@@ -206,6 +206,7 @@ class shmrp: public VirtualRouting {
         void clearRinvTable();
         void addToRinvTable(shmrpRinvPacket *);
         int  getRinvTableSize() const;
+        void updateRinvTableFromRreqTable();
 
         void clearRreqTable();
         bool isRreqTableEmpty() const;
