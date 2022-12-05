@@ -1121,3 +1121,13 @@ void shmrp::finishSpecific() {
     }
     return;
 }
+
+void shmrp::handleMacControlMessage(cMessage *msg) {
+    trace()<<"[info] Entering handleMacControlMessage()";
+    TMacControlMessage *mac_msg=check_and_cast<TMacControlMessage *>(msg);
+    if(!mac_msg) {
+        trace()<<"[error] Not TMacControlMessage";
+    }
+    trace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
+    delete msg;
+}

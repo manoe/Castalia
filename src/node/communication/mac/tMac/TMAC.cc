@@ -297,6 +297,9 @@ void TMAC::fromNetworkLayer(cPacket * netPkt, int destination)
 	macPkt->setType(DATA_TMAC_PACKET);
 	macPkt->setSource(SELF_MAC_ADDRESS);
 	macPkt->setDestination(destination);
+    if(BROADCAST_MAC_ADDRESS != destination) {
+        sendTmacControlMessage(MacControlMessage_type::PKT_SENT,macPkt->getDestination(),macPkt->getSequenceNumber());
+    }
 	//macPkt->setSequenceNumber(txSequenceNum); no need for TMAC specific seq number, virtualMAC takes care of this 
 	if (bufferPacket(macPkt)) {	// this is causing problems
 		if (TXBuffer.size() == 1)
@@ -345,6 +348,11 @@ void TMAC::resetDefaultState(const char *descr)
 		while (!TXBuffer.empty()) {
 			if (txRetries <= 0) {
 				trace() << "Transmission failed to " << txAddr;
+                TMacPacket *tm_pkt= check_and_cast<TMacPacket *>(TXBuffer.front());
+                if(tm_pkt) {
+                    sendTmacControlMessage(MacControlMessage_type::PKT_FAIL,tm_pkt->getDestination(),tm_pkt->getSequenceNumber());
+                }
+
 				popTxBuffer();
 			} else {
 				if (useRtsCts && txAddr != BROADCAST_MAC_ADDRESS) {
@@ -592,6 +600,7 @@ void TMAC::fromRadioLayer(cPacket * pkt, double RSSI, double LQI)
 			if (macState == MAC_STATE_WAIT_FOR_ACK && source == txAddr) {
 				trace() << "Transmission succesful to " << txAddr;
 				cancelTimer(TRANSMISSION_TIMEOUT);
+                sendTmacControlMessage(MacControlMessage_type::ACK_RECV, macPkt->getSource(), macPkt->getSequenceNumber());
 				popTxBuffer();
 				resetDefaultState("transmission successful (ACK received)");
 			}
@@ -821,3 +830,15 @@ void TMAC::popTxBuffer()
 	checkTxBuffer();
 }
 
+void TMAC::sendTmacControlMessage(MacControlMessage_type mt, int destination, unsigned int seq_num) {
+    TMacControlMessage *msg;
+    if(MacControlMessage_type::PKT_SENT == mt) {
+        msg=new TMacControlMessage("Frame sent", MAC_CONTROL_MESSAGE);
+    } else {
+        msg=new TMacControlMessage("Ack received", MAC_CONTROL_MESSAGE);
+    }
+    msg->setMacControlMessageKind(mt);
+    msg->setDestination(destination);
+    msg->setSeq_num(seq_num);
+    send(msg, "toNetworkModule");
+}

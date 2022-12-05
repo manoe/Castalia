@@ -24,6 +24,7 @@
 #include "node/application/ApplicationPacket_m.h"
 #include "node/application/ForestFire/forest_fire_packet_m.h"
 #include "node/mobilityManager/VirtualMobilityManager.h"
+#include "node/communication/mac/tMac/TMacPacket_m.h"
 
 ////enum hdmrpRoleDef {
 ////    SINK        = 1;
@@ -248,7 +249,7 @@ class shmrp: public VirtualRouting {
         void serializeRecvTable(std::map<std::string,node_entry>);
         std::string StateToString(shmrpStateDef);
  
-
+        virtual void handleMacControlMessage(cMessage *);
     public:
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
