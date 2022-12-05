@@ -49,3 +49,9 @@ packet TMacPacket extends MacPacket {
 	int syncId = 0;						// 4 bytes
 }
 
+class MacControlMessage;
+
+message TMacControlMessage extends MacControlMessage {
+    int destination;
+    unsigned int seq_num;
+}   

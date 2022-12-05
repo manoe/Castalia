@@ -12,6 +12,9 @@
 
 enum MacControlMessage_type {
 	MAC_BUFFER_FULL = 1;
+    PKT_SENT        = 2;
+    ACK_RECV        = 3;
+    PKT_FAIL        = 4;
 }
 
 // We need to pass information between MAC and the Radio which is external

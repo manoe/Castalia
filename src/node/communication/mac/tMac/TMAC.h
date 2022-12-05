@@ -131,6 +131,8 @@ class TMAC: public VirtualMac {
 	void extendActivePeriod(simtime_t extra = 0);
 	void checkTxBuffer();
 	void popTxBuffer();
+    void sendTmacControlMessage(MacControlMessage_type mt, int destination, unsigned int seq_num);
+
 };
 
 #endif				//TMACMODULE
