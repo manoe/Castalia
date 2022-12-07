@@ -1129,5 +1129,10 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
         trace()<<"[error] Not TMacControlMessage";
     }
     trace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
+    std::string nw_address = std::to_string(mac_msg->getDestination());
+    if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind() && routing_table.find(nw_address) != routing_table.end()) {
+        routing_table[nw_address].ack_count++;
+    }
+            
     delete msg;
 }
