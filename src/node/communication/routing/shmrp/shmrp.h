@@ -128,6 +128,7 @@ struct node_entry {
     bool used = false;
     int  round = 0;
     int  pkt_count = 0;
+    int  ack_count = 0;
 };
 
 struct feat_par {
