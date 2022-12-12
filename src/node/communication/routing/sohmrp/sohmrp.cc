@@ -7,11 +7,11 @@
  *                                                                             *
  *******************************************************************************/
 
-#include "node/communication/routing/shmrp_v1/shmrp_v1.h"
+#include "node/communication/routing/sohmrp/sohmrp.h"
 
-Define_Module(shmrp_v1);
+Define_Module(sohmrp);
 
-void shmrp_v1::startup() {
+void sohmrp::startup() {
     cModule *appModule = getParentModule()->getParentModule()->getSubmodule("Application");
     if(appModule->hasPar("isSink")) {
         g_is_sink=appModule->par("isSink");
@@ -27,11 +27,11 @@ void shmrp_v1::startup() {
 
     if(isSink()) {
         setHop(0);
-        setTimer(shmrp_v1TimerDef::SINK_START,par("t_start"));
-        setState(shmrp_v1StateDef::WORK);
+        setTimer(sohmrpTimerDef::SINK_START,par("t_start"));
+        setState(sohmrpStateDef::WORK);
     } else {
         setHop(std::numeric_limits<int>::max());
-        setState(shmrp_v1StateDef::INIT);
+        setState(sohmrpStateDef::INIT);
     }
     setRound(0);
     fp.t_l              = par("t_l");
@@ -53,19 +53,19 @@ void shmrp_v1::startup() {
     fp.rand_ring_hop    = par("f_rand_ring_hop");
 }
 
-bool shmrp_v1::isSink() const {
+bool sohmrp::isSink() const {
     return g_is_sink;
 }
 
-void shmrp_v1::setSinkAddress(const char *p_sink_addr) {
+void sohmrp::setSinkAddress(const char *p_sink_addr) {
     g_sink_addr.assign(p_sink_addr);
 }
 
-std::string shmrp_v1::getSinkAddress() const {
+std::string sohmrp::getSinkAddress() const {
     return g_sink_addr;
 }
 
-double shmrp_v1::getTl() {
+double sohmrp::getTl() {
     double t_l=fp.t_l;
     if(fp.random_t_l) {
         t_l=omnetpp::normal(getRNG(0),fp.t_l,fp.random_t_l_sigma);
@@ -75,49 +75,49 @@ double shmrp_v1::getTl() {
 }
 
 
-double shmrp_v1::getTmeas() const {
+double sohmrp::getTmeas() const {
     return fp.t_meas;
 }
 
-double shmrp_v1::getTest() const {
+double sohmrp::getTest() const {
     return fp.t_est;
 }
 
-shmrp_v1CostFuncDef shmrp_v1::strToCostFunc(string str) const {
+sohmrpCostFuncDef sohmrp::strToCostFunc(string str) const {
     if("hop" == str) {
-        return shmrp_v1CostFuncDef::HOP;
+        return sohmrpCostFuncDef::HOP;
     } else if("hop_and_interf" == str) {
-        return shmrp_v1CostFuncDef::HOP_AND_INTERF;
+        return sohmrpCostFuncDef::HOP_AND_INTERF;
     } else if("hop_emerg_and_interf" == str) {
-        return shmrp_v1CostFuncDef::HOP_EMERG_AND_INTERF;
+        return sohmrpCostFuncDef::HOP_EMERG_AND_INTERF;
     }
     throw std::invalid_argument("[error] Unkown cost function");
-    return shmrp_v1CostFuncDef::NOT_DEFINED; 
+    return sohmrpCostFuncDef::NOT_DEFINED; 
 }
 
-shmrp_v1RinvTblAdminDef shmrp_v1::strToRinvTblAdmin(string str) const {
+sohmrpRinvTblAdminDef sohmrp::strToRinvTblAdmin(string str) const {
     if("erase_on_learn" == str) {
-        return shmrp_v1RinvTblAdminDef::ERASE_ON_LEARN;
+        return sohmrpRinvTblAdminDef::ERASE_ON_LEARN;
     } else if("erase_on_round" == str) {
-        return shmrp_v1RinvTblAdminDef::ERASE_ON_ROUND;
+        return sohmrpRinvTblAdminDef::ERASE_ON_ROUND;
     } else if(" never_erase" == str) {
-        return shmrp_v1RinvTblAdminDef::NEVER_ERASE;
+        return sohmrpRinvTblAdminDef::NEVER_ERASE;
     }
     throw std::invalid_argument("[error] Unkown RINV table admin");
-    return shmrp_v1RinvTblAdminDef::UNDEF_ADMIN;
+    return sohmrpRinvTblAdminDef::UNDEF_ADMIN;
 }
 
-void shmrp_v1::setHop(int hop) {
+void sohmrp::setHop(int hop) {
     trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
     g_hop=hop;
 }
 
-int shmrp_v1::getHop() const {
+int sohmrp::getHop() const {
     return g_hop;
 }
 
-int shmrp_v1::calculateHop() {
-    trace()<<"[info] Entering shmrp_v1::calculateHop()";
+int sohmrp::calculateHop() {
+    trace()<<"[info] Entering sohmrp::calculateHop()";
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
@@ -135,38 +135,38 @@ int shmrp_v1::calculateHop() {
     return hop+1;
 }
 
-void shmrp_v1::setRound(int round) {
+void sohmrp::setRound(int round) {
     trace()<<"[info] Changing round "<<g_round<<" to "<<round;
     g_round=round;
 }
 
-int shmrp_v1::getRound() const {
+int sohmrp::getRound() const {
     return g_round;
 }
 
-void shmrp_v1::setState(shmrp_v1StateDef state) {
+void sohmrp::setState(sohmrpStateDef state) {
     trace()<<"[info] State change from "<<stateToStr(g_state)<<" to "<<stateToStr(state);
     g_state=state;
 }
 
-string shmrp_v1::stateToStr(shmrp_v1StateDef state) const {
+string sohmrp::stateToStr(sohmrpStateDef state) const {
     switch (state) {
-        case shmrp_v1StateDef::UNDEF: {
+        case sohmrpStateDef::UNDEF: {
             return "UNDEF";
         }
-        case shmrp_v1StateDef::WORK: {
+        case sohmrpStateDef::WORK: {
             return "WORK";
         }
-        case shmrp_v1StateDef::INIT: {
+        case sohmrpStateDef::INIT: {
             return "INIT";
         }
-        case shmrp_v1StateDef::LEARN: {
+        case sohmrpStateDef::LEARN: {
             return "LEARN";
         }
-        case shmrp_v1StateDef::ESTABLISH: {
+        case sohmrpStateDef::ESTABLISH: {
             return "ESTABLISH";
         }
-        case shmrp_v1StateDef::MEASURE: {
+        case sohmrpStateDef::MEASURE: {
             return "MEASURE";
         }
     }
@@ -174,15 +174,15 @@ string shmrp_v1::stateToStr(shmrp_v1StateDef state) const {
        
 }
 
-shmrp_v1StateDef shmrp_v1::getState() const {
+sohmrpStateDef sohmrp::getState() const {
     return g_state;
 }
 
-void shmrp_v1::sendPing(int round) {
-    trace()<<"[info] Entering shmrp_v1::sendPing(round = "<<round<<")";
-    shmrp_v1PingPacket *ping_pkt=new shmrp_v1PingPacket("SHMRP PING packet", NETWORK_LAYER_PACKET);
+void sohmrp::sendPing(int round) {
+    trace()<<"[info] Entering sohmrp::sendPing(round = "<<round<<")";
+    sohmrpPingPacket *ping_pkt=new sohmrpPingPacket("SHMRP PING packet", NETWORK_LAYER_PACKET);
     ping_pkt->setByteLength(netDataFrameOverhead);
-    ping_pkt->setShmrp_v1PacketKind(shmrp_v1PacketDef::PING_PACKET);
+    ping_pkt->setSohmrpPacketKind(sohmrpPacketDef::PING_PACKET);
     ping_pkt->setSource(SELF_NETWORK_ADDRESS);
     ping_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     ping_pkt->setRound(round);
@@ -190,11 +190,11 @@ void shmrp_v1::sendPing(int round) {
     toMacLayer(ping_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void shmrp_v1::sendPong(int round) {
-    trace()<<"[info] Entering shmrp_v1::sendPong(round = "<<round<<")";
-    shmrp_v1PongPacket *pong_pkt=new shmrp_v1PongPacket("SHMRP PONG packet", NETWORK_LAYER_PACKET);
+void sohmrp::sendPong(int round) {
+    trace()<<"[info] Entering sohmrp::sendPong(round = "<<round<<")";
+    sohmrpPongPacket *pong_pkt=new sohmrpPongPacket("SHMRP PONG packet", NETWORK_LAYER_PACKET);
     pong_pkt->setByteLength(netDataFrameOverhead);
-    pong_pkt->setShmrp_v1PacketKind(shmrp_v1PacketDef::PONG_PACKET);
+    pong_pkt->setSohmrpPacketKind(sohmrpPacketDef::PONG_PACKET);
     pong_pkt->setSource(SELF_NETWORK_ADDRESS);
     pong_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     pong_pkt->setRound(round);
@@ -203,17 +203,17 @@ void shmrp_v1::sendPong(int round) {
 
 }
 
-void shmrp_v1::storePong(shmrp_v1PongPacket *pong_pkt) {
-    trace()<<"[info] Entering shmrp_v1::storePong(pong_pkt.source="<<pong_pkt->getSource()<<")";
+void sohmrp::storePong(sohmrpPongPacket *pong_pkt) {
+    trace()<<"[info] Entering sohmrp::storePong(pong_pkt.source="<<pong_pkt->getSource()<<")";
     pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),0,0,false,0,0,false,pong_pkt->getRound()}});
 }
 
-void shmrp_v1::clearPongTable() {
+void sohmrp::clearPongTable() {
     pong_table.clear();
 }
 
-void shmrp_v1::clearPongTable(int round) {
-    trace()<<"[info] Entering shmrp_v1::clearPongTable(round="<<round<<")";
+void sohmrp::clearPongTable(int round) {
+    trace()<<"[info] Entering sohmrp::clearPongTable(round="<<round<<")";
     for(auto it=pong_table.begin() ; it != pong_table.end() ; ++it) {
         if(it->second.round < round ) {
             pong_table.erase(it);
@@ -221,62 +221,33 @@ void shmrp_v1::clearPongTable(int round) {
     }
 }
 
-int shmrp_v1::getPongTableSize() const {
+int sohmrp::getPongTableSize() const {
     return pong_table.size();
 }
 
-void shmrp_v1::sendRinv(int round, int pathid) {
-    trace()<<"[info] Entering shmrp_v1::sendRinv(round = "<<round<<", pathid = "<<pathid<<")";
-    shmrp_v1RinvPacket *rinv_pkt=new shmrp_v1RinvPacket("SHMRP RINV packet", NETWORK_LAYER_PACKET);
+void sohmrp::sendRinv(int round) {
+    trace()<<"[info] Entering sohmrp::sendRinv(round = "<<round<<")";
+    sohmrpRinvPacket *rinv_pkt=new sohmrpRinvPacket("SHMRP RINV packet", NETWORK_LAYER_PACKET);
     rinv_pkt->setByteLength(netDataFrameOverhead);
-    rinv_pkt->setShmrp_v1PacketKind(shmrp_v1PacketDef::RINV_PACKET);
+    rinv_pkt->setSohmrpPacketKind(sohmrpPacketDef::RINV_PACKET);
     rinv_pkt->setSource(SELF_NETWORK_ADDRESS);
     rinv_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     rinv_pkt->setRound(round);
-    rinv_pkt->setPathid(pathid);
     rinv_pkt->setHop(getHop());
     rinv_pkt->setInterf(getPongTableSize());
     rinv_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void shmrp_v1::sendRinv(int round) {
-    trace()<<"[info] Entering shmrp_v1::sendRinv(round = "<<round<<")";
-    sendRinv(round,0);
-}
-
-void shmrp_v1::sendRinvBasedOnHop() {
-    trace()<<"[info] Entering sendRinvBasedOnHop()";
-    if(getHop() < fp.ring_radius) {
-        trace()<<"[info] Node inside mesh ring";
-        sendRinv(getRound());
-    } else if(getHop() == fp.ring_radius) {
-        trace()<<"[info] Node at mesh ring border";
-        sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS));
-    } else {
-        trace()<<"[info] Node outside mesh ring";
-        int pathid;
-        try {
-            pathid=selectPathid();
-        } catch (std::exception &e) {
-            trace()<<e.what();
-            throw e;
-        }
-        sendRinv(getRound(), pathid);
-    }
-}
-
-
-void shmrp_v1::clearRinvTable() {
+void sohmrp::clearRinvTable() {
     trace()<<"[info] RINV table erased";
     rinv_table.clear();
 }
 
-void shmrp_v1::addToRinvTable(shmrp_v1RinvPacket *rinv_pkt) {
+void sohmrp::addToRinvTable(sohmrpRinvPacket *rinv_pkt) {
     trace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid: "<<rinv_pkt->getPathid()<<" hop: "<<rinv_pkt->getHop()<<" interf: "<<rinv_pkt->getInterf();
     node_entry ne;
     ne.nw_address.assign(rinv_pkt->getSource());
-    ne.pathid = rinv_pkt->getPathid();
     ne.hop = rinv_pkt->getHop();
     ne.interf = rinv_pkt->getInterf();
     if(rinv_table.find(ne.nw_address) != rinv_table.end()) {
@@ -285,31 +256,22 @@ void shmrp_v1::addToRinvTable(shmrp_v1RinvPacket *rinv_pkt) {
     rinv_table.insert({ne.nw_address, ne});
 }
 
-int shmrp_v1::getRinvTableSize() const {
+int sohmrp::getRinvTableSize() const {
     return rinv_table.size();
 }
 
-void shmrp_v1::clearRreqTable() {
-    trace()<<"[info] RREQ table erased";
-    rreq_table.clear();
-}
-
-bool shmrp_v1::isRreqTableEmpty() const {
-    return rreq_table.empty();
-}
-
-double shmrp_v1::calculateCostFunction(node_entry ne) {
+double sohmrp::calculateCostFunction(node_entry ne) {
     double ret_val;
     switch (fp.cost_func) {
-        case shmrp_v1CostFuncDef::HOP: {
+        case sohmrpCostFuncDef::HOP: {
             ret_val=static_cast<double>(ne.hop);
             break;
         }
-        case shmrp_v1CostFuncDef::HOP_AND_INTERF: {
+        case sohmrpCostFuncDef::HOP_AND_INTERF: {
             ret_val=static_cast<double>(ne.hop) * pow(ne.interf,fp.cost_func_beta);
             break;
         }
-        case shmrp_v1CostFuncDef::HOP_EMERG_AND_INTERF: {
+        case sohmrpCostFuncDef::HOP_EMERG_AND_INTERF: {
             ret_val=static_cast<double>(ne.hop) * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta);
             break;
         }
@@ -323,142 +285,11 @@ double shmrp_v1::calculateCostFunction(node_entry ne) {
 }
 
 
-void shmrp_v1::constructRreqTable() {
-    trace()<<"[info] Entering shmrp_v1::constructRreqTable()";
-    if(rinv_table.empty()) {
-        throw rinv_table_empty("[error] RINV table empty");
-    }
-    if(!rreq_table.empty()) {
-        throw rreq_table_non_empty("[error] RREQ table not empty");
-    }
-
-    auto hop=calculateHop();
-    setHop(hop);
-
-    if(hop <= fp.ring_radius) {
-        trace()<<"[info] Node inside mesh ring";
-        for(auto ne: rinv_table) {
-            if(ne.second.hop < getHop() && !ne.second.used) {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                rreq_table.insert(ne);
-                rinv_table[ne.second.nw_address].used=true;
-            }
-        }
-    } else {
-        trace()<<"[info] Node outside mesh ring";
-        std::map<int, std::vector<node_entry>> cl;
-        std::for_each(rinv_table.begin(),rinv_table.end(),[&](std::pair<std::string,node_entry> ne){
-            if(ne.second.hop < getHop() && !ne.second.used) {
-                if(cl.find(ne.second.pathid) == cl.end()) {
-                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                    cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-                } else {
-                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                    cl[ne.second.pathid].push_back(ne.second);
-                }
-            }
-        });
-        if(fp.cf_after_rresp) {
-            trace()<<"[info] Selecting all RINV nodes to RREQ";
-            for(auto l: cl) {
-                for(auto n: l.second) {
-                    if(n.hop < getHop()) {
-                        rreq_table.insert({n.nw_address,n});
-//                        rinv_table[n.nw_address].used = true;
-                    }
-                }
-            }
-        } else {
-           for(auto l: cl) {
-               trace()<<"[info] Selecting nodes per pathid to RREQ";
-               node_entry c_ne=l.second[0];
-               trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
-               for(auto ne: l.second) {
-                   if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
-                       trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
-                       c_ne=ne;
-                   }
-               }
-               trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
-               rreq_table.insert({c_ne.nw_address,c_ne});
-    
-               rinv_table[c_ne.nw_address].used=true;
-           }
-        }
-    }
-    if(rreq_table.empty()) {
-        throw rreq_table_empty("[error] RREQ table empty after constructRreqTable()");
-    }
-
-
-//            for(auto cl: candidate_list) {
-//                auto i=getRNG(0)->intRand(cl.second.size());
-//                trace()<<"[info] Selecting node "<<cl.second[i].nw_address <<" with pathid "<<cl.second[i].pathid<<" from "<<cl.second.size()<<" nodes";
-//                rreq_table.insert({cl.second[i].nw_address,cl.second[i]});
-//            }
-}
-
-bool shmrp_v1::rreqEntryExists(const char *addr, int pathid) {
-    if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid == pathid) {
-        return true;
-    }
-    return false;
-}
-
-void shmrp_v1::updateRreqTableWithRresp(const char *addr, int pathid) {
-    trace()<<"[info] Entering shmrp_v1::updateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
-    if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid == pathid) {
-        rreq_table[string(addr)].rresp=true;
-    } else {
-        throw std::length_error("[error] Entry not found");
-    }
-}
-
-bool shmrp_v1::rrespReceived() const {
-    if(std::any_of(rreq_table.begin(), rreq_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.rresp; } )) {
-        return true;
-    }
-    return false;
-}
-
-
-void shmrp_v1::sendRreqs() {
-    trace()<<"[info] Entering shmrp_v1::sendRreqs()";
-    if(rreq_table.empty()) {
-       throw std::length_error("[error] RREQ table empty");
-    }
-    for(auto ne: rreq_table) {
-        shmrp_v1RreqPacket* rreq_pkt=new shmrp_v1RreqPacket("SHMRP RREQ packet",NETWORK_LAYER_PACKET);
-        rreq_pkt->setByteLength(netDataFrameOverhead);
-        rreq_pkt->setShmrp_v1PacketKind(shmrp_v1PacketDef::RREQ_PACKET);
-        rreq_pkt->setSource(SELF_NETWORK_ADDRESS);
-        rreq_pkt->setDestination(ne.second.nw_address.c_str());
-        rreq_pkt->setRound(getRound());
-        rreq_pkt->setPathid(ne.second.pathid);
-        rreq_pkt->setSequenceNumber(currentSequenceNumber++);
-        trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
-        toMacLayer(rreq_pkt, resolveNetworkAddress(ne.second.nw_address.c_str()));
-    }
-}
-
-void shmrp_v1::sendRresp(const char *dest, int round, int pathid) {
-    trace()<<"[info] Sending RRESP to "<<dest<<" with round "<<round<<" and pathid "<<pathid;
-    shmrp_v1RrespPacket* rresp_pkt=new shmrp_v1RrespPacket("SHMRP RRESP packet",NETWORK_LAYER_PACKET);
-    rresp_pkt->setByteLength(netDataFrameOverhead);
-    rresp_pkt->setShmrp_v1PacketKind(shmrp_v1PacketDef::RRESP_PACKET);
-    rresp_pkt->setSource(SELF_NETWORK_ADDRESS);
-    rresp_pkt->setDestination(dest);
-    rresp_pkt->setRound(round);
-    rresp_pkt->setPathid(pathid);
-    rresp_pkt->setSequenceNumber(currentSequenceNumber++);
-    toMacLayer(rresp_pkt, resolveNetworkAddress(dest));
-}
-
-void shmrp_v1::sendData(cPacket *pkt, std::string dest, int pathid) {
+void sohmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
     trace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
-    shmrp_v1DataPacket *data_pkt=new shmrp_v1DataPacket("SHMRP DATA packet",NETWORK_LAYER_PACKET);
+    sohmrpDataPacket *data_pkt=new sohmrpDataPacket("SHMRP DATA packet",NETWORK_LAYER_PACKET);
     data_pkt->setByteLength(netDataFrameOverhead);
-    data_pkt->setShmrp_v1PacketKind(shmrp_v1PacketDef::DATA_PACKET);
+    data_pkt->setSohmrpPacketKind(sohmrpPacketDef::DATA_PACKET);
     data_pkt->setSource(SELF_NETWORK_ADDRESS);
     data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
     data_pkt->setDestination(dest.c_str());
@@ -468,12 +299,12 @@ void shmrp_v1::sendData(cPacket *pkt, std::string dest, int pathid) {
     toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
 }
 
-void shmrp_v1::forwardData(shmrp_v1DataPacket *data_pkt, std::string dest) {
+void sohmrp::forwardData(sohmrpDataPacket *data_pkt, std::string dest) {
     trace()<<"[info] Entering forwardData(dest="<<dest<<")";
     forwardData(data_pkt, dest, data_pkt->getPathid());
 }
 
-void shmrp_v1::forwardData(shmrp_v1DataPacket *data_pkt, std::string dest, int pathid) {
+void sohmrp::forwardData(sohmrpDataPacket *data_pkt, std::string dest, int pathid) {
     trace()<<"[info] Entering forwardData(dest="<<dest<<", pathid="<<pathid<<")";
     data_pkt->setSource(SELF_NETWORK_ADDRESS);
     data_pkt->setDestination(dest.c_str());
@@ -482,17 +313,17 @@ void shmrp_v1::forwardData(shmrp_v1DataPacket *data_pkt, std::string dest, int p
     toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
 }
 
-void shmrp_v1::clearRoutingTable() {
+void sohmrp::clearRoutingTable() {
     trace()<<"[info] Routing table erased";
     routing_table.clear();
 }
 
-bool shmrp_v1::isRoutingTableEmpty() const {
+bool sohmrp::isRoutingTableEmpty() const {
     return routing_table.empty();
 }
 
-void shmrp_v1::constructRoutingTable(bool rresp_req) {
-    trace()<<"[info] Entering shmrp_v1::constructRoutingTable(rresp_req="<<rresp_req<<")";
+void sohmrp::constructRoutingTable(bool rresp_req) {
+    trace()<<"[info] Entering sohmrp::constructRoutingTable(rresp_req="<<rresp_req<<")";
     for(auto ne: rreq_table) {
         if(ne.second.rresp || !rresp_req) {
             trace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<ne.second.pathid;
@@ -504,8 +335,8 @@ void shmrp_v1::constructRoutingTable(bool rresp_req) {
     }
 }
 
-void shmrp_v1::constructRoutingTable(bool rresp_req, bool app_cf) {
-    trace()<<"[info] Entering shmrp_v1::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<")";
+void sohmrp::constructRoutingTable(bool rresp_req, bool app_cf) {
+    trace()<<"[info] Entering sohmrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<")";
     if(!app_cf) {
         constructRoutingTable(rresp_req);
         return;
@@ -556,8 +387,8 @@ void shmrp_v1::constructRoutingTable(bool rresp_req, bool app_cf) {
     }
 }
 
-int shmrp_v1::selectPathid() {
-    trace()<<"[info] Entering shmrp_v1::selectPathid()";
+int sohmrp::selectPathid() {
+    trace()<<"[info] Entering sohmrp::selectPathid()";
     if(routing_table.empty()) {
         throw routing_table_empty("[error] Routing table empty");
     }
@@ -568,7 +399,7 @@ int shmrp_v1::selectPathid() {
     return it->second.pathid;
 }
 
-std::string shmrp_v1::getNextHop(int pathid) {
+std::string sohmrp::getNextHop(int pathid) {
     trace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
     node_entry next_hop;
     bool found=false;
@@ -585,7 +416,7 @@ std::string shmrp_v1::getNextHop(int pathid) {
     return next_hop.nw_address;
 }
 
-std::string shmrp_v1::getNextHop(int pathid, bool random_node) {
+std::string sohmrp::getNextHop(int pathid, bool random_node) {
     trace()<<"[info] Entering getNextHop(pathid="<<pathid<<", random_node="<<random_node<<")";
     std::string next_hop;
     if(random_node) {
@@ -607,7 +438,7 @@ std::string shmrp_v1::getNextHop(int pathid, bool random_node) {
     return next_hop;
 }
 
-void shmrp_v1::incPktCountInRoutingTable(std::string next_hop) {
+void sohmrp::incPktCountInRoutingTable(std::string next_hop) {
     trace()<<"[info] Entering incPktCountInRoutingTable(next_hop="<<next_hop<<")";
     if(routing_table.find(next_hop) == routing_table.end()) {
         throw no_available_entry("[error] No available entry to update Pkt count"); 
@@ -616,7 +447,7 @@ void shmrp_v1::incPktCountInRoutingTable(std::string next_hop) {
     routing_table[next_hop].pkt_count++;
 }
 
-void shmrp_v1::incPktCountInRecvTable(std::string entry) {
+void sohmrp::incPktCountInRecvTable(std::string entry) {
     trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
     if(recv_table.find(entry) == recv_table.end()) {
         recv_table[entry] = {entry,0,0,false,0,0,false,0,1};
@@ -625,88 +456,30 @@ void shmrp_v1::incPktCountInRecvTable(std::string entry) {
     }
 }
 
-void shmrp_v1::updateRinvTableFromRreqTable() {
-    trace()<<"[info] Entering updateRinvTableFromRreqTable()";
-    for(auto ne: rreq_table) {
-        if(rinv_table.find(ne.first) != rinv_table.end()) {
-            trace()<<"[info] Updating node "<<ne.first<<" as used in RINV table";
-            rinv_table[ne.first].used = true;
-        }
-    }
-}
-
-void shmrp_v1::timerFiredCallback(int index) {
+void sohmrp::timerFiredCallback(int index) {
     switch (index) {
-        case shmrp_v1TimerDef::SINK_START: {
+        case sohmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
             setRound(1+getRound());
             sendRinv(getRound());
             break;
         }
-        case shmrp_v1TimerDef::T_L: {
+        case sohmrpTimerDef::T_L: {
             trace()<<"[timer] T_L timer expired";
-            if(shmrp_v1StateDef::LEARN != getState()) {
+            if(sohmrpStateDef::LEARN != getState()) {
                 trace()<<"[error] State is not LEARN: "<<stateToStr(getState());
                 break;
             }
-            setState(shmrp_v1StateDef::ESTABLISH);
-            clearRreqTable();
+            setState(sohmrpStateDef::ESTABLISH);
 
 
-            try {
-                constructRreqTable();
-            } catch (rinv_table_empty &e) {
-                trace()<<e.what();
-                trace()<<"[info] Empty RINV table after LEARNING state - most probably due to re-learn";
-                setRound(getRound()-1);
-                setState(shmrp_v1StateDef::INIT); // could be also work, if routing table is not empty
-                break;
-            } catch (rreq_table_empty &e) {
-                trace()<<e.what();
-                trace()<<"[info] Empty RREQ table after LEARNING state - returning to INIT";
-                setRound(getRound()-1);
-                setState(shmrp_v1StateDef::INIT);
-                break;
-            } catch (no_available_entry &e) {
-                trace()<<e.what();
-                trace()<<"[info] No node to connect to - returning to INIT";
-                setRound(getRound()-1);
-                setState(shmrp_v1StateDef::INIT);
-                break;
-            } catch (std::exception &e) {
-                trace()<<e.what();
-                break;
-            }
-            sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
-            setTimer(shmrp_v1TimerDef::T_ESTABLISH,getTest());
+            setTimer(sohmrpTimerDef::T_ESTABLISH,getTest());
             break;
         }
-        case shmrp_v1TimerDef::T_ESTABLISH: {
+        case sohmrpTimerDef::T_ESTABLISH: {
             trace()<<"[timer] T_ESTABLISH timer expired";
             
-            if(isRreqTableEmpty()) {
-                trace()<<"[error] RREQ table empty, impossibru";
-                throw rreq_table_empty("[error] RREQ table empty");
-            }
 
-            if(!rrespReceived() && fp.rresp_req) {
-                trace()<<"[error] No RRESP packet received";
-                if(fp.rst_learn) {
-                    trace()<<"[info] Returning to learning state, resetting round";
-                    setState(shmrp_v1StateDef::LEARN);
-                    //setRound(getRound()-1);
-                    setTimer(shmrp_v1TimerDef::T_L,getTl());
-                    if(shmrp_v1RinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
-                        trace()<<"[info] Clearing RINV table";
-                        clearRinvTable();
-                    }
-                    if(fp.cf_after_rresp) {
-                        trace()<<"[info] Setting used flag in all RINV entries that are present in RREQ";
-                        updateRinvTableFromRreqTable();
-                    }
-                    break;
-                }
-            }
 
             clearRoutingTable();
 
@@ -723,8 +496,8 @@ void shmrp_v1::timerFiredCallback(int index) {
 
             if(fp.interf_ping) {
                 trace()<<"[info] Performing PING based interference measurement";
-                setState(shmrp_v1StateDef::MEASURE);
-                setTimer(shmrp_v1TimerDef::T_MEASURE,getTmeas());
+                setState(sohmrpStateDef::MEASURE);
+                setTimer(sohmrpTimerDef::T_MEASURE,getTmeas());
                 if(fp.round_keep_pong) {
                     clearPongTable(getRound());
                 } else {
@@ -734,16 +507,14 @@ void shmrp_v1::timerFiredCallback(int index) {
 
             } else {
                 trace()<<"[info] Establishment done, transitioning to WORK state";
-                setState(shmrp_v1StateDef::WORK);
-                sendRinvBasedOnHop();
+                setState(sohmrpStateDef::WORK);
             }
             break;
         }
-        case shmrp_v1TimerDef::T_MEASURE: {
+        case sohmrpTimerDef::T_MEASURE: {
             trace()<<"[timer] T_MEASURE timer expired, PONG table size: "<<getPongTableSize();
             // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
-            setState(shmrp_v1StateDef::WORK);
-            sendRinvBasedOnHop();
+            setState(sohmrpStateDef::WORK);
             break;
         }
         default: {
@@ -753,11 +524,23 @@ void shmrp_v1::timerFiredCallback(int index) {
     }
 }
 
-void shmrp_v1::fromApplicationLayer(cPacket * pkt, const char *destination) {
+void sohmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
         trace()<<"[error] Packet's destination not sink: "<<destination;
         return;
     }
+
+    switch (getState()) {
+        case sohmrpStateDef::LEARN: {
+            trace()<<"[error] In LEARNING state, can't route packet";
+            return;
+        }
+        case sohmrpStateDef::MEASURE: {
+            trace()<<"[info] In MEASURE state, routing round-robin";
+        }
+
+    }
+
 
     // Shouldn't we buffer?
     if(isRoutingTableEmpty()) {
@@ -768,7 +551,7 @@ void shmrp_v1::fromApplicationLayer(cPacket * pkt, const char *destination) {
     auto pathid=selectPathid();
     std::string next_hop;
     
-    if(shmrp_v1RingDef::EXTERNAL==getRingStatus()) {
+    if(sohmrpRingDef::EXTERNAL==getRingStatus()) {
         next_hop=getNextHop(pathid);
     } else {
         next_hop=getNextHop(pathid,fp.rand_ring_hop);
@@ -779,16 +562,16 @@ void shmrp_v1::fromApplicationLayer(cPacket * pkt, const char *destination) {
 
 }
 
-void shmrp_v1::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
-    shmrp_v1Packet *net_pkt=dynamic_cast<shmrp_v1Packet *>(pkt);
+void sohmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
+    sohmrpPacket *net_pkt=dynamic_cast<sohmrpPacket *>(pkt);
     if(!net_pkt) {
         trace()<<"[error] Dynamic cast of packet failed";
     }
 
-    switch (net_pkt->getShmrp_v1PacketKind()) {
-        case shmrp_v1PacketDef::RINV_PACKET: {
+    switch (net_pkt->getSohmrpPacketKind()) {
+        case sohmrpPacketDef::RINV_PACKET: {
             trace()<<"[info] RINV_PACKET received";
-            auto rinv_pkt=dynamic_cast<shmrp_v1RinvPacket *>(pkt);
+            auto rinv_pkt=dynamic_cast<sohmrpRinvPacket *>(pkt);
 
             if(isSink()) {
                 trace()<<"[info] RINV_PACKET discarded by Sink";
@@ -798,20 +581,16 @@ void shmrp_v1::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, doubl
             if(rinv_pkt->getRound() > getRound()) {
                 setRound(rinv_pkt->getRound());
                 switch (getState()) {
-                    case shmrp_v1StateDef::LEARN: {
-                        cancelTimer(shmrp_v1TimerDef::T_L);
+                    case sohmrpStateDef::LEARN: {
+                        cancelTimer(sohmrpTimerDef::T_L);
                         break;
                     }
-                    case shmrp_v1StateDef::ESTABLISH: {
-                        cancelTimer(shmrp_v1TimerDef::T_ESTABLISH);
-                        break;
-                    }
-                    case shmrp_v1StateDef::MEASURE: {
-                        cancelTimer(shmrp_v1TimerDef::T_MEASURE);
+                    case sohmrpStateDef::MEASURE: {
+                        cancelTimer(sohmrpTimerDef::T_MEASURE);
                         break;
                     }
                 }
-                if(shmrp_v1RinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin || shmrp_v1RinvTblAdminDef::ERASE_ON_ROUND==fp.rinv_tbl_admin) {
+                if(sohmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin || sohmrpRinvTblAdminDef::ERASE_ON_ROUND==fp.rinv_tbl_admin) {
                     clearRinvTable();
                 }
 
@@ -819,11 +598,11 @@ void shmrp_v1::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, doubl
 
                 trace()<<"[info] Start LEARNING process"; 
                 // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
-                setState(shmrp_v1StateDef::LEARN);
-                setTimer(shmrp_v1TimerDef::T_L,getTl());
+                setState(sohmrpStateDef::LEARN);
+                setTimer(sohmrpTimerDef::T_L,getTl());
 
             } else if(rinv_pkt->getRound() == getRound()) {
-                if(shmrp_v1StateDef::LEARN != getState() && shmrp_v1RinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
+                if(sohmrpStateDef::LEARN != getState() && sohmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
                     trace()<<"[info] RINV packet discarded by node, not in learning state anymore";
                     break;
                 }
@@ -834,50 +613,19 @@ void shmrp_v1::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, doubl
 
             break;
         }
-        case shmrp_v1PacketDef::RREQ_PACKET: {
-            trace()<<"[info] RREQ_PACKET received";
-            auto rreq_pkt=dynamic_cast<shmrp_v1RreqPacket *>(pkt);
-            if(rreq_pkt->getRound() != getRound()) {
-                trace()<<"[error] RREQ_PACKET's round: "<<rreq_pkt->getRound()<<" does not equal local round: "<<getRound();
-                break;
-            }
-            if(getHop()<fp.ring_radius) {
-                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
-            } else if(getHop()==fp.ring_radius) {
-                if(resolveNetworkAddress(SELF_NETWORK_ADDRESS)!=rreq_pkt->getPathid()) {
-                    trace()<<"[error] RREQ packet's pathid "<<rreq_pkt->getPathid()<<" does not match node's network address: "<<SELF_NETWORK_ADDRESS;
-                    break;
-                }
-                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
-            } else {
-                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
-            }
-            break;
-        }
-        case shmrp_v1PacketDef::RRESP_PACKET: {
-            trace()<<"[info] RRESP_PACKET received";
-            auto rresp_pkt=dynamic_cast<shmrp_v1RrespPacket *>(pkt);
-            if(rreqEntryExists(rresp_pkt->getSource(),rresp_pkt->getPathid())) {
-                updateRreqTableWithRresp(rresp_pkt->getSource(),rresp_pkt->getPathid());
-            } else {
-                trace()<<"[error] No entry in RREQ table with address "<<rresp_pkt->getSource()<<" and pathid: "<<rresp_pkt->getPathid();
-                break;
-            }
-            break;
-        }
-        case shmrp_v1PacketDef::PING_PACKET: {
+        case sohmrpPacketDef::PING_PACKET: {
             trace()<<"[info] PING_PACKET received";
-            sendPong(dynamic_cast<shmrp_v1PingPacket *>(pkt)->getRound());
+            sendPong(dynamic_cast<sohmrpPingPacket *>(pkt)->getRound());
             break;
         }
-        case shmrp_v1PacketDef::PONG_PACKET: {
+        case sohmrpPacketDef::PONG_PACKET: {
             trace()<<"[info] PONG_PACKET received";
-            storePong(dynamic_cast<shmrp_v1PongPacket *>(pkt));
+            storePong(dynamic_cast<sohmrpPongPacket *>(pkt));
             break;
         }
-        case shmrp_v1PacketDef::DATA_PACKET: {
+        case sohmrpPacketDef::DATA_PACKET: {
             trace()<<"[info] DATA_PACKET received";
-            shmrp_v1DataPacket *data_pkt=dynamic_cast<shmrp_v1DataPacket *>(pkt);
+            sohmrpDataPacket *data_pkt=dynamic_cast<sohmrpDataPacket *>(pkt);
             incPktCountInRecvTable(std::string(data_pkt->getSource()));
             if(isSink() && 0==std::strcmp(data_pkt->getDestination(),SELF_NETWORK_ADDRESS)) {
                 trace()<<"[info] DATA packet arrived, forwarding to Application layer";
@@ -889,7 +637,7 @@ void shmrp_v1::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, doubl
 
                 std::string next_hop;
                 try {
-                    if(shmrp_v1RingDef::EXTERNAL==getRingStatus()) {
+                    if(sohmrpRingDef::EXTERNAL==getRingStatus()) {
                         next_hop=getNextHop(data_pkt->getPathid());
                     } else {
                         next_hop=getNextHop(selectPathid(),fp.rand_ring_hop );
@@ -904,18 +652,18 @@ void shmrp_v1::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, doubl
             }
             break;
         }
-        case shmrp_v1PacketDef::UNDEF_PACKET: {
+        case sohmrpPacketDef::UNDEF_PACKET: {
             trace()<<"[error] UNDEF_PACKET received";
             break;
         }
         default: {
-            trace()<<"[error] Unknown packet received with shmrp_v1PacketKind value: "<<net_pkt->getShmrp_v1PacketKind();
+            trace()<<"[error] Unknown packet received with sohmrpPacketKind value: "<<net_pkt->getSohmrpPacketKind();
             break;
         }
     }
 }
 
-map<int,string> shmrp_v1::getPathsAndHops() {
+map<int,string> sohmrp::getPathsAndHops() {
     map<int,string> ret;
     if(0==routing_table.size()) {
         throw std::length_error("Routing table empty");
@@ -926,39 +674,39 @@ map<int,string> shmrp_v1::getPathsAndHops() {
     return ret;
 }
 
-shmrp_v1RingDef shmrp_v1::getRingStatus() const {
+sohmrpRingDef sohmrp::getRingStatus() const {
     if(0 == getHop()) {
-        return shmrp_v1RingDef::CENTRAL;
+        return sohmrpRingDef::CENTRAL;
     } else if(fp.ring_radius > getHop()) {
-        return shmrp_v1RingDef::INTERNAL;
+        return sohmrpRingDef::INTERNAL;
     } else if(fp.ring_radius == getHop()) {
-        return shmrp_v1RingDef::BORDER;
+        return sohmrpRingDef::BORDER;
     }
-    return shmrp_v1RingDef::EXTERNAL;
+    return sohmrpRingDef::EXTERNAL;
 }
 
-std::string shmrp_v1::ringToStr(shmrp_v1RingDef pos) const {
+std::string sohmrp::ringToStr(sohmrpRingDef pos) const {
     switch (pos) {
-        case shmrp_v1RingDef::CENTRAL: {
+        case sohmrpRingDef::CENTRAL: {
             return string("central");
         }
-        case shmrp_v1RingDef::INTERNAL: {
+        case sohmrpRingDef::INTERNAL: {
             return string("internal");
         }
-        case shmrp_v1RingDef::BORDER: {
+        case sohmrpRingDef::BORDER: {
             return string("border");
         }
-        case shmrp_v1RingDef::EXTERNAL: {
+        case sohmrpRingDef::EXTERNAL: {
             return string("external");
         }
     }
     return string("unkown");
 }
 
-void shmrp_v1::serializeRoutingTable() {
+void sohmrp::serializeRoutingTable() {
     serializeRoutingTable(routing_table);
 }
-void shmrp_v1::serializeRoutingTable(std::map<std::string,node_entry> table) {
+void sohmrp::serializeRoutingTable(std::map<std::string,node_entry> table) {
     y_out<<YAML::BeginSeq;
     for(auto i : table) {
         y_out<<YAML::BeginMap;
@@ -973,11 +721,11 @@ void shmrp_v1::serializeRoutingTable(std::map<std::string,node_entry> table) {
     y_out<<YAML::EndSeq;
 }
 
-void shmrp_v1::serializeRecvTable() {
+void sohmrp::serializeRecvTable() {
     serializeRecvTable(recv_table);
 }
 
-void shmrp_v1::serializeRecvTable(std::map<std::string,node_entry> table) {
+void sohmrp::serializeRecvTable(std::map<std::string,node_entry> table) {
     y_out<<YAML::BeginSeq;
     for(auto i : table) {
         y_out<<YAML::BeginMap;
@@ -992,7 +740,7 @@ void shmrp_v1::serializeRecvTable(std::map<std::string,node_entry> table) {
 }
 
 
-void shmrp_v1::finishSpecific() {
+void sohmrp::finishSpecific() {
     if (isSink()) { // && getParentModule()->getIndex() == 0 ) {
         cTopology *topo;        // temp variable to access energy spent by other nodes
         topo = new cTopology("topo");
@@ -1035,7 +783,7 @@ void shmrp_v1::finishSpecific() {
         y_out<<YAML::EndMap;
 
         for (int i = 1; i < topo->getNumNodes(); ++i) {
-            shmrp_v1 *shmrp_v1_instance = dynamic_cast<shmrp_v1*>
+            sohmrp *sohmrp_instance = dynamic_cast<sohmrp*>
                 (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
             auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(i)->getModule()->getSubmodule("MobilityManager"));
            
@@ -1043,7 +791,7 @@ void shmrp_v1::finishSpecific() {
              y_out<<YAML::Key<<"node";
              y_out<<YAML::Value<<i;
              try {
-                auto table=shmrp_v1_instance->getRecvTable();
+                auto table=sohmrp_instance->getRecvTable();
                  y_out<<YAML::Key<<"recv_table";
                  y_out<<YAML::Value;
                  serializeRecvTable(table);
@@ -1051,7 +799,7 @@ void shmrp_v1::finishSpecific() {
                  trace()<<"[error] No recv table: "<<e.what();
              }
              try {
-                auto table=shmrp_v1_instance->getRoutingTable();
+                auto table=sohmrp_instance->getRoutingTable();
                  y_out<<YAML::Key<<"routing_table";
                  y_out<<YAML::Value;
                  serializeRoutingTable(table);
@@ -1059,13 +807,13 @@ void shmrp_v1::finishSpecific() {
                  trace()<<"[error] No routing table: "<<e.what();
              }
                y_out<<YAML::Key<<"state";
-               y_out<<YAML::Value<<stateToStr(shmrp_v1_instance->getState());
+               y_out<<YAML::Value<<stateToStr(sohmrp_instance->getState());
 
   
 
             map<int,string> routes;
             try {
-                routes=shmrp_v1_instance->getPathsAndHops();
+                routes=sohmrp_instance->getPathsAndHops();
             } catch(std::length_error &e) {
                 trace()<<"[error] Can't retrieve paths and hops for node "<<i<<": "<<e.what();
             }
@@ -1074,7 +822,7 @@ void shmrp_v1::finishSpecific() {
             if(res_mgr->isDead()) {
                 r_out<<"'"<<i<<"':'"<<"dead',";
             } else {
-                r_out<<"'"<<i<<"':'"<<ringToStr(shmrp_v1_instance->getRingStatus())<<"',";
+                r_out<<"'"<<i<<"':'"<<ringToStr(sohmrp_instance->getRingStatus())<<"',";
             }
 
 
@@ -1098,7 +846,7 @@ void shmrp_v1::finishSpecific() {
             y_out<<YAML::Key;
             y_out<<"role";
             y_out<<YAML::Value;
-            y_out<<(res_mgr->isDead()?"dead":ringToStr(shmrp_v1_instance->getRingStatus()));
+            y_out<<(res_mgr->isDead()?"dead":ringToStr(sohmrp_instance->getRingStatus()));
             y_out<<YAML::EndMap;
 
             // seek back one character
@@ -1122,7 +870,7 @@ void shmrp_v1::finishSpecific() {
     return;
 }
 
-void shmrp_v1::handleMacControlMessage(cMessage *msg) {
+void sohmrp::handleMacControlMessage(cMessage *msg) {
     trace()<<"[info] Entering handleMacControlMessage()";
     TMacControlMessage *mac_msg=check_and_cast<TMacControlMessage *>(msg);
     if(!mac_msg) {

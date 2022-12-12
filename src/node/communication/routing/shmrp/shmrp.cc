@@ -968,6 +968,8 @@ void shmrp::serializeRoutingTable(std::map<std::string,node_entry> table) {
         y_out<<YAML::Value<<i.second.pathid;
         y_out<<YAML::Key<<"pkt_count";
         y_out<<YAML::Value<<i.second.pkt_count;
+        y_out<<YAML::Key<<"ack_count";          
+        y_out<<YAML::Value<<i.second.ack_count;
         y_out<<YAML::EndMap;
     }
     y_out<<YAML::EndSeq;
