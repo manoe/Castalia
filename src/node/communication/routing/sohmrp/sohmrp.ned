@@ -7,9 +7,9 @@
 //*                                                                             *
 //*******************************************************************************
 
-package node.communication.routing.shmrp_v1;
+package node.communication.routing.sohmrp;
 
-simple shmrp_v1 like node.communication.routing.iRouting
+simple sohmrp like node.communication.routing.iRouting
 //====================================================================================
 // Network_GenericFrame has the following real-world
 // (non-simulation-specific) fields:

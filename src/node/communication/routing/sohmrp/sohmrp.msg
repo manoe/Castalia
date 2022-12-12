@@ -14,24 +14,23 @@ cplusplus {{
 
 class RoutingPacket;
 
-enum shmrp_v1PacketDef {
+enum sohmrpPacketDef {
     UNDEF_PACKET        = 0;
     DATA_PACKET         = 1;
     RINV_PACKET         = 2;
-    RREQ_PACKET         = 4;
-    RRESP_PACKET        = 8;
+    RUPD_PACKET         = 4;
     PING_PACKET         = 16;
     PONG_PACKET         = 32;
 }
 
 
 // RREQ = { R, S, P, len, nmas }
-packet shmrp_v1Packet extends RoutingPacket {
-    int shmrp_v1PacketKind enum (shmrp_v1PacketDef); // 1 byte
+packet sohmrpPacket extends RoutingPacket {
+    int sohmrpPacketKind enum (sohmrpPacketDef); // 1 byte
     string origin;
 }
 
-packet shmrp_v1RinvPacket extends shmrp_v1Packet {
+packet sohmrpRinvPacket extends sohmrpPacket {
     int round;      // 2 byte
     int pathid;     // 1 byte
     int hop;        // 2 byte
@@ -39,27 +38,22 @@ packet shmrp_v1RinvPacket extends shmrp_v1Packet {
     int emerg;      // 1 byte
 }
 
-packet shmrp_v1RreqPacket extends shmrp_v1Packet {
-    int round;      // 2 byte
-    int pathid;     // 1 byte
-//    int hop;        // 2 byte probably makes no sense
+packet sohmrpRupdPacket extends sohmrpPacket {
+    int     round;      // 2 byte
+    int     pathid;     // 1 byte
+    int     hop;        // 2 byte
+    double  pdr;        // 4 byte
 }
 
-packet shmrp_v1RrespPacket extends shmrp_v1Packet {
-    int round;      // 2 byte
-    int pathid;     // 1 byte
-    int hop;        // 2 byte
-}
-
-packet shmrp_v1DataPacket extends shmrp_v1Packet {
+packet sohmrpDataPacket extends sohmrpPacket {
     int pathid;
     int hop;
 }
 
-packet shmrp_v1PingPacket extends shmrp_v1Packet {
+packet sohmrpPingPacket extends sohmrpPacket {
     int round;
 }
 
-packet shmrp_v1PongPacket extends shmrp_v1Packet {
+packet sohmrpPongPacket extends sohmrpPacket {
     int round;
 }
