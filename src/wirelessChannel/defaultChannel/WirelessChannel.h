@@ -20,6 +20,7 @@
 
 #include "time.h"
 #include <list>
+#include <yaml-cpp/yaml.h>
 
 using namespace std;
 
