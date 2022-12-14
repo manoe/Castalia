@@ -464,6 +464,9 @@ void WirelessChannel::handleMessage(cMessage * msg)
 void WirelessChannel::finishSpecific()
 {
 
+    YAML::Emitter y_out;
+    y_out<<YAML::BeginSeq;
+
 	/*****************************************************
 	 * Delete dynamically allocated arrays. Some allocate
 	 * lists of objects so they need an extra nested loop
@@ -473,11 +476,30 @@ void WirelessChannel::finishSpecific()
 	/* delete pathLoss */
 	for (int i = 0; i < numOfSpaceCells; i++) {
 		list <PathLossElement*>::iterator it1;
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"node";
+        y_out<<YAML::Value<<i;
+        y_out<<YAML::Key<<"neighbors";
+        y_out<<YAML::Value;
+        y_out<<YAML::BeginSeq;
 		for (it1 = pathLoss[i].begin(); it1 != pathLoss[i].end(); it1++) {
+            y_out<<YAML::BeginMap;
+            y_out<<YAML::Key<<"node";
+            y_out<<YAML::Value<<(*it1)->cellID;
+            y_out<<YAML::Key<<"PL";
+            y_out<<YAML::Value<<(*it1)->avgPathLoss;
+            y_out<<YAML::EndMap;
 			delete(*it1);	// deallocate the memory occupied by the object
 		}
+        y_out<<YAML::EndSeq;
+        y_out<<YAML::EndMap;
 	}
 	delete[]pathLoss;	// the delete[] operator releases memory allocated with new []
+    y_out<<YAML::EndSeq;
+
+    ofstream avg_pl_file("avg_pl.yaml");
+    avg_pl_file<<y_out.c_str();
+    avg_pl_file.close();
 
 	/* delete nodesAffectedByTransmitter */
 	delete[]nodesAffectedByTransmitter;	// the delete[] operator releases memory allocated with new []
