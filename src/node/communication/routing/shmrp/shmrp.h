@@ -18,6 +18,7 @@
 #include <ctime>
 #include <cstring>
 #include <yaml-cpp/yaml.h>
+#include <cerrno>
 
 #include "node/communication/routing/VirtualRouting.h"
 #include "node/communication/routing/shmrp/shmrp_m.h"
@@ -149,6 +150,7 @@ struct feat_par {
         bool   interf_ping;
         bool   round_keep_pong;
         bool   rand_ring_hop;
+        bool   static_routing;
 };
 
 class shmrp: public VirtualRouting {
@@ -168,6 +170,7 @@ class shmrp: public VirtualRouting {
 
     protected:
         void startup();
+        void parseRouting(std::string);
         void fromApplicationLayer(cPacket *, const char *);
         void fromMacLayer(cPacket *, int, double, double);
         void timerFiredCallback(int);

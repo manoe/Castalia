@@ -53,10 +53,13 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_random_t_l       = default(false); // Randomize Tl timer
     double f_random_t_l_sigma = default(0.2);   // Sigma parameter of random Tl timer, where Tl is mu
     string f_rinv_table_admin = default("erase_on_learn"); // How to handle RINV table, available: erase_on_learn, erase_on_round, never_erase 
-    bool   f_interf_ping      = default(false);
+    bool   f_interf_ping      = default(false); // Perform interference measurement with PING messages
     bool   f_round_keep_pong  = default(false); // Keep PONG messages received in the same round
 
     bool   f_rand_ring_hop    = default(false); // Select random nextHop inside ring
+
+    bool   f_static_routing   = default(false); // Use static routing
+    string f_routing_file     = default("routes.yaml"); // YAMl file dscribing static routing
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
