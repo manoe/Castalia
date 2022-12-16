@@ -25,15 +25,6 @@ void shmrp::startup() {
         trace()<<"[error] No sink address provisioned";
     }
 
-    if(isSink()) {
-        setHop(0);
-        setTimer(shmrpTimerDef::SINK_START,par("t_start"));
-        setState(shmrpStateDef::WORK);
-    } else {
-        setHop(std::numeric_limits<int>::max());
-        setState(shmrpStateDef::INIT);
-    }
-    setRound(0);
     fp.t_l              = par("t_l");
     fp.ring_radius      = par("ring_radius");
     fp.t_est            = par("t_est");
@@ -51,6 +42,44 @@ void shmrp::startup() {
     fp.interf_ping      = par("f_interf_ping");
     fp.round_keep_pong  = par("f_round_keep_pong");
     fp.rand_ring_hop    = par("f_rand_ring_hop");
+    fp.static_routing   = par("f_static_routing");
+
+    if(fp.static_routing) {
+        parseRouting(par("f_routing_file").stringValue());
+        setState(shmrpStateDef::WORK);
+        setHop(0); // probably wrong
+    } else {
+        if(isSink()) {
+            setHop(0);
+            setTimer(shmrpTimerDef::SINK_START,par("t_start"));
+            setState(shmrpStateDef::WORK);
+        } else {
+            setHop(std::numeric_limits<int>::max());
+            setState(shmrpStateDef::INIT);
+        }
+    }
+    setRound(0);
+}
+
+void shmrp::parseRouting(std::string file) {
+    YAML::Node nodes;
+    try {
+        nodes = YAML::LoadFile("routes.yaml");
+    }
+    catch (std::exception &e) {
+        trace()<<e.what();
+        throw e;
+    }
+    if(nodes.IsSequence()) {
+        trace()<<"Sequence";
+    }
+    for(auto i = 0 ; i < nodes.size() ; ++i) {
+        if(0 == std::strcmp(nodes[i]["node"].as<std::string>().c_str(), SELF_NETWORK_ADDRESS)) {
+            for(auto j = 0 ; j < nodes[i]["routes"].size() ; ++j) {
+                nodes[i]["routes"][j];
+            }
+        } 
+    }
 }
 
 bool shmrp::isSink() const {
