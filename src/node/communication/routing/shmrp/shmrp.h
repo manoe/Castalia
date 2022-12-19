@@ -151,6 +151,8 @@ struct feat_par {
         bool   round_keep_pong;
         bool   rand_ring_hop;
         bool   static_routing;
+        bool   measure_w_rreq;
+        int    meas_rreq_count;
 };
 
 class shmrp: public VirtualRouting {
@@ -236,6 +238,7 @@ class shmrp: public VirtualRouting {
 
 
         void sendRreqs();
+        void sendRreqs(int);
 
         void sendRresp(const char *,int, int);
 
