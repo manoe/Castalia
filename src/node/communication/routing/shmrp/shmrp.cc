@@ -43,6 +43,8 @@ void shmrp::startup() {
     fp.round_keep_pong  = par("f_round_keep_pong");
     fp.rand_ring_hop    = par("f_rand_ring_hop");
     fp.static_routing   = par("f_static_routing");
+    fp.measure_w_rreq   = par("f_measure_w_rreq");
+    fp.meas_rreq_count  = par("f_meas_rreq_count");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -450,24 +452,32 @@ bool shmrp::rrespReceived() const {
     return false;
 }
 
-
-void shmrp::sendRreqs() {
-    trace()<<"[info] Entering shmrp::sendRreqs()";
+void shmrp::sendRreqs(int count) {
+    trace()<<"[info] Entering shmrp::sendRreqs(count="<<count<<")";
+    
     if(rreq_table.empty()) {
        throw std::length_error("[error] RREQ table empty");
     }
-    for(auto ne: rreq_table) {
-        shmrpRreqPacket* rreq_pkt=new shmrpRreqPacket("SHMRP RREQ packet",NETWORK_LAYER_PACKET);
-        rreq_pkt->setByteLength(netDataFrameOverhead);
-        rreq_pkt->setShmrpPacketKind(shmrpPacketDef::RREQ_PACKET);
-        rreq_pkt->setSource(SELF_NETWORK_ADDRESS);
-        rreq_pkt->setDestination(ne.second.nw_address.c_str());
-        rreq_pkt->setRound(getRound());
-        rreq_pkt->setPathid(ne.second.pathid);
-        rreq_pkt->setSequenceNumber(currentSequenceNumber++);
-        trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
-        toMacLayer(rreq_pkt, resolveNetworkAddress(ne.second.nw_address.c_str()));
+    for(auto &&ne: rreq_table) {
+        for(int i = 0 ; i < count ; ++i) {
+            shmrpRreqPacket* rreq_pkt=new shmrpRreqPacket("SHMRP RREQ packet",NETWORK_LAYER_PACKET);
+            rreq_pkt->setByteLength(netDataFrameOverhead);
+            rreq_pkt->setShmrpPacketKind(shmrpPacketDef::RREQ_PACKET);
+            rreq_pkt->setSource(SELF_NETWORK_ADDRESS);
+            rreq_pkt->setDestination(ne.second.nw_address.c_str());
+            rreq_pkt->setRound(getRound());
+            rreq_pkt->setPathid(ne.second.pathid);
+            rreq_pkt->setSequenceNumber(currentSequenceNumber++);
+            trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
+            ne.second.pkt_count = count;
+            toMacLayer(rreq_pkt, resolveNetworkAddress(ne.second.nw_address.c_str()));
+        }
     }
+}
+
+void shmrp::sendRreqs() {
+    trace()<<"[info] Entering shmrp::sendRreqs()";
+    sendRreqs(1);
 }
 
 void shmrp::sendRresp(const char *dest, int round, int pathid) {
@@ -705,6 +715,9 @@ void shmrp::timerFiredCallback(int index) {
             } catch (std::exception &e) {
                 trace()<<e.what();
                 break;
+            }
+            if(fp.measure_w_rreq) {
+                sendRreqs(fp.meas_rreq_count);
             }
             sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
             setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
@@ -1161,9 +1174,14 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
     }
     trace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
     std::string nw_address = std::to_string(mac_msg->getDestination());
-    if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind() && routing_table.find(nw_address) != routing_table.end()) {
-        routing_table[nw_address].ack_count++;
+    if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
+        if(rreq_table.find(nw_address) != rreq_table.end()){
+            rreq_table[nw_address].ack_count++;
+        }
+        if(routing_table.find(nw_address) != routing_table.end()) {
+            routing_table[nw_address].ack_count++;
+        }
     }
-            
+
     delete msg;
 }

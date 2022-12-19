@@ -43,6 +43,8 @@ simple shmrp like node.communication.routing.iRouting
     string sink_address = default("0");         // sink's network address
 
     bool   f_rresp_required   = default(false); // Expect RRESP to use route
+    bool   f_measure_w_rreq   = default(false); // Measure with subsequent RREQ messages
+    int    f_meas_rreq_count  = default(10);    // How many RREQs should we send
     bool   f_restart_learning = default(false); // Restart learning if isolated
     bool   f_replay_rinv      = default(false); // Ask neighbours to re-send RINVs within round
     string f_cost_function    = default("hop"); // Cost Functions, available: hop, hop_and_interf, hop_emerg_and_interf
