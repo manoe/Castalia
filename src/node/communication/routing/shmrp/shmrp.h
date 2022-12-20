@@ -64,10 +64,13 @@ enum shmrpRingDef {
 };
 
 enum shmrpCostFuncDef {
-    NOT_DEFINED          = 0,
-    HOP                  = 1,
-    HOP_AND_INTERF       = 2,
-    HOP_EMERG_AND_INTERF = 3,
+    NOT_DEFINED              = 0,
+    HOP                      = 1,
+    HOP_AND_INTERF           = 2,
+    HOP_EMERG_AND_INTERF     = 3,
+    HOP_AND_PDR              = 4,
+    HOP_PDR_AND_INTERF       = 5,
+    HOP_EMERG_PDR_AND_INTERF = 6
 };
 
 enum shmrpRinvTblAdminDef {
@@ -227,7 +230,7 @@ class shmrp: public VirtualRouting {
 
         void clearRoutingTable();
         void constructRoutingTable(bool);
-        void constructRoutingTable(bool,bool);
+        void constructRoutingTable(bool,bool,bool);
         bool isRoutingTableEmpty() const;
         int  selectPathid();
         std::string getNextHop(int);

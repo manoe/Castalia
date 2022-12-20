@@ -121,6 +121,12 @@ shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
         return shmrpCostFuncDef::HOP_AND_INTERF;
     } else if("hop_emerg_and_interf" == str) {
         return shmrpCostFuncDef::HOP_EMERG_AND_INTERF;
+    } else if("hop_and_pdr" == str) {
+        return shmrpCostFuncDef::HOP_AND_PDR;
+    } else if("hop_pdr_and_interf" == str) {
+        return shmrpCostFuncDef::HOP_PDR_AND_INTERF;
+    } else if("hop_emerg_pdr_and_interf" == str) {
+        return shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF;
     }
     throw std::invalid_argument("[error] Unkown cost function");
     return shmrpCostFuncDef::NOT_DEFINED; 
@@ -336,12 +342,24 @@ double shmrp::calculateCostFunction(node_entry ne) {
             ret_val=static_cast<double>(ne.hop);
             break;
         }
+        case shmrpCostFuncDef::HOP_AND_PDR: {
+            ret_val=static_cast<double>(ne.hop)*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count);
+            break;
+        }
         case shmrpCostFuncDef::HOP_AND_INTERF: {
             ret_val=static_cast<double>(ne.hop) * pow(ne.interf,fp.cost_func_beta);
             break;
         }
+        case shmrpCostFuncDef::HOP_PDR_AND_INTERF: {
+            ret_val=static_cast<double>(ne.hop) * pow(ne.interf,fp.cost_func_beta)*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count);
+            break;
+        }
         case shmrpCostFuncDef::HOP_EMERG_AND_INTERF: {
             ret_val=static_cast<double>(ne.hop) * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta);
+            break;
+        }
+        case shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF: {
+            ret_val=static_cast<double>(ne.hop) * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta)*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count);
             break;
         }
         default: {
@@ -469,7 +487,7 @@ void shmrp::sendRreqs(int count) {
             rreq_pkt->setPathid(ne.second.pathid);
             rreq_pkt->setSequenceNumber(currentSequenceNumber++);
             trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
-            ne.second.pkt_count = count;
+            ne.second.pkt_count++;
             toMacLayer(rreq_pkt, resolveNetworkAddress(ne.second.nw_address.c_str()));
         }
     }
@@ -543,8 +561,8 @@ void shmrp::constructRoutingTable(bool rresp_req) {
     }
 }
 
-void shmrp::constructRoutingTable(bool rresp_req, bool app_cf) {
-    trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<")";
+void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, bool pdr=false) {
+    trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<", pdr="<<pdr<<")";
     if(!app_cf) {
         constructRoutingTable(rresp_req);
         return;
@@ -561,6 +579,8 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf) {
         }
         return;
     }
+
+
 
     std::map<int, std::vector<node_entry>> cl;
     std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
@@ -580,12 +600,15 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf) {
         node_entry c_ne=l.second[0];
         trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
         for(auto ne: l.second) {
+            trace()<<"[info] Node "<<ne.nw_address<<" pkt data - sent: "<<ne.pkt_count<<" ack: "<<ne.ack_count;
             if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
                 trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
                 c_ne=ne;
             }
         }
         trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
+        c_ne.pkt_count = 0;
+        c_ne.ack_count = 0;
         routing_table.insert({c_ne.nw_address,c_ne});
 
         rinv_table[c_ne.nw_address].used=true;
@@ -718,8 +741,9 @@ void shmrp::timerFiredCallback(int index) {
             }
             if(fp.measure_w_rreq) {
                 sendRreqs(fp.meas_rreq_count);
+            } else {
+                sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
             }
-            sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
             setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
             break;
         }
