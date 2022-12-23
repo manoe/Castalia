@@ -61,7 +61,7 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_rand_ring_hop    = default(false); // Select random nextHop inside ring
 
     bool   f_static_routing   = default(false); // Use static routing
-    string f_routing_file     = default("routes.yaml"); // YAMl file dscribing static routing
+    string f_routing_file     = default("routes.yaml"); // YAMl file describing static routing
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ

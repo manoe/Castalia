@@ -343,7 +343,7 @@ double shmrp::calculateCostFunction(node_entry ne) {
             break;
         }
         case shmrpCostFuncDef::HOP_AND_PDR: {
-            ret_val=static_cast<double>(ne.hop)*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count);
+            ret_val=static_cast<double>(ne.hop)*static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count);
             break;
         }
         case shmrpCostFuncDef::HOP_AND_INTERF: {
@@ -351,7 +351,7 @@ double shmrp::calculateCostFunction(node_entry ne) {
             break;
         }
         case shmrpCostFuncDef::HOP_PDR_AND_INTERF: {
-            ret_val=static_cast<double>(ne.hop) * pow(ne.interf,fp.cost_func_beta)*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count);
+            ret_val=static_cast<double>(ne.hop) * pow(ne.interf,fp.cost_func_beta)*static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count);
             break;
         }
         case shmrpCostFuncDef::HOP_EMERG_AND_INTERF: {
@@ -359,7 +359,7 @@ double shmrp::calculateCostFunction(node_entry ne) {
             break;
         }
         case shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF: {
-            ret_val=static_cast<double>(ne.hop) * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta)*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count);
+            ret_val=static_cast<double>(ne.hop) * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta)*static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count);
             break;
         }
         default: {
