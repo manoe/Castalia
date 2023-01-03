@@ -66,19 +66,23 @@ void shmrp::startup() {
 void shmrp::parseRouting(std::string file) {
     YAML::Node nodes;
     try {
-        nodes = YAML::LoadFile("routes.yaml");
+        nodes = YAML::LoadFile(file);
     }
     catch (std::exception &e) {
         trace()<<e.what();
         throw e;
     }
-    if(nodes.IsSequence()) {
-        trace()<<"Sequence";
+    if(!nodes.IsSequence()) {
+        throw std::runtime_error("[error] Routing file - format error - node sequence missing");
     }
     for(auto i = 0 ; i < nodes.size() ; ++i) {
         if(0 == std::strcmp(nodes[i]["node"].as<std::string>().c_str(), SELF_NETWORK_ADDRESS)) {
+            if(!nodes[i]["routes"].IsSequence()) {
+                throw std::runtime_error("[error] Routing file - format error - route sequence missing");
+            }
             for(auto j = 0 ; j < nodes[i]["routes"].size() ; ++j) {
-                nodes[i]["routes"][j];
+                trace()<<"[info] "<<nodes[i]["routes"][j]["node"].as<std::string>()<<" node via pathid "<<nodes[i]["routes"][j]["pathid"].as<std::string>();
+
             }
         } 
     }
@@ -543,6 +547,16 @@ void shmrp::clearRoutingTable() {
     trace()<<"[info] Routing table erased";
     routing_table.clear();
 }
+
+void shmrp::addRoute(std::string next_hop, int pathid) {
+    trace()<<"[info] Entering shmrp::addRoute(next_hop="<<next_hop<<", pathid="<<pathid;
+    if(routing_table.find(next_hop) == routing_table.end()) {
+        routing_table[next_hop]={next_hop,pathid };
+    } else {
+        trace()<<"[error] Route already exists";
+    }
+}
+
 
 bool shmrp::isRoutingTableEmpty() const {
     return routing_table.empty();
