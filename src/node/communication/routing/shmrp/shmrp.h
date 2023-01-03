@@ -231,6 +231,7 @@ class shmrp: public VirtualRouting {
         void clearRoutingTable();
         void constructRoutingTable(bool);
         void constructRoutingTable(bool,bool,bool);
+        void addRoute(std::string, int);
         bool isRoutingTableEmpty() const;
         int  selectPathid();
         std::string getNextHop(int);
