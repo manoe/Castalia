@@ -222,6 +222,7 @@ class shmrp: public VirtualRouting {
         bool isRreqTableEmpty() const;
         void constructRreqTable();
         bool rreqEntryExists(const char *, int);
+        int  getRreqPktCount();
         void updateRreqTableWithRresp(const char *, int);
         bool rrespReceived() const;
 
