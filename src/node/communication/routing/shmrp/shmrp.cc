@@ -467,306 +467,319 @@ void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
     }
 }
 
-bool shmrp::rrespReceived() const {
-    if(std::any_of(rreq_table.begin(), rreq_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.rresp; } )) {
-        return true;
-    }
-    return false;
-}
-
-void shmrp::sendRreqs(int count) {
-    trace()<<"[info] Entering shmrp::sendRreqs(count="<<count<<")";
-    
+int  shmrp::getRreqPktCount() {
     if(rreq_table.empty()) {
        throw std::length_error("[error] RREQ table empty");
     }
-    for(auto &&ne: rreq_table) {
-        for(int i = 0 ; i < count ; ++i) {
-            shmrpRreqPacket* rreq_pkt=new shmrpRreqPacket("SHMRP RREQ packet",NETWORK_LAYER_PACKET);
-            rreq_pkt->setByteLength(netDataFrameOverhead);
-            rreq_pkt->setShmrpPacketKind(shmrpPacketDef::RREQ_PACKET);
-            rreq_pkt->setSource(SELF_NETWORK_ADDRESS);
-            rreq_pkt->setDestination(ne.second.nw_address.c_str());
-            rreq_pkt->setRound(getRound());
-            rreq_pkt->setPathid(ne.second.pathid);
-            rreq_pkt->setSequenceNumber(currentSequenceNumber++);
-            trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
-            ne.second.pkt_count++;
-            toMacLayer(rreq_pkt, resolveNetworkAddress(ne.second.nw_address.c_str()));
+    trace()<<"[info] Rreq Pkt count: "<<rreq_table.begin()->second.pkt_count;
+    return rreq_table.begin()->second.pkt_count;
+}
+
+
+    bool shmrp::rrespReceived() const {
+        if(std::any_of(rreq_table.begin(), rreq_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.rresp; } )) {
+            return true;
+        }
+        return false;
+    }
+
+    void shmrp::sendRreqs(int count) {
+        trace()<<"[info] Entering shmrp::sendRreqs(count="<<count<<")";
+        
+        if(rreq_table.empty()) {
+           throw std::length_error("[error] RREQ table empty");
+        }
+        for(auto &&ne: rreq_table) {
+            for(int i = 0 ; i < count ; ++i) {
+                shmrpRreqPacket* rreq_pkt=new shmrpRreqPacket("SHMRP RREQ packet",NETWORK_LAYER_PACKET);
+                rreq_pkt->setByteLength(netDataFrameOverhead);
+                rreq_pkt->setShmrpPacketKind(shmrpPacketDef::RREQ_PACKET);
+                rreq_pkt->setSource(SELF_NETWORK_ADDRESS);
+                rreq_pkt->setDestination(ne.second.nw_address.c_str());
+                rreq_pkt->setRound(getRound());
+                rreq_pkt->setPathid(ne.second.pathid);
+                rreq_pkt->setSequenceNumber(currentSequenceNumber++);
+                trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
+                ne.second.pkt_count++;
+                toMacLayer(rreq_pkt, resolveNetworkAddress(ne.second.nw_address.c_str()));
+            }
         }
     }
-}
 
-void shmrp::sendRreqs() {
-    trace()<<"[info] Entering shmrp::sendRreqs()";
-    sendRreqs(1);
-}
-
-void shmrp::sendRresp(const char *dest, int round, int pathid) {
-    trace()<<"[info] Sending RRESP to "<<dest<<" with round "<<round<<" and pathid "<<pathid;
-    shmrpRrespPacket* rresp_pkt=new shmrpRrespPacket("SHMRP RRESP packet",NETWORK_LAYER_PACKET);
-    rresp_pkt->setByteLength(netDataFrameOverhead);
-    rresp_pkt->setShmrpPacketKind(shmrpPacketDef::RRESP_PACKET);
-    rresp_pkt->setSource(SELF_NETWORK_ADDRESS);
-    rresp_pkt->setDestination(dest);
-    rresp_pkt->setRound(round);
-    rresp_pkt->setPathid(pathid);
-    rresp_pkt->setSequenceNumber(currentSequenceNumber++);
-    toMacLayer(rresp_pkt, resolveNetworkAddress(dest));
-}
-
-void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
-    trace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
-    shmrpDataPacket *data_pkt=new shmrpDataPacket("SHMRP DATA packet",NETWORK_LAYER_PACKET);
-    data_pkt->setByteLength(netDataFrameOverhead);
-    data_pkt->setShmrpPacketKind(shmrpPacketDef::DATA_PACKET);
-    data_pkt->setSource(SELF_NETWORK_ADDRESS);
-    data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
-    data_pkt->setDestination(dest.c_str());
-    data_pkt->setPathid(pathid);
-    data_pkt->setSequenceNumber(currentSequenceNumber++);
-    data_pkt->encapsulate(pkt);
-    toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
-}
-
-void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest) {
-    trace()<<"[info] Entering forwardData(dest="<<dest<<")";
-    forwardData(data_pkt, dest, data_pkt->getPathid());
-}
-
-void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest, int pathid) {
-    trace()<<"[info] Entering forwardData(dest="<<dest<<", pathid="<<pathid<<")";
-    data_pkt->setSource(SELF_NETWORK_ADDRESS);
-    data_pkt->setDestination(dest.c_str());
-    data_pkt->setPathid(pathid);
-    data_pkt->setSequenceNumber(currentSequenceNumber++);
-    toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
-}
-
-void shmrp::clearRoutingTable() {
-    trace()<<"[info] Routing table erased";
-    routing_table.clear();
-}
-
-void shmrp::addRoute(std::string next_hop, int pathid) {
-    trace()<<"[info] Entering shmrp::addRoute(next_hop="<<next_hop<<", pathid="<<pathid<<")";
-    if(routing_table.find(next_hop) == routing_table.end()) {
-        routing_table[next_hop]={next_hop,pathid };
-    } else {
-        trace()<<"[error] Route already exists";
+    void shmrp::sendRreqs() {
+        trace()<<"[info] Entering shmrp::sendRreqs()";
+        sendRreqs(1);
     }
-}
 
+    void shmrp::sendRresp(const char *dest, int round, int pathid) {
+        trace()<<"[info] Sending RRESP to "<<dest<<" with round "<<round<<" and pathid "<<pathid;
+        shmrpRrespPacket* rresp_pkt=new shmrpRrespPacket("SHMRP RRESP packet",NETWORK_LAYER_PACKET);
+        rresp_pkt->setByteLength(netDataFrameOverhead);
+        rresp_pkt->setShmrpPacketKind(shmrpPacketDef::RRESP_PACKET);
+        rresp_pkt->setSource(SELF_NETWORK_ADDRESS);
+        rresp_pkt->setDestination(dest);
+        rresp_pkt->setRound(round);
+        rresp_pkt->setPathid(pathid);
+        rresp_pkt->setSequenceNumber(currentSequenceNumber++);
+        toMacLayer(rresp_pkt, resolveNetworkAddress(dest));
+    }
 
-bool shmrp::isRoutingTableEmpty() const {
-    return routing_table.empty();
-}
+    void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
+        trace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
+        shmrpDataPacket *data_pkt=new shmrpDataPacket("SHMRP DATA packet",NETWORK_LAYER_PACKET);
+        data_pkt->setByteLength(netDataFrameOverhead);
+        data_pkt->setShmrpPacketKind(shmrpPacketDef::DATA_PACKET);
+        data_pkt->setSource(SELF_NETWORK_ADDRESS);
+        data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
+        data_pkt->setDestination(dest.c_str());
+        data_pkt->setPathid(pathid);
+        data_pkt->setSequenceNumber(currentSequenceNumber++);
+        data_pkt->encapsulate(pkt);
+        toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
+    }
 
-void shmrp::constructRoutingTable(bool rresp_req) {
-    trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<")";
-    for(auto ne: rreq_table) {
-        if(ne.second.rresp || !rresp_req) {
-            trace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<ne.second.pathid;
-            routing_table.insert(ne);
+    void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest) {
+        trace()<<"[info] Entering forwardData(dest="<<dest<<")";
+        forwardData(data_pkt, dest, data_pkt->getPathid());
+    }
+
+    void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest, int pathid) {
+        trace()<<"[info] Entering forwardData(dest="<<dest<<", pathid="<<pathid<<")";
+        data_pkt->setSource(SELF_NETWORK_ADDRESS);
+        data_pkt->setDestination(dest.c_str());
+        data_pkt->setPathid(pathid);
+        data_pkt->setSequenceNumber(currentSequenceNumber++);
+        toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
+    }
+
+    void shmrp::clearRoutingTable() {
+        trace()<<"[info] Routing table erased";
+        routing_table.clear();
+    }
+
+    void shmrp::addRoute(std::string next_hop, int pathid) {
+        trace()<<"[info] Entering shmrp::addRoute(next_hop="<<next_hop<<", pathid="<<pathid<<")";
+        if(routing_table.find(next_hop) == routing_table.end()) {
+            routing_table[next_hop]={next_hop,pathid };
+        } else {
+            trace()<<"[error] Route already exists";
         }
     }
-    if(routing_table.empty()) {
-        throw routing_table_empty("[error] Routing table empty");
-    }
-}
 
-void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, bool pdr=false) {
-    trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<", pdr="<<pdr<<")";
-    if(!app_cf) {
-        constructRoutingTable(rresp_req);
-        return;
+
+    bool shmrp::isRoutingTableEmpty() const {
+        return routing_table.empty();
     }
 
-    if(getHop() <= fp.ring_radius) {
-        trace()<<"[info] Node inside mesh ring";
+    void shmrp::constructRoutingTable(bool rresp_req) {
+        trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<")";
         for(auto ne: rreq_table) {
-            if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req )) {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+            if(ne.second.rresp || !rresp_req) {
+                trace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<ne.second.pathid;
                 routing_table.insert(ne);
-//                rinv_table[ne.second.nw_address].used=true;
             }
         }
-        return;
+        if(routing_table.empty()) {
+            throw routing_table_empty("[error] Routing table empty");
+        }
     }
 
+    void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, bool pdr=false) {
+        trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<", pdr="<<pdr<<")";
+        if(!app_cf) {
+            constructRoutingTable(rresp_req);
+            return;
+        }
+
+        if(getHop() <= fp.ring_radius) {
+            trace()<<"[info] Node inside mesh ring";
+            for(auto ne: rreq_table) {
+                if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req )) {
+                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                    routing_table.insert(ne);
+    //                rinv_table[ne.second.nw_address].used=true;
+                }
+            }
+            return;
+        }
 
 
-    std::map<int, std::vector<node_entry>> cl;
-    std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
-        // Either select only hop-based, if rresp is not required or based on rresp received
-        if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req) ) {
-            if(cl.find(ne.second.pathid) == cl.end()) {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-            } else {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                cl[ne.second.pathid].push_back(ne.second);
+
+        std::map<int, std::vector<node_entry>> cl;
+        std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
+            // Either select only hop-based, if rresp is not required or based on rresp received
+            if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req) ) {
+                if(cl.find(ne.second.pathid) == cl.end()) {
+                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                    cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
+                } else {
+                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                    cl[ne.second.pathid].push_back(ne.second);
+                }
+            }
+        });
+        for(auto l: cl) {
+            trace()<<"[info] Selecting nodes per pathid to RREQ";
+            node_entry c_ne=l.second[0];
+            trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
+            for(auto ne: l.second) {
+                trace()<<"[info] Node "<<ne.nw_address<<" pkt data - sent: "<<ne.pkt_count<<" ack: "<<ne.ack_count;
+                if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
+                    trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
+                    c_ne=ne;
+                }
+            }
+            trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
+            c_ne.pkt_count = 0;
+            c_ne.ack_count = 0;
+            routing_table.insert({c_ne.nw_address,c_ne});
+
+            rinv_table[c_ne.nw_address].used=true;
+        }
+        if(routing_table.empty()) {
+            throw rreq_table_empty("[error] routing table empty after constructRreqTable()");
+        }
+    }
+
+    int shmrp::selectPathid() {
+        trace()<<"[info] Entering shmrp::selectPathid()";
+        if(routing_table.empty()) {
+            throw routing_table_empty("[error] Routing table empty");
+        }
+        auto i=getRNG(0)->intRand(routing_table.size());
+        auto it=routing_table.begin();
+        std::advance(it,i);
+        trace()<<"[info] Selected pathid: "<<it->second.pathid;
+        return it->second.pathid;
+    }
+
+    std::string shmrp::getNextHop(int pathid) {
+        trace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
+        node_entry next_hop;
+        bool found=false;
+        std::for_each(routing_table.begin(),routing_table.end(),
+            [&](std::pair<std::string,node_entry> ne){
+                if(pathid==ne.second.pathid) {
+                    found=true;
+                    next_hop=ne.second;
+            }
+        });
+        if(!found) {
+            throw no_available_entry("Next hop not available");
+        }
+        return next_hop.nw_address;
+    }
+
+    std::string shmrp::getNextHop(int pathid, bool random_node) {
+        trace()<<"[info] Entering getNextHop(pathid="<<pathid<<", random_node="<<random_node<<")";
+        std::string next_hop;
+        if(random_node) {
+            std::vector<node_entry> nodes;
+            for(auto a : routing_table) {
+                if(a.second.pathid == pathid) {
+                    nodes.push_back(a.second);
+                }
+            }
+            if(nodes.empty()) {
+                throw no_available_entry("[error] Next hop not available");
+            }
+            auto i=getRNG(0)->intRand(nodes.size());
+            next_hop=nodes[i].nw_address;
+            trace()<<"[info] Randomly selected node: "<<next_hop;    
+        } else {
+            next_hop=getNextHop(pathid);
+        }
+        return next_hop;
+    }
+
+    void shmrp::incPktCountInRoutingTable(std::string next_hop) {
+        trace()<<"[info] Entering incPktCountInRoutingTable(next_hop="<<next_hop<<")";
+        if(routing_table.find(next_hop) == routing_table.end()) {
+            throw no_available_entry("[error] No available entry to update Pkt count"); 
+        }
+
+        routing_table[next_hop].pkt_count++;
+    }
+
+    void shmrp::incPktCountInRecvTable(std::string entry) {
+        trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
+        if(recv_table.find(entry) == recv_table.end()) {
+            recv_table[entry] = {entry,0,0,false,0,0,false,0,1};
+        } else {
+            recv_table[entry].pkt_count++;
+        }
+    }
+
+    void shmrp::updateRinvTableFromRreqTable() {
+        trace()<<"[info] Entering updateRinvTableFromRreqTable()";
+        for(auto ne: rreq_table) {
+            if(rinv_table.find(ne.first) != rinv_table.end()) {
+                trace()<<"[info] Updating node "<<ne.first<<" as used in RINV table";
+                rinv_table[ne.first].used = true;
             }
         }
-    });
-    for(auto l: cl) {
-        trace()<<"[info] Selecting nodes per pathid to RREQ";
-        node_entry c_ne=l.second[0];
-        trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
-        for(auto ne: l.second) {
-            trace()<<"[info] Node "<<ne.nw_address<<" pkt data - sent: "<<ne.pkt_count<<" ack: "<<ne.ack_count;
-            if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
-                trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
-                c_ne=ne;
-            }
-        }
-        trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
-        c_ne.pkt_count = 0;
-        c_ne.ack_count = 0;
-        routing_table.insert({c_ne.nw_address,c_ne});
-
-        rinv_table[c_ne.nw_address].used=true;
-    }
-    if(routing_table.empty()) {
-        throw rreq_table_empty("[error] routing table empty after constructRreqTable()");
-    }
-}
-
-int shmrp::selectPathid() {
-    trace()<<"[info] Entering shmrp::selectPathid()";
-    if(routing_table.empty()) {
-        throw routing_table_empty("[error] Routing table empty");
-    }
-    auto i=getRNG(0)->intRand(routing_table.size());
-    auto it=routing_table.begin();
-    std::advance(it,i);
-    trace()<<"[info] Selected pathid: "<<it->second.pathid;
-    return it->second.pathid;
-}
-
-std::string shmrp::getNextHop(int pathid) {
-    trace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
-    node_entry next_hop;
-    bool found=false;
-    std::for_each(routing_table.begin(),routing_table.end(),
-        [&](std::pair<std::string,node_entry> ne){
-            if(pathid==ne.second.pathid) {
-                found=true;
-                next_hop=ne.second;
-        }
-    });
-    if(!found) {
-        throw no_available_entry("Next hop not available");
-    }
-    return next_hop.nw_address;
-}
-
-std::string shmrp::getNextHop(int pathid, bool random_node) {
-    trace()<<"[info] Entering getNextHop(pathid="<<pathid<<", random_node="<<random_node<<")";
-    std::string next_hop;
-    if(random_node) {
-        std::vector<node_entry> nodes;
-        for(auto a : routing_table) {
-            if(a.second.pathid == pathid) {
-                nodes.push_back(a.second);
-            }
-        }
-        if(nodes.empty()) {
-            throw no_available_entry("[error] Next hop not available");
-        }
-        auto i=getRNG(0)->intRand(nodes.size());
-        next_hop=nodes[i].nw_address;
-        trace()<<"[info] Randomly selected node: "<<next_hop;    
-    } else {
-        next_hop=getNextHop(pathid);
-    }
-    return next_hop;
-}
-
-void shmrp::incPktCountInRoutingTable(std::string next_hop) {
-    trace()<<"[info] Entering incPktCountInRoutingTable(next_hop="<<next_hop<<")";
-    if(routing_table.find(next_hop) == routing_table.end()) {
-        throw no_available_entry("[error] No available entry to update Pkt count"); 
     }
 
-    routing_table[next_hop].pkt_count++;
-}
-
-void shmrp::incPktCountInRecvTable(std::string entry) {
-    trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
-    if(recv_table.find(entry) == recv_table.end()) {
-        recv_table[entry] = {entry,0,0,false,0,0,false,0,1};
-    } else {
-        recv_table[entry].pkt_count++;
-    }
-}
-
-void shmrp::updateRinvTableFromRreqTable() {
-    trace()<<"[info] Entering updateRinvTableFromRreqTable()";
-    for(auto ne: rreq_table) {
-        if(rinv_table.find(ne.first) != rinv_table.end()) {
-            trace()<<"[info] Updating node "<<ne.first<<" as used in RINV table";
-            rinv_table[ne.first].used = true;
-        }
-    }
-}
-
-void shmrp::timerFiredCallback(int index) {
-    switch (index) {
-        case shmrpTimerDef::SINK_START: {
-            trace()<<"[timer] SINK_START timer expired";
-            setRound(1+getRound());
-            sendRinv(getRound());
-            break;
-        }
-        case shmrpTimerDef::T_L: {
-            trace()<<"[timer] T_L timer expired";
-            if(shmrpStateDef::LEARN != getState()) {
-                trace()<<"[error] State is not LEARN: "<<stateToStr(getState());
+    void shmrp::timerFiredCallback(int index) {
+        switch (index) {
+            case shmrpTimerDef::SINK_START: {
+                trace()<<"[timer] SINK_START timer expired";
+                setRound(1+getRound());
+                sendRinv(getRound());
                 break;
             }
-            setState(shmrpStateDef::ESTABLISH);
-            clearRreqTable();
+            case shmrpTimerDef::T_L: {
+                trace()<<"[timer] T_L timer expired";
+                if(shmrpStateDef::LEARN != getState()) {
+                    trace()<<"[error] State is not LEARN: "<<stateToStr(getState());
+                    break;
+                }
+                setState(shmrpStateDef::ESTABLISH);
+                clearRreqTable();
 
 
-            try {
-                constructRreqTable();
-            } catch (rinv_table_empty &e) {
-                trace()<<e.what();
-                trace()<<"[info] Empty RINV table after LEARNING state - most probably due to re-learn";
-                setRound(getRound()-1);
-                setState(shmrpStateDef::INIT); // could be also work, if routing table is not empty
-                break;
-            } catch (rreq_table_empty &e) {
-                trace()<<e.what();
-                trace()<<"[info] Empty RREQ table after LEARNING state - returning to INIT";
-                setRound(getRound()-1);
-                setState(shmrpStateDef::INIT);
-                break;
-            } catch (no_available_entry &e) {
-                trace()<<e.what();
-                trace()<<"[info] No node to connect to - returning to INIT";
-                setRound(getRound()-1);
-                setState(shmrpStateDef::INIT);
-                break;
-            } catch (std::exception &e) {
-                trace()<<e.what();
-                break;
-            }
-            if(fp.measure_w_rreq) {
-                sendRreqs(fp.meas_rreq_count);
-            } else {
+                try {
+                    constructRreqTable();
+                } catch (rinv_table_empty &e) {
+                    trace()<<e.what();
+                    trace()<<"[info] Empty RINV table after LEARNING state - most probably due to re-learn";
+                    setRound(getRound()-1);
+                    setState(shmrpStateDef::INIT); // could be also work, if routing table is not empty
+                    break;
+                } catch (rreq_table_empty &e) {
+                    trace()<<e.what();
+                    trace()<<"[info] Empty RREQ table after LEARNING state - returning to INIT";
+                    setRound(getRound()-1);
+                    setState(shmrpStateDef::INIT);
+                    break;
+                } catch (no_available_entry &e) {
+                    trace()<<e.what();
+                    trace()<<"[info] No node to connect to - returning to INIT";
+                    setRound(getRound()-1);
+                    setState(shmrpStateDef::INIT);
+                    break;
+                } catch (std::exception &e) {
+                    trace()<<e.what();
+                    break;
+                }
+                
                 sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
+                setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
+                break;
             }
-            setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
-            break;
-        }
-        case shmrpTimerDef::T_ESTABLISH: {
-            trace()<<"[timer] T_ESTABLISH timer expired";
-            
-            if(isRreqTableEmpty()) {
-                trace()<<"[error] RREQ table empty, impossibru";
-                throw rreq_table_empty("[error] RREQ table empty");
+            case shmrpTimerDef::T_ESTABLISH: {
+                trace()<<"[timer] T_ESTABLISH timer expired";
+                
+                if(isRreqTableEmpty()) {
+                    trace()<<"[error] RREQ table empty, impossibru";
+                    throw rreq_table_empty("[error] RREQ table empty");
+                }
+
+                if(fp.measure_w_rreq && (fp.meas_rreq_count > getRreqPktCount()) ) {
+                    sendRreqs();
+                    trace()<<"[info] measure_w_rreq active, restarting T_ESTABLISH timer";
+                    setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
+                    break;
             }
 
             if(!rrespReceived() && fp.rresp_req) {
@@ -822,6 +835,7 @@ void shmrp::timerFiredCallback(int index) {
         case shmrpTimerDef::T_MEASURE: {
             trace()<<"[timer] T_MEASURE timer expired, PONG table size: "<<getPongTableSize();
             // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
+
             setState(shmrpStateDef::WORK);
             sendRinvBasedOnHop();
             break;
