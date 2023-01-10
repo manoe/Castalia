@@ -81,8 +81,8 @@ void shmrp::parseRouting(std::string file) {
                 throw std::runtime_error("[error] Routing file - format error - route sequence missing");
             }
             for(auto j = 0 ; j < nodes[i]["routes"].size() ; ++j) {
-                trace()<<"[info] "<<nodes[i]["routes"][j]["node"].as<std::string>()<<" node via pathid "<<nodes[i]["routes"][j]["pathid"].as<std::string>();
-
+                trace()<<"[info] "<<nodes[i]["routes"][j]["node"].as<std::string>()<<" node via pathid "<<nodes[i]["routes"][j]["pathid"].as<int>();
+                addRoute(nodes[i]["routes"][j]["node"].as<std::string>(), nodes[i]["routes"][j]["pathid"].as<int>());
             }
         } 
     }
@@ -549,7 +549,7 @@ void shmrp::clearRoutingTable() {
 }
 
 void shmrp::addRoute(std::string next_hop, int pathid) {
-    trace()<<"[info] Entering shmrp::addRoute(next_hop="<<next_hop<<", pathid="<<pathid;
+    trace()<<"[info] Entering shmrp::addRoute(next_hop="<<next_hop<<", pathid="<<pathid<<")";
     if(routing_table.find(next_hop) == routing_table.end()) {
         routing_table[next_hop]={next_hop,pathid };
     } else {
