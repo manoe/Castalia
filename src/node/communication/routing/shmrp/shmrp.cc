@@ -65,6 +65,7 @@ void shmrp::startup() {
 
 void shmrp::parseRouting(std::string file) {
     YAML::Node nodes;
+
     try {
         nodes = YAML::LoadFile(file);
     }
@@ -726,7 +727,12 @@ int  shmrp::getRreqPktCount() {
                 trace()<<"[timer] SINK_START timer expired";
                 setRound(1+getRound());
                 sendRinv(getRound());
+                setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
                 break;
+            }
+            case shmrpTimerDef::T_REPEAT: {
+                sendRinv(getRound());
+                setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             }
             case shmrpTimerDef::T_L: {
                 trace()<<"[timer] T_L timer expired";
