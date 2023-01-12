@@ -1161,6 +1161,14 @@ void shmrp::finishSpecific() {
              } catch (exception &e) {
                  trace()<<"[error] No routing table: "<<e.what();
              }
+             try {
+                 auto table=shmrp_instance->getRreqTable();
+                 y_out<<YAML::Key<<"rreq_table";
+                 y_out<<YAML::Value;
+                 serializeRoutingTable(table);
+             } catch (exception &e) {
+                 trace()<<"[error] No rreq table: "<<e.what();
+             }
                y_out<<YAML::Key<<"state";
                y_out<<YAML::Value<<stateToStr(shmrp_instance->getState());
 
