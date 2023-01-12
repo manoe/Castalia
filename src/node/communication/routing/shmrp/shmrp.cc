@@ -733,6 +733,7 @@ int  shmrp::getRreqPktCount() {
             case shmrpTimerDef::T_REPEAT: {
                 sendRinv(getRound());
                 setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+                break;
             }
             case shmrpTimerDef::T_L: {
                 trace()<<"[timer] T_L timer expired";
