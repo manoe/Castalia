@@ -1242,7 +1242,7 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
     trace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
     std::string nw_address = std::to_string(mac_msg->getDestination());
     if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
-        if(rreq_table.find(nw_address) != rreq_table.end()){
+        if(rreq_table.find(nw_address) != rreq_table.end() && shmrpStateDef::WORK != getState() ){
             rreq_table[nw_address].ack_count++;
         }
         if(routing_table.find(nw_address) != routing_table.end()) {
