@@ -281,6 +281,12 @@ class shmrp: public VirtualRouting {
             }
             return rreq_table;
         };
+        std::map<std::string,node_entry> getRinvTable() {
+            if(rinv_table.empty()) {
+                throw rinv_table_empty("[error Rinv table empty at node");
+            }
+            return rinv_table;
+        };
 };
 
 #endif // _SHMRP_H_

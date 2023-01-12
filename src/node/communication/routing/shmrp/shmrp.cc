@@ -1067,6 +1067,8 @@ void shmrp::serializeRoutingTable(std::map<std::string,node_entry> table) {
         y_out<<YAML::Value<<i.second.nw_address;
         y_out<<YAML::Key<<"pathid";
         y_out<<YAML::Value<<i.second.pathid;
+        y_out<<YAML::Key<<"hop";
+        y_out<<YAML::Value<<i.second.hop;
         y_out<<YAML::Key<<"pkt_count";
         y_out<<YAML::Value<<i.second.pkt_count;
         y_out<<YAML::Key<<"ack_count";          
@@ -1169,6 +1171,15 @@ void shmrp::finishSpecific() {
              } catch (exception &e) {
                  trace()<<"[error] No rreq table: "<<e.what();
              }
+             try {
+                 auto table=shmrp_instance->getRinvTable();
+                 y_out<<YAML::Key<<"rinv_table";
+                 y_out<<YAML::Value;
+                 serializeRoutingTable(table);
+             } catch (exception &e) {
+                 trace()<<"[error] No rinv table: "<<e.what();
+             }
+
                y_out<<YAML::Key<<"state";
                y_out<<YAML::Value<<stateToStr(shmrp_instance->getState());
 
