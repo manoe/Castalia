@@ -201,7 +201,6 @@ class shmrp: public VirtualRouting {
         void sendRinvBasedOnHop(); 
 
         void setHop(int);
-        int getHop() const;
         int calculateHop();
 
         void setRound(int);
@@ -262,6 +261,8 @@ class shmrp: public VirtualRouting {
     public:
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
+        int getHop() const;
+
 
         std::map<std::string,node_entry> getRoutingTable() {
             if(routing_table.empty()) {

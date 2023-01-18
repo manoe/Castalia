@@ -1221,6 +1221,10 @@ void shmrp::finishSpecific() {
             y_out<<"role";
             y_out<<YAML::Value;
             y_out<<(res_mgr->isDead()?"dead":ringToStr(shmrp_instance->getRingStatus()));
+            y_out<<YAML::Key;
+            y_out<<"hop";
+            y_out<<YAML::Value;
+            y_out<<shmrp_instance->getHop();
             y_out<<YAML::EndMap;
 
             // seek back one character
