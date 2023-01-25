@@ -153,6 +153,7 @@ struct feat_par {
         bool   static_routing;
         bool   measure_w_rreq;
         int    meas_rreq_count;
+        bool   calc_max_hop;
 };
 
 class shmrp: public VirtualRouting {
@@ -201,7 +202,8 @@ class shmrp: public VirtualRouting {
         void sendRinvBasedOnHop(); 
 
         void setHop(int);
-        int calculateHop();
+        int calculateHop(bool);
+        int calculateHopFromRoutingTable();
 
         void setRound(int);
         int  getRound() const;

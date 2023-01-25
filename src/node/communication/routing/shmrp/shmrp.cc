@@ -45,6 +45,7 @@ void shmrp::startup() {
     fp.static_routing   = par("f_static_routing");
     fp.measure_w_rreq   = par("f_measure_w_rreq");
     fp.meas_rreq_count  = par("f_meas_rreq_count");
+    fp.calc_max_hop     = par("f_calc_max_hop");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -150,6 +151,7 @@ shmrpRinvTblAdminDef shmrp::strToRinvTblAdmin(string str) const {
 }
 
 void shmrp::setHop(int hop) {
+    trace()<<"[info] Entering shmrp::setHop(hop="<<hop<<")";  
     trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
     g_hop=hop;
 }
@@ -158,8 +160,8 @@ int shmrp::getHop() const {
     return g_hop;
 }
 
-int shmrp::calculateHop() {
-    trace()<<"[info] Entering shmrp::calculateHop()";
+int shmrp::calculateHop(bool max_hop=false) {
+    trace()<<"[info] Entering shmrp::calculateHop(max_hop="<<max_hop<<")";
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
@@ -168,10 +170,28 @@ int shmrp::calculateHop() {
     }
 
     int hop=std::numeric_limits<int>::max();
+    bool (*gt_lt)(int,int)=[](int lh, int rh) { return lh > rh; };
+    
+    if(max_hop) {
+        hop=std::numeric_limits<int>::min();
+        gt_lt=[](int lh, int rh) { return lh < rh; };
+    }
+
     for(auto ne: rinv_table) {
         trace()<<"[info] Hop level for node "<<ne.second.nw_address<<" is "<<ne.second.hop;
-        if(hop > ne.second.hop && !ne.second.used) {
+        if(!ne.second.used && gt_lt(hop,ne.second.hop)) {
             hop=ne.second.hop;
+        }
+    }
+    return hop+1;
+}
+
+int shmrp::calculateHopFromRoutingTable() {
+    trace()<<"[info] Entering shmrp::calculateHopFromRoutingTable()";
+    int hop=std::numeric_limits<int>::max();
+    for(auto i: routing_table) {
+        if(i.second.hop < hop) {
+            hop=i.second.hop;
         }
     }
     return hop+1;
@@ -386,7 +406,7 @@ void shmrp::constructRreqTable() {
         throw rreq_table_non_empty("[error] RREQ table not empty");
     }
 
-    auto hop=calculateHop();
+    auto hop=calculateHop(fp.calc_max_hop);
     setHop(hop);
 
     if(hop <= fp.ring_radius) {
@@ -403,15 +423,15 @@ void shmrp::constructRreqTable() {
         std::map<int, std::vector<node_entry>> cl;
         std::for_each(rinv_table.begin(),rinv_table.end(),[&](std::pair<std::string,node_entry> ne){
                 if(ne.second.hop < getHop() && !ne.second.used) {
-                if(cl.find(ne.second.pathid) == cl.end()) {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-                } else {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                cl[ne.second.pathid].push_back(ne.second);
+                    if(cl.find(ne.second.pathid) == cl.end()) {
+                        trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                        cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
+                    } else {
+                        trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                        cl[ne.second.pathid].push_back(ne.second);
+                    }
                 }
-                }
-                });
+            });
         if(fp.cf_after_rresp) {
             trace()<<"[info] Selecting all RINV nodes to RREQ";
             for(auto l: cl) {
@@ -610,15 +630,15 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, bool pdr=false) {
     std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
             // Either select only hop-based, if rresp is not required or based on rresp received
             if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req) ) {
-            if(cl.find(ne.second.pathid) == cl.end()) {
-            trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-            cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-            } else {
-            trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-            cl[ne.second.pathid].push_back(ne.second);
+                if(cl.find(ne.second.pathid) == cl.end()) {
+                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                    cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
+                } else {
+                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                    cl[ne.second.pathid].push_back(ne.second);
+                }
             }
-            }
-            });
+        });
     for(auto l: cl) {
         trace()<<"[info] Selecting nodes per pathid to RREQ";
         node_entry c_ne=l.second[0];
@@ -816,6 +836,7 @@ void shmrp::timerFiredCallback(int index) {
                 } else {
                     constructRoutingTable(fp.rresp_req);
                 }
+                setHop(calculateHopFromRoutingTable());
             } catch (routing_table_empty &e) {
                 trace()<<e.what();
                 break;
