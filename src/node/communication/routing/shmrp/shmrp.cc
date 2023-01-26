@@ -46,6 +46,7 @@ void shmrp::startup() {
     fp.measure_w_rreq   = par("f_measure_w_rreq");
     fp.meas_rreq_count  = par("f_meas_rreq_count");
     fp.calc_max_hop     = par("f_calc_max_hop");
+    fp.qos_pdr          = par("f_qos_pdr");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -406,10 +407,9 @@ void shmrp::constructRreqTable() {
         throw rreq_table_non_empty("[error] RREQ table not empty");
     }
 
-    auto hop=calculateHop(fp.calc_max_hop);
-    setHop(hop);
+    setHop(calculateHop(fp.calc_max_hop));
 
-    if(hop <= fp.ring_radius) {
+    if(getHop() <= fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rinv_table) {
             if(ne.second.hop < getHop() && !ne.second.used) {
@@ -605,7 +605,7 @@ void shmrp::constructRoutingTable(bool rresp_req) {
     }
 }
 
-void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, bool pdr=false) {
+void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
     trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<", pdr="<<pdr<<")";
     if(!app_cf) {
         constructRoutingTable(rresp_req);
@@ -624,12 +624,12 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, bool pdr=false) {
         return;
     }
 
-
+    auto calc_pdr=[](node_entry n){return n.ack_count/n.pkt_count;};
 
     std::map<int, std::vector<node_entry>> cl;
     std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
             // Either select only hop-based, if rresp is not required or based on rresp received
-            if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req) ) {
+            if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req) && calc_pdr(ne.second) >= pdr ) {
                 if(cl.find(ne.second.pathid) == cl.end()) {
                     trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
                     cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
@@ -658,7 +658,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, bool pdr=false) {
         rinv_table[c_ne.nw_address].used=true;
     }
     if(routing_table.empty()) {
-        throw rreq_table_empty("[error] routing table empty after constructRreqTable()");
+        throw routing_table_empty("[error] routing table empty after constructRreqTable()");
     }
 }
 
@@ -832,7 +832,7 @@ void shmrp::timerFiredCallback(int index) {
 
             try {
                 if(fp.cf_after_rresp) {
-                    constructRoutingTable(fp.rresp_req, fp.cf_after_rresp);
+                    constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
                 } else {
                     constructRoutingTable(fp.rresp_req);
                 }
@@ -840,6 +840,7 @@ void shmrp::timerFiredCallback(int index) {
             } catch (routing_table_empty &e) {
                 trace()<<e.what();
                 break;
+                // return
             }
 
             if(fp.interf_ping) {
