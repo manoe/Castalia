@@ -658,7 +658,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
         rinv_table[c_ne.nw_address].used=true;
     }
     if(routing_table.empty()) {
-        throw routing_table_empty("[error] routing table empty after constructRreqTable()");
+        throw routing_table_empty("[error] routing table empty after constructRoutingTable()");
     }
 }
 
@@ -839,6 +839,9 @@ void shmrp::timerFiredCallback(int index) {
                 setHop(calculateHopFromRoutingTable());
             } catch (routing_table_empty &e) {
                 trace()<<e.what();
+                trace()<<"[info] Returning to LEARN state";
+                setState(shmrpStateDef::LEARN);
+                setTimer(shmrpTimerDef::T_L,getTl());
                 break;
                 // return
             }
