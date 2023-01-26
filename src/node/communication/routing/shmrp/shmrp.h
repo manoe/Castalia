@@ -154,6 +154,7 @@ struct feat_par {
         bool   measure_w_rreq;
         int    meas_rreq_count;
         bool   calc_max_hop;
+        double qos_pdr;
 };
 
 class shmrp: public VirtualRouting {
@@ -229,7 +230,7 @@ class shmrp: public VirtualRouting {
 
         void clearRoutingTable();
         void constructRoutingTable(bool);
-        void constructRoutingTable(bool,bool,bool);
+        void constructRoutingTable(bool,bool,double);
         void addRoute(std::string, int);
         bool isRoutingTableEmpty() const;
         int  selectPathid();

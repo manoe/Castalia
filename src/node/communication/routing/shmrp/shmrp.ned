@@ -62,6 +62,7 @@ simple shmrp like node.communication.routing.iRouting
 
     bool   f_static_routing   = default(false); // Use static routing
     bool   f_calc_max_hop     = default(false); // Calculate maximum possible hop
+    double f_qos_pdr          = default(0.0);   // Apply QoS limit to measured PDR
     string f_routing_file     = default("routes.yaml"); // YAMl file describing static routing
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
