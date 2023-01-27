@@ -612,19 +612,22 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
         return;
     }
 
+    auto calc_pdr=[](node_entry n){return n.ack_count/n.pkt_count;};
+
     if(getHop() <= fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rreq_table) {
-            if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req )) {
+            if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req ) && calc_pdr(ne.second) >= pdr ) {
                 trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
                 routing_table.insert(ne);
                 //                rinv_table[ne.second.nw_address].used=true;
             }
         }
+        if(isRoutingTableEmpty()) {
+            throw routing_table_empty("[error] routing table empty after constructRoutingTable()");
+        }
         return;
     }
-
-    auto calc_pdr=[](node_entry n){return n.ack_count/n.pkt_count;};
 
     std::map<int, std::vector<node_entry>> cl;
     std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
