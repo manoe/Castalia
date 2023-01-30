@@ -612,7 +612,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
         return;
     }
 
-    auto calc_pdr=[](node_entry n){return n.ack_count/n.pkt_count;};
+    auto calc_pdr=[](node_entry n){return static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);};
 
     if(getHop() <= fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
