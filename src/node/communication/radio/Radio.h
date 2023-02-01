@@ -233,6 +233,7 @@ class Radio: public CastaliaModule {
  public:
 	double readRSSI();
 	CCA_result isChannelClear();
+    PktBreakdown getStats() { return stats; };
 };
 
 #endif				//_RADIOMODULE_H_

@@ -26,6 +26,7 @@
 #include "node/application/ForestFire/forest_fire_packet_m.h"
 #include "node/mobilityManager/VirtualMobilityManager.h"
 #include "node/communication/mac/tMac/TMacPacket_m.h"
+#include "node/communication/radio/Radio.h"
 
 ////enum hdmrpRoleDef {
 ////    SINK        = 1;
@@ -258,6 +259,8 @@ class shmrp: public VirtualRouting {
 
         void serializeRecvTable();
         void serializeRecvTable(std::map<std::string,node_entry>);
+        void serializeRadioStats(PktBreakdown);
+
         std::string StateToString(shmrpStateDef);
  
         virtual void handleMacControlMessage(cMessage *);
