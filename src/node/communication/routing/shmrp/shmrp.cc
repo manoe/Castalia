@@ -1124,6 +1124,29 @@ void shmrp::serializeRecvTable(std::map<std::string,node_entry> table) {
 
 }
 
+void shmrp::serializeRadioStats(PktBreakdown stats) {
+    y_out<<YAML::BeginMap;
+    y_out<<YAML::Key<<"TX_pkt";
+    y_out<<YAML::Value<<stats.transmissions;
+    y_out<<YAML::Key<<"RX_ok_no_interf";
+    y_out<<YAML::Value<<stats.RxReachedNoInterference;
+    y_out<<YAML::Key<<"RX_ok_interf";
+    y_out<<YAML::Value<<stats.RxReachedInterference;
+    y_out<<YAML::Key<<"RX_fail_no_interf";
+    y_out<<YAML::Value<<stats.RxFailedNoInterference;	
+    y_out<<YAML::Key<<"RX_fail_interf";
+    y_out<<YAML::Value<<stats.RxFailedInterference;
+    y_out<<YAML::Key<<"RX_fail_below_sensitivity";
+    y_out<<YAML::Value<<stats.RxFailedSensitivity;
+    y_out<<YAML::Key<<"RX_fail_wrong_modulation";
+    y_out<<YAML::Value<<stats.RxFailedModulation;
+    y_out<<YAML::Key<<"RX_fail_not_rx_state";
+    y_out<<YAML::Value<<stats.RxFailedNoRxState;
+    y_out<<YAML::Key<<"buffer_overflow";
+    y_out<<YAML::Value<<stats.bufferOverflow;
+    y_out<<YAML::EndMap;
+}
+
 
 void shmrp::finishSpecific() {
     if (isSink()) { // && getParentModule()->getIndex() == 0 ) {
@@ -1154,6 +1177,8 @@ void shmrp::finishSpecific() {
 
         auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"));
 
+        auto radio=dynamic_cast<Radio *>(topo->getNode(0)->getModule()->getSubmodule("Communication")->getSubmodule("Radio"));
+
         auto loc=mob_mgr->getLocation();
         y_out<<YAML::Key<<"x";
         y_out<<YAML::Value;
@@ -1164,7 +1189,9 @@ void shmrp::finishSpecific() {
         y_out<<YAML::Key<<"role";
         y_out<<YAML::Value;
         y_out<<ringToStr(getRingStatus());
-
+        y_out<<YAML::Key<<"radio";
+        y_out<<YAML::Value;
+        serializeRadioStats(radio->getStats());
         y_out<<YAML::EndMap;
 
         for (int i = 1; i < topo->getNumNodes(); ++i) {
@@ -1211,6 +1238,10 @@ void shmrp::finishSpecific() {
             y_out<<YAML::Key<<"state";
             y_out<<YAML::Value<<stateToStr(shmrp_instance->getState());
 
+            auto radio=dynamic_cast<Radio *>(topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Radio"));
+            y_out<<YAML::Key<<"radio";
+            y_out<<YAML::Value;
+            serializeRadioStats(radio->getStats());
 
 
             map<int,string> routes;
