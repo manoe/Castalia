@@ -1189,6 +1189,8 @@ void shmrp::finishSpecific() {
         y_out<<YAML::Key<<"role";
         y_out<<YAML::Value;
         y_out<<ringToStr(getRingStatus());
+        y_out<<YAML::Key<<"pong_table";
+        y_out<<YAML::Value<<getPongTableSize();
         y_out<<YAML::Key<<"radio";
         y_out<<YAML::Value;
         serializeRadioStats(radio->getStats());
@@ -1280,6 +1282,8 @@ void shmrp::finishSpecific() {
             y_out<<"role";
             y_out<<YAML::Value;
             y_out<<(res_mgr->isDead()?"dead":ringToStr(shmrp_instance->getRingStatus()));
+            y_out<<YAML::Key<<"pong_table";
+            y_out<<YAML::Value<<shmrp_instance->getPongTableSize();
             y_out<<YAML::Key;
             y_out<<"hop";
             y_out<<YAML::Value;

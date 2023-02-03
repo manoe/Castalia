@@ -253,10 +253,22 @@ void ForestFire::finishSpecific()
     if(isSink) {
 	int numNodes = getParentModule()->getParentModule()->par("numNodes");
 
+    YAML::Emitter y_out;
+    y_out<<YAML::BeginMap;
+    y_out<<YAML::Key<<"seed";
+    auto env_mod=getEnvir();
+    auto conf_mod=env_mod->getConfig();
+    y_out<<YAML::Value<<conf_mod->getConfigValue("seed-set");      
+    y_out<<YAML::Key<<"pdr";
+    y_out<<YAML::BeginSeq;
+
 	cTopology *topo;	// temp variable to access packets received by other nodes
 	topo = new cTopology("topo");
 	topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
 	for (int i = 0; i < numNodes; i++) {
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"node";
+        y_out<<YAML::Value<<i;
 		ForestFire *appModule = dynamic_cast<ForestFire*>
 			(topo->getNode(i)->getModule()->getSubmodule("Application"));
 		if (appModule) {
@@ -265,15 +277,25 @@ void ForestFire::finishSpecific()
 			if (reportSent > 0 ) { // this node sent us some packets
 				float rate = (float)reportRecv[i]/(float)reportSent;
 				collectOutput("Report reception rate", i, "total", rate);
+                y_out<<YAML::Key<<"report_pdr";
+                y_out<<YAML::Value<<rate;
 			}
             if (eventSent > 0) {
                 float rate = (float)eventRecv[i] / (float)eventSent;
 				collectOutput("Event reception rate", i, "total", rate);
+                y_out<<YAML::Key<<"event_pdr";
+                y_out<<YAML::Value<<rate;
             }
 
 		}
+        y_out<<YAML::EndMap;
 	}
 	delete(topo);
+    y_out<<YAML::EndSeq;
+    y_out<<YAML::EndMap;
+    ofstream pdr_file("pdr.yaml");
+    pdr_file<<y_out.c_str();
+    pdr_file.close();
     }
 
 	if (isSink) {
@@ -284,15 +306,8 @@ void ForestFire::finishSpecific()
 			collectOutput("Report reception", report_info_table[i].source,
 					"Fail", report_info_table[i].seq - report_info_table[i].parts.size());
 		}
-	} else {
-		declareOutput("Reprogram reception");
-		for (int i = 0; i < (int)version_info_table.size(); i++) {
-			collectOutput("Reprogram reception", "Success",
-				      version_info_table[i].parts.size());
-			collectOutput("Reprogram reception", "Fail",
-				      version_info_table[i].seq - version_info_table[i].parts.size());
-		}
 	}
+    
 }
 
 //int ForestFire::updateReportTable(int src, int seq)
