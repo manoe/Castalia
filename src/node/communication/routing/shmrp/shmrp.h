@@ -195,7 +195,6 @@ class shmrp: public VirtualRouting {
         void sendPing(int);
         void sendPong(int);
         void storePong(shmrpPongPacket *);
-        int getPongTableSize() const;
         void clearPongTable();
         void clearPongTable(int);
 
@@ -269,6 +268,7 @@ class shmrp: public VirtualRouting {
         shmrpStateDef getState() const;
         int getHop() const;
 
+        int getPongTableSize() const;
 
         std::map<std::string,node_entry> getRoutingTable() {
             if(routing_table.empty()) {

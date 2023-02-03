@@ -12,6 +12,7 @@
 
 #include "node/application/VirtualApplication.h"
 #include "node/application/ForestFire/forest_fire_packet_m.h"
+#include <yaml-cpp/yaml.h>
 
 #define REPORT_PACKET_NAME "Wildfire report"
 #define EVENT_PACKET_NAME  "Wildfire event"
