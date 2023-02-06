@@ -209,6 +209,12 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
     }
 }
 
+void ForestFire::alertRouting() {
+    auto *msg=new EmergencyMessage("alert Routing", NETWORK_CONTROL_COMMAND);
+    msg->setEvent(MsgType::EMERGENCY);
+    toNetworkLayer(msg);
+}
+
 void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 {
 	string sensType(sensorMsg->getSensorType());
@@ -224,6 +230,7 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
         sendEmergencyBroadcast();
         cancelTimer(EMERGENCY_BROADCAST);
         setTimer(EMERGENCY_BROADCAST,emergency_broadcast);
+        alertRouting();
     }
 	//if (isSink) {
 	//	trace() << "Sink recieved SENSOR_READING (while it shouldnt) "

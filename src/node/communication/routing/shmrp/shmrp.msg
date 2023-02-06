@@ -22,12 +22,13 @@ enum shmrpPacketDef {
     RRESP_PACKET        = 8;
     PING_PACKET         = 16;
     PONG_PACKET         = 32;
+    RWARN_PACKET        = 64;
 }
 
 enum shmrpWarnDef {
     UNDEF_WARN          = 0;
-    EMERGENCY           = 1;
-    NODE_FAILURE        = 2;
+    EMERGENCY_EVENT     = 1;
+    NODE_FAILURE_EVENT  = 2;
 }
 
 

@@ -12,6 +12,7 @@
 
 #include "node/application/VirtualApplication.h"
 #include "node/application/ForestFire/forest_fire_packet_m.h"
+#include "node/application/ForestFire/forest_fire_message_m.h"
 #include <yaml-cpp/yaml.h>
 
 #define REPORT_PACKET_NAME "Wildfire report"
@@ -81,6 +82,7 @@ class ForestFire : public VirtualApplication {
     void sendReport();
     void sendEmergencyBroadcast();
     bool isPacketSeen(int source, int sn);
+    void alertRouting();
  public:
     int getReportSent();
     int getEventSent();

@@ -27,6 +27,7 @@
 #include "node/mobilityManager/VirtualMobilityManager.h"
 #include "node/communication/mac/tMac/TMacPacket_m.h"
 #include "node/communication/radio/Radio.h"
+#include "node/application/ForestFire/forest_fire_message_m.h"
 
 ////enum hdmrpRoleDef {
 ////    SINK        = 1;
@@ -164,6 +165,7 @@ class shmrp: public VirtualRouting {
         string g_sink_addr;
         int g_hop;
         int g_round;
+        int g_pathid; // this is dangerous
         feat_par fp;
         shmrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
@@ -178,6 +180,7 @@ class shmrp: public VirtualRouting {
         void parseRouting(std::string);
         void fromApplicationLayer(cPacket *, const char *);
         void fromMacLayer(cPacket *, int, double, double);
+        void handleNetworkControlCommand(cMessage *);
         void timerFiredCallback(int);
         void finishSpecific();
         
@@ -234,6 +237,7 @@ class shmrp: public VirtualRouting {
         void addRoute(std::string, int);
         bool isRoutingTableEmpty() const;
         int  selectPathid();
+        int  selectPathid(bool);
         std::string getNextHop(int);
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
@@ -249,7 +253,9 @@ class shmrp: public VirtualRouting {
         void sendData(cPacket *, std::string, int); 
         void forwardData(shmrpDataPacket *, std::string, int);
         void forwardData(shmrpDataPacket *, std::string);
-        std::string ringToStr(shmrpRingDef pos) const; 
+        std::string ringToStr(shmrpRingDef pos) const;
+
+        void sendRwarn(); 
 
         map<int,string> getPathsAndHops();
 
