@@ -24,6 +24,12 @@ enum shmrpPacketDef {
     PONG_PACKET         = 32;
 }
 
+enum shmrpWarnDef {
+    UNDEF_WARN          = 0;
+    EMERGENCY           = 1;
+    NODE_FAILURE        = 2;
+}
+
 
 // RREQ = { R, S, P, len, nmas }
 packet shmrpPacket extends RoutingPacket {
@@ -37,6 +43,13 @@ packet shmrpRinvPacket extends shmrpPacket {
     int hop;        // 2 byte
     int interf;     // 1 byte
     int emerg;      // 1 byte
+}
+
+packet shmrpRwarnPacket extends shmrpPacket {
+    int cause enum (shmrpWarnDef); // 1 byte
+    int round;      // 2 byte
+    int pathid;     // 1 byte
+    int hop;        // 2 byte
 }
 
 packet shmrpRreqPacket extends shmrpPacket {
