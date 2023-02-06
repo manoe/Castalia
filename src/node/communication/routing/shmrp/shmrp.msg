@@ -22,6 +22,13 @@ enum shmrpPacketDef {
     RRESP_PACKET        = 8;
     PING_PACKET         = 16;
     PONG_PACKET         = 32;
+    RWARN_PACKET        = 64;
+}
+
+enum shmrpWarnDef {
+    UNDEF_WARN          = 0;
+    EMERGENCY_EVENT     = 1;
+    NODE_FAILURE_EVENT  = 2;
 }
 
 
@@ -37,6 +44,13 @@ packet shmrpRinvPacket extends shmrpPacket {
     int hop;        // 2 byte
     int interf;     // 1 byte
     int emerg;      // 1 byte
+}
+
+packet shmrpRwarnPacket extends shmrpPacket {
+    int cause enum (shmrpWarnDef); // 1 byte
+    int round;      // 2 byte
+    int pathid;     // 1 byte
+    int hop;        // 2 byte
 }
 
 packet shmrpRreqPacket extends shmrpPacket {

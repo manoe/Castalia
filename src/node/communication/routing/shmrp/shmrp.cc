@@ -320,7 +320,7 @@ void shmrp::sendRinvBasedOnHop() {
         trace()<<"[info] Node outside mesh ring";
         int pathid;
         try {
-            pathid=selectPathid();
+            pathid=selectPathid(false);
         } catch (std::exception &e) {
             trace()<<e.what();
             throw e;
@@ -663,6 +663,15 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
     if(routing_table.empty()) {
         throw routing_table_empty("[error] routing table empty after constructRoutingTable()");
     }
+}
+
+
+int shmrp::selectPathid(bool replay) {
+    trace()<<"[info] Entering shmrp::selectPathid(replay="<<replay<<")";
+    if(!replay) {
+        g_pathid=selectPathid();
+    }
+    return g_pathid;
 }
 
 int shmrp::selectPathid() {
@@ -1330,3 +1339,32 @@ void shmrp::finishSpecific() {
 
         delete msg;
     }
+
+
+void shmrp::handleNetworkControlCommand(cMessage *msg) {
+   trace()<<"[info] Entering handleNetworkControlCommand()";
+   EmergencyMessage *app_msg=check_and_cast<EmergencyMessage *>(msg);
+   if(!msg) {
+       trace()<<"[error] Unknown Network Control Command Message";
+   }
+   if(MsgType::EMERGENCY == app_msg->getEvent()) {
+       trace()<<"[info] Application in Emergency state, start local re-learn";
+       sendRwarn();
+   }
+}
+
+
+void shmrp::sendRwarn() {
+    trace()<<"[info] Entering sendWarn()";
+    shmrpRwarnPacket *warn_pkt=new shmrpRwarnPacket("SHMRP RWARN packet", NETWORK_LAYER_PACKET);
+    warn_pkt->setByteLength(netDataFrameOverhead);
+    warn_pkt->setShmrpPacketKind(shmrpPacketDef::RWARN_PACKET);
+    warn_pkt->setSource(SELF_NETWORK_ADDRESS);
+    warn_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+    warn_pkt->setRound(getRound());
+    warn_pkt->setPathid(selectPathid(true));
+    warn_pkt->setHop(getHop());
+    warn_pkt->setSequenceNumber(currentSequenceNumber++);
+    toMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);
+
+}
