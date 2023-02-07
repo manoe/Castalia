@@ -143,8 +143,10 @@ struct feat_par {
         bool   rst_learn;
         bool   replay_rinv;
         shmrpCostFuncDef cost_func;
-        double cost_func_alpha;
-        double cost_func_beta;
+        double cost_func_epsilon;
+        double cost_func_iota;
+        double cost_func_pi;
+        double cost_func_phi;
         bool   cf_after_rresp;
         bool   random_t_l;
         double random_t_l_sigma;

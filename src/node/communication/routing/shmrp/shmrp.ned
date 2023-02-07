@@ -48,8 +48,10 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_restart_learning = default(false); // Restart learning if isolated
     bool   f_replay_rinv      = default(false); // Ask neighbours to re-send RINVs within round
     string f_cost_function    = default("hop"); // Cost Functions, available: hop, hop_and_interf, hop_emerg_and_interf, hop_and_pdr, hop_pdr_and_interf, hop_emerg_pdr_and_interf
-    double f_cost_func_alpha  = default(1.0);   // Alpha coeff. in cost function,  controls emerg term
-    double f_cost_func_beta   = default(1.0);   // Beta coeff. in cost function, controls interference term
+    double f_cost_func_epsilon= default(1.0);   // Alpha coeff. in cost function,  controls emerg term
+    double f_cost_func_iota   = default(1.0);   // Beta coeff. in cost function, controls interference term
+    double f_cost_func_pi     = default(1.0);   // Pi coeff. in cost function, controls pdr term
+    double f_cost_func_phi    = default(1.0);   // Phi coeff. in cost function, controls hop term
     bool   f_cf_after_rresp   = default(false); // Apply cost function based selection after RREQ/RRESP
 
     bool   f_random_t_l       = default(false); // Randomize Tl timer

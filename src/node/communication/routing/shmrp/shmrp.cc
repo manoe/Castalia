@@ -33,8 +33,10 @@ void shmrp::startup() {
     fp.rst_learn        = par("f_restart_learning");
     fp.replay_rinv      = par("f_replay_rinv");
     fp.cost_func        = strToCostFunc(par("f_cost_function").stringValue());
-    fp.cost_func_alpha  = par("f_cost_func_alpha");
-    fp.cost_func_beta   = par("f_cost_func_beta");
+    fp.cost_func_epsilon= par("f_cost_func_epsion");
+    fp.cost_func_iota   = par("f_cost_func_iota");
+    fp.cost_func_pi     = par("f_cost_func_pi");
+    fp.cost_func_phi    = par("f_cost_func_phi");
     fp.cf_after_rresp   = par("f_cf_after_rresp");
     fp.random_t_l       = par("f_random_t_l");
     fp.random_t_l_sigma = par("f_random_t_l_sigma");
@@ -365,27 +367,27 @@ double shmrp::calculateCostFunction(node_entry ne) {
     double ret_val;
     switch (fp.cost_func) {
         case shmrpCostFuncDef::HOP: {
-            ret_val=static_cast<double>(ne.hop);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi);
             break;
         }
         case shmrpCostFuncDef::HOP_AND_PDR: {
-            ret_val=static_cast<double>(ne.hop)*static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
             break;
         }
         case shmrpCostFuncDef::HOP_AND_INTERF: {
-            ret_val=static_cast<double>(ne.hop) * pow(ne.interf,fp.cost_func_beta);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.interf,fp.cost_func_iota);
             break;
         }
         case shmrpCostFuncDef::HOP_PDR_AND_INTERF: {
-            ret_val=static_cast<double>(ne.hop) * pow(ne.interf,fp.cost_func_beta)*static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.interf,fp.cost_func_iota) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
             break;
         }
         case shmrpCostFuncDef::HOP_EMERG_AND_INTERF: {
-            ret_val=static_cast<double>(ne.hop) * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg,fp.cost_func_epsilon) * pow(ne.interf,fp.cost_func_iota);
             break;
         }
         case shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF: {
-            ret_val=static_cast<double>(ne.hop) * pow(ne.emerg,fp.cost_func_alpha) * pow(ne.interf,fp.cost_func_beta)*static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg,fp.cost_func_epsilon) * pow(ne.interf,fp.cost_func_iota) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
             break;
         }
         default: {
