@@ -203,9 +203,9 @@ class shmrp: public VirtualRouting {
         void clearPongTable();
         void clearPongTable(int);
 
-        void sendRinv(int);
-        void sendRinv(int,int);
-        void sendRinvBasedOnHop(); 
+        void sendRinv(int,bool);
+        void sendRinv(int,int,bool);
+        void sendRinvBasedOnHop(bool); 
 
         void setHop(int);
         int calculateHop(bool);
