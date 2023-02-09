@@ -33,7 +33,7 @@ void shmrp::startup() {
     fp.rst_learn        = par("f_restart_learning");
     fp.replay_rinv      = par("f_replay_rinv");
     fp.cost_func        = strToCostFunc(par("f_cost_function").stringValue());
-    fp.cost_func_epsilon= par("f_cost_func_epsion");
+    fp.cost_func_epsilon= par("f_cost_func_epsilon");
     fp.cost_func_iota   = par("f_cost_func_iota");
     fp.cost_func_pi     = par("f_cost_func_pi");
     fp.cost_func_phi    = par("f_cost_func_phi");
@@ -290,7 +290,7 @@ int shmrp::getPongTableSize() const {
     return pong_table.size();
 }
 
-void shmrp::sendRinv(int round, int pathid) {
+void shmrp::sendRinv(int round, int pathid, bool local=false) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<", pathid = "<<pathid<<")";
     shmrpRinvPacket *rinv_pkt=new shmrpRinvPacket("SHMRP RINV packet", NETWORK_LAYER_PACKET);
     rinv_pkt->setByteLength(netDataFrameOverhead);
@@ -301,23 +301,24 @@ void shmrp::sendRinv(int round, int pathid) {
     rinv_pkt->setPathid(pathid);
     rinv_pkt->setHop(getHop());
     rinv_pkt->setInterf(getPongTableSize());
+    rinv_pkt->setLocal(local);
     rinv_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void shmrp::sendRinv(int round) {
+void shmrp::sendRinv(int round, bool local=false) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<")";
-    sendRinv(round,0);
+    sendRinv(round,0,local);
 }
 
-void shmrp::sendRinvBasedOnHop() {
+void shmrp::sendRinvBasedOnHop(bool local=false) {
     trace()<<"[info] Entering sendRinvBasedOnHop()";
     if(getHop() < fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
-        sendRinv(getRound());
+        sendRinv(getRound(), local);
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
-        sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+        sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS), local);
     } else {
         trace()<<"[info] Node outside mesh ring";
         int pathid;
@@ -327,7 +328,7 @@ void shmrp::sendRinvBasedOnHop() {
             trace()<<e.what();
             throw e;
         }
-        sendRinv(getRound(), pathid);
+        sendRinv(getRound(), pathid, local);
     }
 }
 
@@ -1003,6 +1004,16 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] No entry in RREQ table with address "<<rresp_pkt->getSource()<<" and pathid: "<<rresp_pkt->getPathid();
                 break;
             }
+            break;
+        }
+        case shmrpPacketDef::RWARN_PACKET: {
+            trace()<<"[info] RWARN_PACKET received";
+            auto rwarn_pkt=dynamic_cast<shmrpRwarnPacket *>(pkt);
+            if(rwarn_pkt->getRound() > getRound()) {
+                trace()<<"[warn] Warning node's round is greater than receiving node's round. Exiting.";
+                break;
+            }
+            sendRinvBasedOnHop(true); 
             break;
         }
         case shmrpPacketDef::PING_PACKET: {

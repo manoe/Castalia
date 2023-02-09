@@ -44,6 +44,7 @@ packet shmrpRinvPacket extends shmrpPacket {
     int hop;        // 2 byte
     int interf;     // 1 byte
     int emerg;      // 1 byte
+    bool local;     // 1 byte
 }
 
 packet shmrpRwarnPacket extends shmrpPacket {
