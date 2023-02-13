@@ -49,7 +49,7 @@ void shmrp::startup() {
     fp.meas_rreq_count  = par("f_meas_rreq_count");
     fp.calc_max_hop     = par("f_calc_max_hop");
     fp.qos_pdr          = par("f_qos_pdr");
-
+    fp.rt_recalc_w_emerg= par("f_rt_recalc_w_emerg");
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
         setState(shmrpStateDef::WORK);
@@ -1099,18 +1099,18 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[warn] Warning node's round is greater than receiving node's round. Exiting.";
                 break;
             }
-            
-            try {
-                updateRreqEntryWithEmergency(rwarn_pkt->getSource());
-                if(fp.cf_after_rresp) {
-                    constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
-                } else {
-                    constructRoutingTable(fp.rresp_req);
+            if(fp.rt_recalc_w_emerg) {
+                try {
+                    updateRreqEntryWithEmergency(rwarn_pkt->getSource());
+                    if(fp.cf_after_rresp) {
+                        constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
+                    } else {
+                        constructRoutingTable(fp.rresp_req);
+                    }
+                } catch (no_available_entry &e) {
+                    trace()<<"[info] Entry not available (not a real error): "<<e.what();
                 }
-            } catch (no_available_entry &e) {
-                trace()<<"[info] Entry not available (fortuntely): "<<e.what();
             }
-
             break;
         }
         case shmrpPacketDef::PING_PACKET: {
