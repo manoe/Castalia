@@ -66,6 +66,7 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_calc_max_hop     = default(false); // Calculate maximum possible hop
     double f_qos_pdr          = default(0.0);   // Apply QoS limit to measured PDR
     string f_routing_file     = default("routes.yaml"); // YAMl file describing static routing
+    string f_loc_rt_strat     = default("rreq_tbl"); // Routing table construction stategy during local update: rreq_table (based on rreq_table), rreq
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ

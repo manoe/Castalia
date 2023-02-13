@@ -39,12 +39,13 @@ packet shmrpPacket extends RoutingPacket {
 }
 
 packet shmrpRinvPacket extends shmrpPacket {
-    int round;      // 2 byte
-    int pathid;     // 1 byte
-    int hop;        // 2 byte
-    int interf;     // 1 byte
-    int emerg;      // 1 byte
-    bool local;     // 1 byte
+    int  round;      // 2 byte
+    int  pathid;     // 1 byte
+    int  hop;        // 2 byte
+    int  interf;     // 1 byte
+    int  emerg;      // 1 byte
+    bool local;      // 1 byte
+    int  localid;    // 1 byte
 }
 
 packet shmrpRwarnPacket extends shmrpPacket {

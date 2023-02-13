@@ -234,6 +234,9 @@ string shmrp::stateToStr(shmrpStateDef state) const {
         case shmrpStateDef::MEASURE: {
             return "MEASURE";
         }
+        case shmrpStateDef::LOCAL_LEARN: {
+            return "LOCAL_LEARN";
+        }
     }
     return "UNKNOWN";
 
@@ -290,7 +293,7 @@ int shmrp::getPongTableSize() const {
     return pong_table.size();
 }
 
-void shmrp::sendRinv(int round, int pathid, bool local=false) {
+void shmrp::sendRinv(int round, int pathid, bool local=false, int local_id=0) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<", pathid = "<<pathid<<")";
     shmrpRinvPacket *rinv_pkt=new shmrpRinvPacket("SHMRP RINV packet", NETWORK_LAYER_PACKET);
     rinv_pkt->setByteLength(netDataFrameOverhead);
@@ -302,20 +305,21 @@ void shmrp::sendRinv(int round, int pathid, bool local=false) {
     rinv_pkt->setHop(getHop());
     rinv_pkt->setInterf(getPongTableSize());
     rinv_pkt->setLocal(local);
+    rinv_pkt->setLocalid(local_id);
     rinv_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void shmrp::sendRinv(int round, bool local=false) {
+void shmrp::sendRinv(int round, bool local=false, int localid=0) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<")";
-    sendRinv(round,0,local);
+    sendRinv(round,0,local,localid);
 }
 
-void shmrp::sendRinvBasedOnHop(bool local=false) {
+void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0) {
     trace()<<"[info] Entering sendRinvBasedOnHop()";
     if(getHop() < fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
-        sendRinv(getRound(), local);
+        sendRinv(getRound(), local, localid);
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
         sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS), local);
@@ -328,7 +332,7 @@ void shmrp::sendRinvBasedOnHop(bool local=false) {
             trace()<<e.what();
             throw e;
         }
-        sendRinv(getRound(), pathid, local);
+        sendRinv(getRound(), pathid, local, localid);
     }
 }
 
@@ -353,6 +357,21 @@ void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
 
 int shmrp::getRinvTableSize() const {
     return rinv_table.size();
+}
+
+void shmrp::clearRinvTableLocalFlags() {
+    trace()<<"[info] entering clearRinvTableLocalFlags()";
+    for(auto i=rinv_table.begin() ; i != rinv_table.end() ; ++i) {
+        i->second.local=false;
+    }
+}
+
+void shmrp::markRinvEntryLocal(std::string id) {
+    trace()<<"[info] Entering markRinvEntryLocal("<<id<<")";
+    if(rinv_table.find(id) == rinv_table.end()) {
+        throw no_available_entry("[error] No entry available in RINV table");
+    }
+    rinv_table[id].local = true;
 }
 
 void shmrp::clearRreqTable() {
@@ -507,6 +526,14 @@ bool shmrp::rrespReceived() const {
     return false;
 }
 
+void shmrp::updateRreqEntryWithEmergency(const char *addr) {
+    trace()<<"Entering shmrp::updateRreqEntryWithEmergency(addr="<<addr<<")";
+    if(rreq_table.find(string(addr)) == rreq_table.end()) {
+        throw no_available_entry("[error] Entry not present in routing table"); 
+    }
+    rreq_table[string(addr)].emerg++;
+}
+
 void shmrp::sendRreqs(int count) {
     trace()<<"[info] Entering shmrp::sendRreqs(count="<<count<<")";
 
@@ -590,9 +617,20 @@ void shmrp::addRoute(std::string next_hop, int pathid) {
     }
 }
 
-
 bool shmrp::isRoutingTableEmpty() const {
     return routing_table.empty();
+}
+
+void shmrp::constructRoutingTableFromRinvTable() {
+    trace()<<"[info] Entering constructRoutingTableFromRinvTable()";
+    std::map<std::string,node_entry> filt_table;
+    for(auto ne: rinv_table) {
+        if(ne.second.local) {
+            filt_table[ne.second.nw_address]=ne.second;
+        }
+    }
+
+//    for(auto 
 }
 
 void shmrp::constructRoutingTable(bool rresp_req) {
@@ -772,41 +810,49 @@ void shmrp::timerFiredCallback(int index) {
         }
         case shmrpTimerDef::T_L: {
             trace()<<"[timer] T_L timer expired";
-            if(shmrpStateDef::LEARN != getState()) {
-                trace()<<"[error] State is not LEARN: "<<stateToStr(getState());
-                break;
+            switch (getState()) {
+                case shmrpStateDef::LOCAL_LEARN: {
+                    trace()<<"[info] LOCAL_LEARN finished";
+                    constructRoutingTableFromRinvTable();
+                    setState(shmrpStateDef::WORK);
+                    break;
+                }
+                case shmrpStateDef::LEARN: {
+                    trace()<<"[info] LOCAL_LEARN finished";
+                    setState(shmrpStateDef::ESTABLISH);
+                    clearRreqTable();
+                    try {
+                        constructRreqTable();
+                    } catch (rinv_table_empty &e) {
+                        trace()<<e.what();
+                        trace()<<"[info] Empty RINV table after LEARNING state - most probably due to re-learn";
+                        setRound(getRound()-1);
+                        setState(shmrpStateDef::INIT); // could be also work, if routing table is not empty
+                        break;
+                    } catch (rreq_table_empty &e) {
+                        trace()<<e.what();
+                        trace()<<"[info] Empty RREQ table after LEARNING state - returning to INIT";
+                        setRound(getRound()-1);
+                        setState(shmrpStateDef::INIT);
+                        break;
+                    } catch (no_available_entry &e) {
+                        trace()<<e.what();
+                        trace()<<"[info] No node to connect to - returning to INIT";
+                        setRound(getRound()-1);
+                        setState(shmrpStateDef::INIT);
+                        break;
+                    } catch (std::exception &e) {
+                        trace()<<e.what();
+                        break;
+                    }
+                    sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
+                    setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
+                    break;
+                }
+                default: {
+                    trace()<<"[error] State is not LEARN or LOCAL_LEARN: "<<stateToStr(getState());
+                }
             }
-            setState(shmrpStateDef::ESTABLISH);
-            clearRreqTable();
-
-
-            try {
-                constructRreqTable();
-            } catch (rinv_table_empty &e) {
-                trace()<<e.what();
-                trace()<<"[info] Empty RINV table after LEARNING state - most probably due to re-learn";
-                setRound(getRound()-1);
-                setState(shmrpStateDef::INIT); // could be also work, if routing table is not empty
-                break;
-            } catch (rreq_table_empty &e) {
-                trace()<<e.what();
-                trace()<<"[info] Empty RREQ table after LEARNING state - returning to INIT";
-                setRound(getRound()-1);
-                setState(shmrpStateDef::INIT);
-                break;
-            } catch (no_available_entry &e) {
-                trace()<<e.what();
-                trace()<<"[info] No node to connect to - returning to INIT";
-                setRound(getRound()-1);
-                setState(shmrpStateDef::INIT);
-                break;
-            } catch (std::exception &e) {
-                trace()<<e.what();
-                break;
-            }
-
-            sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
-            setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
             break;
         }
         case shmrpTimerDef::T_ESTABLISH: {
@@ -827,7 +873,7 @@ void shmrp::timerFiredCallback(int index) {
             if(!rrespReceived() && fp.rresp_req) {
                 trace()<<"[error] No RRESP packet received";
                 if(fp.rst_learn) {
-                    trace()<<"[info] Returning to learning state, resetting round";
+                    trace()<<"[info] Returning to learning state, staying in round";
                     setState(shmrpStateDef::LEARN);
                     //setRound(getRound()-1);
                     setTimer(shmrpTimerDef::T_L,getTl());
@@ -964,7 +1010,47 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 setTimer(shmrpTimerDef::T_L,getTl());
 
             } else if(rinv_pkt->getRound() == getRound()) {
-                if(shmrpStateDef::LEARN != getState() && shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
+                if(true == rinv_pkt->getLocal()) {
+                    // HOP!!!!!
+                    if(shmrpStateDef::WORK == getState()) {
+                        if(checkLocalid(rinv_pkt->getLocalid())) {
+                            trace()<<"[info] Local learn initiated by "<<rinv_pkt->getLocalid()<<" already executed, exiting";
+                        } else {
+                            trace()<<"[info] New local learn, initiated by "<<rinv_pkt->getLocalid();
+                            storeLocalid(rinv_pkt->getLocalid());
+                            setState(shmrpStateDef::LOCAL_LEARN);
+                            setTimer(shmrpTimerDef::T_L, getTl());
+                            clearRinvTableLocalFlags();
+                            try {
+                                markRinvEntryLocal(std::string(rinv_pkt->getSource()));
+                            } catch (no_available_entry &e) {
+                                trace()<<e.what();
+                                // maybe create?
+                                break;
+                            }
+                        }
+                        break;
+                    } else if(shmrpStateDef::LOCAL_LEARN == getState()) {
+                        if(checkLocalid(rinv_pkt->getLocalid())) {
+                            trace()<<"[info] Local learn initiated by "<<rinv_pkt->getLocalid()<<" already executed, LOCAL_LEARN not restarting, exiting";
+                            break; // this should be moved out
+                        } else {
+                            trace()<<"[info] Local learn restart due to "<<rinv_pkt->getLocalid();
+                            storeLocalid(rinv_pkt->getLocalid());
+                            cancelTimer(shmrpTimerDef::T_L);
+                            setTimer(shmrpTimerDef::T_L, getTl());
+                            try {
+                                markRinvEntryLocal(std::string(rinv_pkt->getSource()));
+                            } catch (no_available_entry &e) {
+                                trace()<<e.what();
+                                // maybe create?
+                                break;
+                            }
+                            break;
+                        }
+                    }
+                }
+                else if(shmrpStateDef::LEARN != getState() && shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
                     trace()<<"[info] RINV packet discarded by node, not in learning state anymore";
                     break;
                 }
@@ -1013,7 +1099,18 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[warn] Warning node's round is greater than receiving node's round. Exiting.";
                 break;
             }
-            sendRinvBasedOnHop(true); 
+            
+            try {
+                updateRreqEntryWithEmergency(rwarn_pkt->getSource());
+                if(fp.cf_after_rresp) {
+                    constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
+                } else {
+                    constructRoutingTable(fp.rresp_req);
+                }
+            } catch (no_available_entry &e) {
+                trace()<<"[info] Entry not available (fortuntely): "<<e.what();
+            }
+
             break;
         }
         case shmrpPacketDef::PING_PACKET: {
@@ -1342,7 +1439,7 @@ void shmrp::finishSpecific() {
         trace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
         std::string nw_address = std::to_string(mac_msg->getDestination());
         if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
-            if(rreq_table.find(nw_address) != rreq_table.end() && shmrpStateDef::WORK != getState() ){
+            if(rreq_table.find(nw_address) != rreq_table.end() && shmrpStateDef::ESTABLISH == getState() ){
                 rreq_table[nw_address].ack_count++;
             }
             if(routing_table.find(nw_address) != routing_table.end()) {

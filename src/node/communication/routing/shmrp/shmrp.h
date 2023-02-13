@@ -43,7 +43,8 @@ enum shmrpStateDef {
     INIT      = 2,
     LEARN     = 3,
     ESTABLISH = 4,
-    MEASURE   = 5
+    MEASURE   = 5,
+    LOCAL_LEARN = 6
 };
 
 enum shmrpTimerDef {
@@ -127,11 +128,12 @@ struct node_entry {
     int  hop;
     bool rresp = false;
     int  interf;
-    int  emerg;
+    int  emerg = 0;
     bool used = false;
     int  round = 0;
     int  pkt_count = 0;
     int  ack_count = 0;
+    bool local = false;
 };
 
 struct feat_par {
@@ -176,6 +178,7 @@ class shmrp: public VirtualRouting {
         std::map<std::string,node_entry> pong_table;
         std::map<std::string,node_entry> recv_table;
         YAML::Emitter y_out;
+        std::unordered_set<int> local_id_table;
 
     protected:
         void startup();
@@ -203,9 +206,9 @@ class shmrp: public VirtualRouting {
         void clearPongTable();
         void clearPongTable(int);
 
-        void sendRinv(int,bool);
-        void sendRinv(int,int,bool);
-        void sendRinvBasedOnHop(bool); 
+        void sendRinv(int,bool,int);
+        void sendRinv(int,int,bool,int);
+        void sendRinvBasedOnHop(bool,int); 
 
         void setHop(int);
         int calculateHop(bool);
@@ -214,6 +217,10 @@ class shmrp: public VirtualRouting {
         void setRound(int);
         int  getRound() const;
 
+        bool checkLocalid(int id) { return local_id_table.end() != local_id_table.find(id); }; 
+        void storeLocalid(int id) { local_id_table.insert(id); };
+        void clearLocalids() { local_id_table.clear(); };
+
         void setState(shmrpStateDef);
         std::string stateToStr(shmrpStateDef) const;
 
@@ -221,6 +228,10 @@ class shmrp: public VirtualRouting {
         void addToRinvTable(shmrpRinvPacket *);
         int  getRinvTableSize() const;
         void updateRinvTableFromRreqTable();
+        void clearRinvTableLocalFlags();
+        void markRinvEntryLocal(std::string);
+        bool checkRinvEntry(std::string id) { return rinv_table.find(id) != rinv_table.end();};
+
 
         void clearRreqTable();
         bool isRreqTableEmpty() const;
@@ -229,13 +240,14 @@ class shmrp: public VirtualRouting {
         int  getRreqPktCount();
         void updateRreqTableWithRresp(const char *, int);
         bool rrespReceived() const;
-
+        void updateRreqEntryWithEmergency(const char *);
         double calculateCostFunction(node_entry);
 
 
         void clearRoutingTable();
         void constructRoutingTable(bool);
         void constructRoutingTable(bool,bool,double);
+        void constructRoutingTableFromRinvTable();
         void addRoute(std::string, int);
         bool isRoutingTableEmpty() const;
         int  selectPathid();
