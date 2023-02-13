@@ -161,6 +161,7 @@ struct feat_par {
         int    meas_rreq_count;
         bool   calc_max_hop;
         double qos_pdr;
+        bool   rt_recalc_w_emerg;
 };
 
 class shmrp: public VirtualRouting {
