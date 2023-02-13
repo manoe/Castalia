@@ -224,7 +224,15 @@ void ThroughputTest::finishSpecific() {
 
                 // write yaml
                 if(isSink) {
-                    y_out<<YAML::Key<<i<<YAML::Value<<rate;
+                    //y_out<<YAML::Key<<i<<YAML::Value<<rate;
+                    y_out<<YAML::Key<<i;
+                    y_out<<YAML::Value;
+                    y_out<<YAML::BeginMap;
+                    y_out<<YAML::Key<<"pkt_recv";
+                    y_out<<YAML::Value<<packetsReceived[i];
+                    y_out<<YAML::Key<<"pkt_sent";
+                    y_out<<YAML::Value<<packetsSent;
+                    y_out<<YAML::EndMap;
                 }
 
 			} else {
