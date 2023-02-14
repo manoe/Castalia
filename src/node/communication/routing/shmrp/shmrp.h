@@ -38,13 +38,14 @@
 //
 
 enum shmrpStateDef {
-    UNDEF     = 0,
-    WORK      = 1,
-    INIT      = 2,
-    LEARN     = 3,
-    ESTABLISH = 4,
-    MEASURE   = 5,
-    LOCAL_LEARN = 6
+    UNDEF       = 0,
+    WORK        = 1,
+    INIT        = 2,
+    LEARN       = 3,
+    ESTABLISH   = 4,
+    MEASURE     = 5,
+    LOCAL_LEARN = 6,
+    DEAD        = 7
 };
 
 enum shmrpTimerDef {
