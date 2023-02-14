@@ -68,6 +68,7 @@ simple shmrp like node.communication.routing.iRouting
     string f_routing_file     = default("routes.yaml"); // YAMl file describing static routing
     string f_loc_rt_strat     = default("rreq_tbl"); // Routing table construction stategy during local update: rreq_table (based on rreq_table), rreq
     bool   f_rt_recalc_w_emerg= default(false); // Recalculate routing table with emergency parameter, in case of WARN message
+    bool   f_reroute_pkt      = default(false); // Reroute data pkt, if routing table entry is missing
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
