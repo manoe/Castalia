@@ -50,6 +50,7 @@ void shmrp::startup() {
     fp.calc_max_hop     = par("f_calc_max_hop");
     fp.qos_pdr          = par("f_qos_pdr");
     fp.rt_recalc_w_emerg= par("f_rt_recalc_w_emerg");
+    fp.reroute_pkt      = par("f_reroute_pkt");
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
         setState(shmrpStateDef::WORK);
@@ -403,11 +404,11 @@ double shmrp::calculateCostFunction(node_entry ne) {
             break;
         }
         case shmrpCostFuncDef::HOP_EMERG_AND_INTERF: {
-            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg,fp.cost_func_epsilon) * pow(ne.interf,fp.cost_func_iota);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg+1,fp.cost_func_epsilon) * pow(ne.interf,fp.cost_func_iota);
             break;
         }
         case shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF: {
-            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg,fp.cost_func_epsilon) * pow(ne.interf,fp.cost_func_iota) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg+1,fp.cost_func_epsilon) * pow(ne.interf,fp.cost_func_iota) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
             break;
         }
         default: {
@@ -941,28 +942,31 @@ void shmrp::timerFiredCallback(int index) {
 }
 
 void shmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
-    if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
+    if(0==std::strcmp(destination,BROADCAST_NETWORK_ADDRESS)) {
+        trace()<<"[info] Broadcast packet";
+        sendData(pkt,std::string(destination),0);
+    } else if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
         trace()<<"[error] Packet's destination not sink: "<<destination;
         return;
-    }
-
-    // Shouldn't we buffer?
-    if(isRoutingTableEmpty()) {
-        trace()<<"[error] Routing table empty, can't route packet";
-        return;
-    }
-
-    auto pathid=selectPathid();
-    std::string next_hop;
-
-    if(shmrpRingDef::EXTERNAL==getRingStatus()) {
-        next_hop=getNextHop(pathid);
     } else {
-        next_hop=getNextHop(pathid,fp.rand_ring_hop);
+        // Shouldn't we buffer?
+        if(isRoutingTableEmpty()) {
+            trace()<<"[error] Routing table empty, can't route packet";
+            return;
+        }
+    
+        auto pathid=selectPathid();
+        std::string next_hop;
+    
+        if(shmrpRingDef::EXTERNAL==getRingStatus()) {
+            next_hop=getNextHop(pathid);
+        } else {
+            next_hop=getNextHop(pathid,fp.rand_ring_hop);
+        }
+    
+        incPktCountInRoutingTable(next_hop);
+        sendData(pkt,next_hop,pathid);
     }
-
-    incPktCountInRoutingTable(next_hop);
-    sendData(pkt,next_hop,pathid);
 
 }
 
@@ -1132,6 +1136,9 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 data_pkt->setSource(data_pkt->getOrigin());
                 toApplicationLayer(decapsulatePacket(data_pkt));
                 break;
+            } else if(0==std::strcmp(data_pkt->getDestination(), BROADCAST_NETWORK_ADDRESS)) {
+                trace()<<"[info] Broadcast packet, forwarding to Application layer";
+                toApplicationLayer(decapsulatePacket(data_pkt));
             } else {
                 trace()<<"[info] DATA packet at interim node, routing forward";
 
@@ -1144,7 +1151,12 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     }
                 } catch (no_available_entry &e) {
                     trace()<<"[error] Next hop not available for pathid: "<<data_pkt->getPathid();
-                    break;
+                    if(fp.reroute_pkt) {
+                        trace()<<"[info] Rerouting packet";
+                        next_hop=getNextHop(selectPathid());
+                    } else {
+                        break;
+                    }
                 }
 
                 incPktCountInRoutingTable(next_hop);
