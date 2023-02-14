@@ -238,12 +238,18 @@ string shmrp::stateToStr(shmrpStateDef state) const {
         case shmrpStateDef::LOCAL_LEARN: {
             return "LOCAL_LEARN";
         }
+        case shmrpStateDef::DEAD: {
+            return "DEAD";
+        }
     }
     return "UNKNOWN";
 
 }
 
 shmrpStateDef shmrp::getState() const {
+    if(disabled) {
+        return shmrpStateDef::DEAD;
+    }
     return g_state;
 }
 
