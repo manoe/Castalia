@@ -164,6 +164,18 @@ int shmrp::getHop() const {
     return g_hop;
 }
 
+int shmrp::getHop(int pathid) {
+    trace()<<"[info] Entering shmrp::getHop(pathid="<<pathid<<")";
+    int hop=getHop();
+    for(auto ne: routing_table) {
+        if(pathid == ne.second.pathid) {
+            return ne.second.hop;
+        }
+    }
+    trace()<<"[info] Hop count for pathid "<<pathid<<" is "<<hop;
+    return hop;
+}
+
 int shmrp::calculateHop(bool max_hop=false) {
     trace()<<"[info] Entering shmrp::calculateHop(max_hop="<<max_hop<<")";
     if(rinv_table.empty()) {
@@ -309,7 +321,7 @@ void shmrp::sendRinv(int round, int pathid, bool local=false, int local_id=0) {
     rinv_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     rinv_pkt->setRound(round);
     rinv_pkt->setPathid(pathid);
-    rinv_pkt->setHop(getHop());
+    rinv_pkt->setHop(getHop(pathid));
     rinv_pkt->setInterf(getPongTableSize());
     rinv_pkt->setLocal(local);
     rinv_pkt->setLocalid(local_id);

@@ -290,6 +290,7 @@ class shmrp: public VirtualRouting {
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
         int getHop() const;
+        int getHop(int);
 
         int getPongTableSize() const;
 
