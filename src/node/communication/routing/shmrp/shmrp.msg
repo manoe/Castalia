@@ -23,6 +23,8 @@ enum shmrpPacketDef {
     PING_PACKET         = 16;
     PONG_PACKET         = 32;
     RWARN_PACKET        = 64;
+    LREQ_PACKET         = 128;
+    LRESP_PACKET        = 256;
 }
 
 enum shmrpWarnDef {
@@ -65,6 +67,19 @@ packet shmrpRrespPacket extends shmrpPacket {
     int round;      // 2 byte
     int pathid;     // 1 byte
     int hop;        // 2 byte
+}
+
+// shmrp learn request
+packet shmrpLreqPacket extends shmrpPacket {
+    int round;
+    int pathid;
+    int hop;
+}
+
+// shmrp learn response
+packet shmrpLrespPacket extends shmrpPacket {
+    int round;
+    int pathid;
 }
 
 packet shmrpDataPacket extends shmrpPacket {
