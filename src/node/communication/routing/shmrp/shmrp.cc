@@ -51,6 +51,9 @@ void shmrp::startup() {
     fp.qos_pdr          = par("f_qos_pdr");
     fp.rt_recalc_w_emerg= par("f_rt_recalc_w_emerg");
     fp.reroute_pkt      = par("f_reroute_pkt");
+    fp.second_learn     = par("f_second_learn");
+    fp.t_sec_l          = par("f_t_sec_l");
+
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
         setState(shmrpStateDef::WORK);
@@ -60,6 +63,9 @@ void shmrp::startup() {
             setHop(0);
             setTimer(shmrpTimerDef::SINK_START,par("t_start"));
             setState(shmrpStateDef::WORK);
+            if(fp.second_learn) {
+                setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
+            }
         } else {
             setHop(std::numeric_limits<int>::max());
             setState(shmrpStateDef::INIT);
@@ -594,6 +600,20 @@ void shmrp::sendRresp(const char *dest, int round, int pathid) {
     toMacLayer(rresp_pkt, resolveNetworkAddress(dest));
 }
 
+void shmrp::sendLreq(int round, int pathid) {
+    trace()<<"[info] Entering sendLReq(round="<<round<<", pathid="<<pathid;
+    shmrpLreqPacket *lreq_pkt=new shmrpLreqPacket("SHMRP LREQ packet",NETWORK_LAYER_PACKET);
+    lreq_pkt->setByteLength(netDataFrameOverhead);
+    lreq_pkt->setShmrpPacketKind(shmrpPacketDef::LREQ_PACKET);
+    lreq_pkt->setSource(SELF_NETWORK_ADDRESS);
+    lreq_pkt->setRound(round);
+    lreq_pkt->setPathid(pathid);
+    lreq_pkt->setHop(getHop());
+    lreq_pkt->setSequenceNumber(currentSequenceNumber++);
+    toMacLayer(lreq_pkt, resolveNetworkAddress(BROADCAST_NETWORK_ADDRESS));
+}
+
+
 void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
     trace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
     shmrpDataPacket *data_pkt=new shmrpDataPacket("SHMRP DATA packet",NETWORK_LAYER_PACKET);
@@ -794,6 +814,19 @@ void shmrp::incPktCountInRoutingTable(std::string next_hop) {
     routing_table[next_hop].pkt_count++;
 }
 
+bool shmrp::checkPathid(int pathid) {
+    trace()<<"[info] Entering checkPathid(pathid="<<pathid<<")";
+    for(auto ne: routing_table) {
+        if(pathid == ne.second.pathid) {
+            trace()<<"[info] Pathid found";
+            return true;
+        }
+    }
+    trace()<<"[info] Pathid not found";
+    return false;
+}
+
+
 void shmrp::incPktCountInRecvTable(std::string entry) {
     trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
     if(recv_table.find(entry) == recv_table.end()) {
@@ -820,6 +853,38 @@ void shmrp::timerFiredCallback(int index) {
             setRound(1+getRound());
             sendRinv(getRound());
             setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            break;
+        }
+        case shmrpTimerDef::T_SEC_L: {
+            trace()<<"[timer] T_SEC_L timer expired";
+            if(isSink()) {
+               sendLreq(getRound(),0);
+               break;
+            }
+            if(shmrpStateDef::WORK != getState()) {
+                trace()<<"[info] Node still not in WORK state, starting T_SEC_L timer.";
+                setTimer(shmrpTimerDef::T_SEC_L, fp.t_sec_l);
+                break;
+            }
+
+            switch (getRingStatus()) {
+                case shmrpRingDef::CENTRAL: {
+                    trace()<<"[info] Node is sink, impossibru";
+                    break;
+                }
+                case shmrpRingDef::INTERNAL: {
+                    trace()<<"[info] Node is internal";
+                    sendLreq(getRound(),0);
+                    break;
+                }
+                case shmrpRingDef::BORDER: {
+                    trace()<<"[info] Node is at border";
+                    sendLreq(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                    break;
+                } 
+            } 
+
+
             break;
         }
         case shmrpTimerDef::T_REPEAT: {
@@ -999,6 +1064,16 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             trace()<<"[info] RINV_PACKET received";
             auto rinv_pkt=dynamic_cast<shmrpRinvPacket *>(pkt);
 
+            if(fp.second_learn) {
+                trace()<<"[info] Second learn active";
+                if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
+                    trace()<<"[info] T_SEC_L timer active, restarting";
+                    cancelTimer(shmrpTimerDef::T_SEC_L);
+                    setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
+                }
+            }
+
+
             if(isSink()) {
                 trace()<<"[info] RINV_PACKET discarded by Sink";
                 break;
@@ -1028,6 +1103,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
                 trace()<<"[info] Start LEARNING process"; 
                 // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
+                setSecL(false);
                 setState(shmrpStateDef::LEARN);
                 setTimer(shmrpTimerDef::T_L,getTl());
 
@@ -1112,6 +1188,41 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] No entry in RREQ table with address "<<rresp_pkt->getSource()<<" and pathid: "<<rresp_pkt->getPathid();
                 break;
             }
+            break;
+        }
+        case shmrpPacketDef::LREQ_PACKET: {
+            trace()<<"[info] LREQ_PACKET received";
+            if(isSink()) {
+                trace()<<"[info] Node is sink, discarding LREQ_PACKET";
+                break;
+            }
+            if(getSecL()) {
+                trace()<<"[info] Second learn already performed";
+                break;
+            }
+            auto lreq_packet=dynamic_cast<shmrpLreqPacket *>(pkt);
+            if(lreq_packet->getRound() != getRound()) {
+                trace()<<"LREQ_PACKET out of round. Packet round: "<<lreq_packet->getRound()<<" own round: "<<getRound();
+                break;
+            }
+
+            // This is not a real issue, isn't it?
+            if(lreq_packet->getHop() >= getHop()) {
+                trace()<<"LREQ_PACKET hop is higher than local hop. Packet hop: "<<lreq_packet->getRound()<<" own hop: "<<getHop();
+                break;
+            }
+
+            if(shmrpRingDef::EXTERNAL == getRingStatus()) {
+                if(!checkPathid(lreq_packet->getPathid())) {
+                    trace()<<"[info] LREQ_PACKET indicates unknown pathid, discarding.";
+                    break;
+                }
+            }
+
+            setSecL(true);
+            
+            setTimer(shmrpTimerDef::T_SEC_L, fp.t_sec_l);
+
             break;
         }
         case shmrpPacketDef::RWARN_PACKET: {

@@ -53,7 +53,8 @@ enum shmrpTimerDef {
     T_L              = 2,
     T_ESTABLISH      = 3,
     T_MEASURE        = 4,
-    T_REPEAT         = 5
+    T_REPEAT         = 5,
+    T_SEC_L          = 6
 };
 
 enum shmrpRingDef {
@@ -138,32 +139,34 @@ struct node_entry {
 };
 
 struct feat_par {
-        int    ring_radius;
-        double t_l;
-        double t_est;
-        double t_meas;
-        bool   rresp_req;
-        bool   rst_learn;
-        bool   replay_rinv;
-        shmrpCostFuncDef cost_func;
-        double cost_func_epsilon;
-        double cost_func_iota;
-        double cost_func_pi;
-        double cost_func_phi;
-        bool   cf_after_rresp;
-        bool   random_t_l;
-        double random_t_l_sigma;
-        shmrpRinvTblAdminDef rinv_tbl_admin;
-        bool   interf_ping;
-        bool   round_keep_pong;
-        bool   rand_ring_hop;
-        bool   static_routing;
-        bool   measure_w_rreq;
-        int    meas_rreq_count;
-        bool   calc_max_hop;
-        double qos_pdr;
-        bool   rt_recalc_w_emerg;
-        bool   reroute_pkt;
+    int    ring_radius;
+    double t_l;
+    double t_est;
+    double t_meas;
+    bool   rresp_req;
+    bool   rst_learn;
+    bool   replay_rinv;
+    shmrpCostFuncDef cost_func;
+    double cost_func_epsilon;
+    double cost_func_iota;
+    double cost_func_pi;
+    double cost_func_phi;
+    bool   cf_after_rresp;
+    bool   random_t_l;
+    double random_t_l_sigma;
+    shmrpRinvTblAdminDef rinv_tbl_admin;
+    bool   interf_ping;
+    bool   round_keep_pong;
+    bool   rand_ring_hop;
+    bool   static_routing;
+    bool   measure_w_rreq;
+    int    meas_rreq_count;
+    bool   calc_max_hop;
+    double qos_pdr;
+    bool   rt_recalc_w_emerg;
+    bool   reroute_pkt;
+    bool   second_learn;
+    double t_sec_l;  
 };
 
 class shmrp: public VirtualRouting {
@@ -173,6 +176,7 @@ class shmrp: public VirtualRouting {
         int g_hop;
         int g_round;
         int g_pathid; // this is dangerous
+        bool g_sec_l = false;
         feat_par fp;
         shmrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
@@ -214,8 +218,8 @@ class shmrp: public VirtualRouting {
         void sendRinvBasedOnHop(bool,int); 
 
         void setHop(int);
-        int calculateHop(bool);
-        int calculateHopFromRoutingTable();
+        int  calculateHop(bool);
+        int  calculateHopFromRoutingTable();
 
         void setRound(int);
         int  getRound() const;
@@ -258,6 +262,8 @@ class shmrp: public VirtualRouting {
         std::string getNextHop(int);
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
+        bool checkPathid(int);
+        int  getRoutingTableSize() { return routing_table.size();};
 
         void incPktCountInRecvTable(std::string);
 
@@ -266,6 +272,8 @@ class shmrp: public VirtualRouting {
         void sendRreqs(int);
 
         void sendRresp(const char *,int, int);
+
+        void sendLreq(int, int);
 
         void sendData(cPacket *, std::string, int); 
         void forwardData(shmrpDataPacket *, std::string, int);
@@ -286,6 +294,9 @@ class shmrp: public VirtualRouting {
         std::string StateToString(shmrpStateDef);
  
         virtual void handleMacControlMessage(cMessage *);
+
+        void setSecL(bool flag) { g_sec_l=flag;};
+        bool getSecL() { return g_sec_l; };
     public:
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
