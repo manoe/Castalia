@@ -45,7 +45,8 @@ enum shmrpStateDef {
     ESTABLISH   = 4,
     MEASURE     = 5,
     LOCAL_LEARN = 6,
-    DEAD        = 7
+    DEAD        = 7,
+    S_ESTABLISH = 8
 };
 
 enum shmrpTimerDef {
@@ -177,6 +178,7 @@ class shmrp: public VirtualRouting {
         int g_round;
         int g_pathid; // this is dangerous
         bool g_sec_l = false;
+        int g_sec_l_pathid;
         feat_par fp;
         shmrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
@@ -243,6 +245,7 @@ class shmrp: public VirtualRouting {
         void clearRreqTable();
         bool isRreqTableEmpty() const;
         void constructRreqTable();
+        void constructRreqTable(std::vector<int>);
         bool rreqEntryExists(const char *, int);
         int  getRreqPktCount();
         void updateRreqTableWithRresp(const char *, int);
@@ -297,6 +300,8 @@ class shmrp: public VirtualRouting {
 
         void setSecL(bool flag) { g_sec_l=flag;};
         bool getSecL() { return g_sec_l; };
+        void setSecLPathid(int pathid) { g_sec_l_pathid=pathid;};
+        int  getSecLPathid() { return g_sec_l_pathid;};
     public:
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
