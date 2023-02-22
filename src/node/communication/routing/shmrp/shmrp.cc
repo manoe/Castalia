@@ -259,6 +259,9 @@ string shmrp::stateToStr(shmrpStateDef state) const {
         case shmrpStateDef::DEAD: {
             return "DEAD";
         }
+        case shmrpStateDef::S_ESTABLISH: {
+            return "S_ESTABLISH";
+        }
     }
     return "UNKNOWN";
 
@@ -518,6 +521,34 @@ void shmrp::constructRreqTable() {
     //                rreq_table.insert({cl.second[i].nw_address,cl.second[i]});
     //            }
 }
+
+void shmrp::constructRreqTable(std::vector<int> path_filter) {
+    trace()<<"[info] Entering constructRreqTable(path_filter= )";
+    if(rinv_table.empty()) {
+        throw rinv_table_empty("[error] RINV table empty");
+    }
+    if(!rreq_table.empty()) {
+        throw rreq_table_non_empty("[error] RREQ table not empty");
+    }
+
+    rreq_table=rinv_table;
+
+    for(auto it=rreq_table.begin() ; it != rreq_table.end(); ) {
+        bool erase=false;
+        for(auto i: path_filter) {
+            if(it->second.pathid == i) {
+                erase=true;
+                continue;
+            }
+        }
+        if(erase) {
+            rreq_table.erase(it++);
+        } else {
+            ++it;
+        }
+    }
+}
+
 
 bool shmrp::rreqEntryExists(const char *addr, int pathid) {
     if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid == pathid) {
@@ -858,6 +889,7 @@ void shmrp::timerFiredCallback(int index) {
         case shmrpTimerDef::T_SEC_L: {
             trace()<<"[timer] T_SEC_L timer expired";
             if(isSink()) {
+               trace()<<"[info] Sink starting second learn";
                sendLreq(getRound(),0);
                break;
             }
@@ -881,10 +913,29 @@ void shmrp::timerFiredCallback(int index) {
                     trace()<<"[info] Node is at border";
                     sendLreq(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
                     break;
-                } 
+                }
+                case shmrpRingDef::EXTERNAL: {
+                    trace()<<"[info] Node is external.";
+                    if(1 < getRoutingTableSize()) {
+                        trace()<<"[info] Enough routing entries";
+                        sendLreq(getRound(),getSecLPathid());
+                        break;
+                    }
+                    clearRreqTable();
+                    try {
+                        std::vector<int> pf;
+                        pf.push_back(getSecLPathid());
+                        constructRreqTable(pf);
+                    } catch (exception &e) {
+                        trace()<<e.what();
+                        break;
+                    }
+                    setState(shmrpStateDef::S_ESTABLISH);
+                    sendRreqs(); 
+                    setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
+                    break;
+                }
             } 
-
-
             break;
         }
         case shmrpTimerDef::T_REPEAT: {
@@ -902,7 +953,7 @@ void shmrp::timerFiredCallback(int index) {
                     break;
                 }
                 case shmrpStateDef::LEARN: {
-                    trace()<<"[info] LOCAL_LEARN finished";
+                    trace()<<"[info] LEARN finished";
                     setState(shmrpStateDef::ESTABLISH);
                     clearRreqTable();
                     try {
@@ -954,7 +1005,7 @@ void shmrp::timerFiredCallback(int index) {
                 break;
             }
 
-            if(!rrespReceived() && fp.rresp_req) {
+            if(!rrespReceived() && fp.rresp_req && shmrpStateDef::S_ESTABLISH != getState()) {
                 trace()<<"[error] No RRESP packet received";
                 if(fp.rst_learn) {
                     trace()<<"[info] Returning to learning state, staying in round";
@@ -1166,6 +1217,13 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] RREQ_PACKET's round: "<<rreq_pkt->getRound()<<" does not equal local round: "<<getRound();
                 break;
             }
+            if(fp.second_learn) {
+                if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
+                    trace()<<"[info] RREQ received,  T_SEC_L timer active, restarting";
+                    cancelTimer(shmrpTimerDef::T_SEC_L);
+                    setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
+                }
+            }
             if(getHop()<fp.ring_radius) {
                 sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
             } else if(getHop()==fp.ring_radius) {
@@ -1220,7 +1278,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
 
             setSecL(true);
-            
+            setSecLPathid(lreq_packet->getPathid());
             setTimer(shmrpTimerDef::T_SEC_L, fp.t_sec_l);
 
             break;
