@@ -123,6 +123,12 @@ enum shmrpRinvTblAdminDef {
             explicit no_available_entry(const char   *what_arg) : std::runtime_error(what_arg) {};
     };
 
+    class state_not_permitted : public std::runtime_error {
+        public:
+            explicit state_not_permitted(const string &what_arg) : std::runtime_error(what_arg) {};
+            explicit state_not_permitted(const char   *what_arg) : std::runtime_error(what_arg) {};
+    };
+
 //}
 
 struct node_entry {
@@ -256,7 +262,7 @@ class shmrp: public VirtualRouting {
 
         void clearRoutingTable();
         void constructRoutingTable(bool);
-        void constructRoutingTable(bool,bool,double);
+        void constructRoutingTable(bool,bool,double,bool);
         void constructRoutingTableFromRinvTable();
         void addRoute(std::string, int);
         bool isRoutingTableEmpty() const;

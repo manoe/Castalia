@@ -716,7 +716,7 @@ void shmrp::constructRoutingTable(bool rresp_req) {
     }
 }
 
-void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
+void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, bool update=false) {
     trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<", pdr="<<pdr<<")";
     if(!app_cf) {
         constructRoutingTable(rresp_req);
@@ -726,6 +726,10 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
     auto calc_pdr=[](node_entry n){return static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);};
 
     if(getHop() <= fp.ring_radius) {
+        if(update) {
+            trace()<<"[error] No routing table update inside the ring";
+            throw state_not_permitted("[error] No routing table update inside the ring");  
+        }
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rreq_table) {
             if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req ) && calc_pdr(ne.second) >= pdr ) {
@@ -743,7 +747,8 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
     std::map<int, std::vector<node_entry>> cl;
     std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
             // Either select only hop-based, if rresp is not required or based on rresp received
-            if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req) && calc_pdr(ne.second) >= pdr ) {
+            // During update do not consider hop
+            if((update || ne.second.hop < getHop()) && (ne.second.rresp || !fp.rresp_req) && calc_pdr(ne.second) >= pdr ) {
                 if(cl.find(ne.second.pathid) == cl.end()) {
                     trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
                     cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
@@ -775,7 +780,6 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0) {
         throw routing_table_empty("[error] routing table empty after constructRoutingTable()");
     }
 }
-
 
 int shmrp::selectPathid(bool replay) {
     trace()<<"[info] Entering shmrp::selectPathid(replay="<<replay<<")";
@@ -1004,8 +1008,15 @@ void shmrp::timerFiredCallback(int index) {
                 setTimer(shmrpTimerDef::T_ESTABLISH,getTest());
                 break;
             }
+            if(shmrpStateDef::S_ESTABLISH == getState()) {
+                trace()<<"[info] Second learn finished";
+                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /*update */ );
 
-            if(!rrespReceived() && fp.rresp_req && shmrpStateDef::S_ESTABLISH != getState()) {
+                setState(shmrpStateDef::WORK);
+                break;
+            }
+
+            if(!rrespReceived() && fp.rresp_req ) {
                 trace()<<"[error] No RRESP packet received";
                 if(fp.rst_learn) {
                     trace()<<"[info] Returning to learning state, staying in round";
