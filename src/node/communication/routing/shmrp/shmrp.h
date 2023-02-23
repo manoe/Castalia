@@ -230,7 +230,6 @@ class shmrp: public VirtualRouting {
         int  calculateHopFromRoutingTable();
 
         void setRound(int);
-        int  getRound() const;
 
         bool checkLocalid(int id) { return local_id_table.end() != local_id_table.find(id); }; 
         void storeLocalid(int id) { local_id_table.insert(id); };
@@ -305,7 +304,6 @@ class shmrp: public VirtualRouting {
         virtual void handleMacControlMessage(cMessage *);
 
         void setSecL(bool flag) { g_sec_l=flag;};
-        bool getSecL() { return g_sec_l; };
         void setSecLPathid(int pathid) { g_sec_l_pathid=pathid;};
         int  getSecLPathid() { return g_sec_l_pathid;};
     public:
@@ -313,6 +311,8 @@ class shmrp: public VirtualRouting {
         shmrpStateDef getState() const;
         int getHop() const;
         int getHop(int);
+        int  getRound() const;
+        bool getSecL() { return g_sec_l; };
 
         int getPongTableSize() const;
 
