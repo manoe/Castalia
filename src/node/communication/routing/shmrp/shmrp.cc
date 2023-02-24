@@ -547,6 +547,10 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
             ++it;
         }
     }
+
+    if(rreq_table.empty()) {
+        throw rreq_table_empty("[error] RREQ table empty after construction");
+    }
 }
 
 
@@ -862,10 +866,10 @@ bool shmrp::checkPathid(int pathid) {
 }
 
 
-void shmrp::incPktCountInRecvTable(std::string entry) {
+void shmrp::incPktCountInRecvTable(std::string entry, int pathid) {
     trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
     if(recv_table.find(entry) == recv_table.end()) {
-        recv_table[entry] = {entry,0,0,false,0,0,false,0,1};
+        recv_table[entry] = {entry,pathid,0,false,0,0,false,0,1};
     } else {
         recv_table[entry].pkt_count++;
     }
@@ -1328,7 +1332,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         case shmrpPacketDef::DATA_PACKET: {
             trace()<<"[info] DATA_PACKET received";
             shmrpDataPacket *data_pkt=dynamic_cast<shmrpDataPacket *>(pkt);
-            incPktCountInRecvTable(std::string(data_pkt->getSource()));
+            incPktCountInRecvTable(std::string(data_pkt->getSource()), data_pkt->getPathid() );
             if(isSink() && 0==std::strcmp(data_pkt->getDestination(),SELF_NETWORK_ADDRESS)) {
                 trace()<<"[info] DATA packet arrived, forwarding to Application layer";
                 data_pkt->setSource(data_pkt->getOrigin());
@@ -1445,6 +1449,8 @@ void shmrp::serializeRecvTable(std::map<std::string,node_entry> table) {
         y_out<<YAML::BeginMap;
         y_out<<YAML::Key<<"node";
         y_out<<YAML::Value<<i.second.nw_address;
+        y_out<<YAML::Key<<"pathid";
+        y_out<<YAML::Value<<i.second.pathid;
         y_out<<YAML::Key<<"pkt_count";
         y_out<<YAML::Value<<i.second.pkt_count;
         y_out<<YAML::EndMap;

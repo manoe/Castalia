@@ -273,7 +273,7 @@ class shmrp: public VirtualRouting {
         bool checkPathid(int);
         int  getRoutingTableSize() { return routing_table.size();};
 
-        void incPktCountInRecvTable(std::string);
+        void incPktCountInRecvTable(std::string, int);
 
 
         void sendRreqs();
