@@ -83,6 +83,12 @@ enum shmrpRinvTblAdminDef {
     NEVER_ERASE    = 3 
 };
 
+enum shmrpSecLParDef {
+    OFF            = 0,
+    BROADCAST      = 1,
+    UNICAST        = 2
+};
+
 
 //namespace shmrp {
     class rreq_table_empty : public std::runtime_error {
@@ -143,6 +149,7 @@ struct node_entry {
     int  pkt_count = 0;
     int  ack_count = 0;
     bool local = false;
+    bool secl  = false;
 };
 
 struct feat_par {
@@ -172,7 +179,7 @@ struct feat_par {
     double qos_pdr;
     bool   rt_recalc_w_emerg;
     bool   reroute_pkt;
-    bool   second_learn;
+    shmrpSecLParDef second_learn;
     double t_sec_l;  
 };
 
@@ -206,6 +213,7 @@ class shmrp: public VirtualRouting {
         
         shmrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         shmrpCostFuncDef strToCostFunc(string) const;
+        shmrpSecLParDef strToSecLPar(string) const; 
 
         bool isSink() const;
         void setSinkAddress(const char *);
@@ -281,7 +289,11 @@ class shmrp: public VirtualRouting {
 
         void sendRresp(const char *,int, int);
 
-        void sendLreq(int, int);
+        void sendLreq(const char *,int, int);
+        void sendLreqUnicast(int, int);
+        void sendLreqBroadcast(int, int);
+
+        void sendLresp(const char *,int, int);
 
         void sendData(cPacket *, std::string, int); 
         void forwardData(shmrpDataPacket *, std::string, int);

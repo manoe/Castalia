@@ -51,7 +51,7 @@ void shmrp::startup() {
     fp.qos_pdr          = par("f_qos_pdr");
     fp.rt_recalc_w_emerg= par("f_rt_recalc_w_emerg");
     fp.reroute_pkt      = par("f_reroute_pkt");
-    fp.second_learn     = par("f_second_learn");
+    fp.second_learn     = strToSecLPar(par("f_second_learn").stringValue());
     fp.t_sec_l          = par("f_t_sec_l");
 
     if(fp.static_routing) {
@@ -63,7 +63,7 @@ void shmrp::startup() {
             setHop(0);
             setTimer(shmrpTimerDef::SINK_START,par("t_start"));
             setState(shmrpStateDef::WORK);
-            if(fp.second_learn) {
+            if(fp.second_learn != shmrpSecLParDef::OFF) {
                 setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
             }
         } else {
@@ -159,6 +159,19 @@ shmrpRinvTblAdminDef shmrp::strToRinvTblAdmin(string str) const {
     throw std::invalid_argument("[error] Unkown RINV table admin");
     return shmrpRinvTblAdminDef::UNDEF_ADMIN;
 }
+
+shmrpSecLParDef shmrp::strToSecLPar(std::string str) const {
+    if("off" == str) {
+        return shmrpSecLParDef::OFF;
+    } else if("broadcast" == str) {
+        return shmrpSecLParDef::BROADCAST;
+    } else if("unicast" == str) {
+        return shmrpSecLParDef::UNICAST;
+    }
+    throw std::invalid_argument("[error] Unknown second_learn parameter");
+    return shmrpSecLParDef::OFF;
+}
+
 
 void shmrp::setHop(int hop) {
     trace()<<"[info] Entering shmrp::setHop(hop="<<hop<<")";  
@@ -635,12 +648,19 @@ void shmrp::sendRresp(const char *dest, int round, int pathid) {
     toMacLayer(rresp_pkt, resolveNetworkAddress(dest));
 }
 
-void shmrp::sendLreq(int round, int pathid) {
-    trace()<<"[info] Entering sendLReq(round="<<round<<", pathid="<<pathid;
+
+void shmrp::sendLreqBroadcast(int round, int pathid) {
+    trace()<<"[info] Entering sendLReqBroadcast(round="<<round<<", pathid="<<pathid<<")";
+    sendLreq(BROADCAST_NETWORK_ADDRESS,round,pathid);
+}
+
+void shmrp::sendLreq(const char *nw_address, int round, int pathid) {
+    trace()<<"[info] Entering sendLReq(nw_address="<<nw_address<<", round="<<round<<", pathid="<<pathid<<")";
     shmrpLreqPacket *lreq_pkt=new shmrpLreqPacket("SHMRP LREQ packet",NETWORK_LAYER_PACKET);
     lreq_pkt->setByteLength(netDataFrameOverhead);
     lreq_pkt->setShmrpPacketKind(shmrpPacketDef::LREQ_PACKET);
     lreq_pkt->setSource(SELF_NETWORK_ADDRESS);
+    lreq_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     lreq_pkt->setRound(round);
     lreq_pkt->setPathid(pathid);
     lreq_pkt->setHop(getHop());
@@ -648,6 +668,28 @@ void shmrp::sendLreq(int round, int pathid) {
     toMacLayer(lreq_pkt, resolveNetworkAddress(BROADCAST_NETWORK_ADDRESS));
 }
 
+void shmrp::sendLreqUnicast(int round, int pathid) {
+    trace()<<"[info] Entering sendLReqUnicast(round="<<round<<", pathid="<<pathid<<")";
+    for(auto ne: recv_table) {
+        if(ne.second.pathid == pathid && !ne.second.secl) {
+            sendLreq(ne.second.nw_address.c_str(), round, pathid);
+        }
+    }
+}
+
+void shmrp::sendLresp(const char *nw_address, int round, int pathid) {
+    trace()<<"[info] Entering sendLResp(nw_address="<<nw_address<<", round="<<round<<", pathid="<<pathid<<")";
+    shmrpLreqPacket *lresp_pkt=new shmrpLreqPacket("SHMRP LRESP packet",NETWORK_LAYER_PACKET);
+    lresp_pkt->setByteLength(netDataFrameOverhead);
+    lresp_pkt->setShmrpPacketKind(shmrpPacketDef::LRESP_PACKET);
+    lresp_pkt->setSource(SELF_NETWORK_ADDRESS);
+    lresp_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+    lresp_pkt->setRound(round);
+    lresp_pkt->setPathid(pathid);
+    lresp_pkt->setHop(getHop());
+    lresp_pkt->setSequenceNumber(currentSequenceNumber++);
+    toMacLayer(lresp_pkt, resolveNetworkAddress(BROADCAST_NETWORK_ADDRESS));
+}
 
 void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
     trace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
@@ -898,7 +940,7 @@ void shmrp::timerFiredCallback(int index) {
             trace()<<"[timer] T_SEC_L timer expired";
             if(isSink()) {
                trace()<<"[info] Sink starting second learn";
-               sendLreq(getRound(),0);
+               sendLreqBroadcast(getRound(),0);
                break;
             }
             if(shmrpStateDef::WORK != getState()) {
@@ -914,19 +956,19 @@ void shmrp::timerFiredCallback(int index) {
                 }
                 case shmrpRingDef::INTERNAL: {
                     trace()<<"[info] Node is internal";
-                    sendLreq(getRound(),0);
+                    sendLreqBroadcast(getRound(),0);
                     break;
                 }
                 case shmrpRingDef::BORDER: {
                     trace()<<"[info] Node is at border";
-                    sendLreq(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                    sendLreqBroadcast(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
                     break;
                 }
                 case shmrpRingDef::EXTERNAL: {
                     trace()<<"[info] Node is external.";
                     if(1 < getRoutingTableSize()) {
                         trace()<<"[info] Enough routing entries";
-                        sendLreq(getRound(),getSecLPathid());
+                        sendLreqBroadcast(getRound(),getSecLPathid());
                         break;
                     }
                     clearRreqTable();
@@ -1130,7 +1172,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             trace()<<"[info] RINV_PACKET received";
             auto rinv_pkt=dynamic_cast<shmrpRinvPacket *>(pkt);
 
-            if(fp.second_learn) {
+            if(fp.second_learn != shmrpSecLParDef::OFF) {
                 trace()<<"[info] Second learn active";
                 if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
                     trace()<<"[info] T_SEC_L timer active, restarting";
@@ -1232,7 +1274,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] RREQ_PACKET's round: "<<rreq_pkt->getRound()<<" does not equal local round: "<<getRound();
                 break;
             }
-            if(fp.second_learn) {
+            if(fp.second_learn != shmrpSecLParDef::OFF) {
                 if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
                     trace()<<"[info] RREQ received,  T_SEC_L timer active, restarting";
                     cancelTimer(shmrpTimerDef::T_SEC_L);
@@ -1290,6 +1332,10 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"[info] LREQ_PACKET indicates unknown pathid, discarding.";
                     break;
                 }
+            }
+
+            if(0!=std::strcmp(lreq_packet->getDestination(),BROADCAST_NETWORK_ADDRESS)) {
+                sendLresp(lreq_packet->getSource(),getRound(),lreq_packet->getPathid());
             }
 
             setSecL(true);

@@ -69,7 +69,7 @@ simple shmrp like node.communication.routing.iRouting
     string f_loc_rt_strat     = default("rreq_tbl"); // Routing table construction stategy during local update: rreq_table (based on rreq_table), rreq
     bool   f_rt_recalc_w_emerg= default(false); // Recalculate routing table with emergency parameter, in case of WARN message
     bool   f_reroute_pkt      = default(false); // Reroute data pkt, if routing table entry is missing
-    bool   f_second_learn     = default(false); // Perform a second learn
+    string f_second_learn     = default("off"); // Perform a second learn, off: broadcast, unicast
     double f_t_sec_l          = default(10.0);  // Second learn's start timer. Restarts after every RINV
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
