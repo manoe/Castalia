@@ -55,7 +55,8 @@ enum shmrpTimerDef {
     T_ESTABLISH      = 3,
     T_MEASURE        = 4,
     T_REPEAT         = 5,
-    T_SEC_L          = 6
+    T_SEC_L          = 6,
+    T_SEC_L_REPEAT   = 7
 };
 
 enum shmrpRingDef {
@@ -81,6 +82,12 @@ enum shmrpRinvTblAdminDef {
     ERASE_ON_LEARN = 1,
     ERASE_ON_ROUND = 2,
     NEVER_ERASE    = 3 
+};
+
+enum shmrpSecLParDef {
+    OFF            = 0,
+    BROADCAST      = 1,
+    UNICAST        = 2
 };
 
 
@@ -143,6 +150,7 @@ struct node_entry {
     int  pkt_count = 0;
     int  ack_count = 0;
     bool local = false;
+    bool secl  = false;
 };
 
 struct feat_par {
@@ -172,8 +180,10 @@ struct feat_par {
     double qos_pdr;
     bool   rt_recalc_w_emerg;
     bool   reroute_pkt;
-    bool   second_learn;
-    double t_sec_l;  
+    shmrpSecLParDef second_learn;
+    double t_sec_l;
+    double t_sec_l_repeat;
+    int    t_sec_l_timeout;
 };
 
 class shmrp: public VirtualRouting {
@@ -185,6 +195,7 @@ class shmrp: public VirtualRouting {
         int g_pathid; // this is dangerous
         bool g_sec_l = false;
         int g_sec_l_pathid;
+        int g_sec_l_timeout = 0;
         feat_par fp;
         shmrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
@@ -206,6 +217,7 @@ class shmrp: public VirtualRouting {
         
         shmrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         shmrpCostFuncDef strToCostFunc(string) const;
+        shmrpSecLParDef strToSecLPar(string) const; 
 
         bool isSink() const;
         void setSinkAddress(const char *);
@@ -273,7 +285,7 @@ class shmrp: public VirtualRouting {
         bool checkPathid(int);
         int  getRoutingTableSize() { return routing_table.size();};
 
-        void incPktCountInRecvTable(std::string, int);
+        void incPktCountInRecvTable(std::string, int, int);
 
 
         void sendRreqs();
@@ -281,7 +293,11 @@ class shmrp: public VirtualRouting {
 
         void sendRresp(const char *,int, int);
 
-        void sendLreq(int, int);
+        void sendLreq(const char *,int, int);
+        void sendLreqUnicast(int, int);
+        void sendLreqBroadcast(int, int);
+
+        void sendLresp(const char *,int, int);
 
         void sendData(cPacket *, std::string, int); 
         void forwardData(shmrpDataPacket *, std::string, int);
@@ -306,6 +322,7 @@ class shmrp: public VirtualRouting {
         void setSecL(bool flag) { g_sec_l=flag;};
         void setSecLPathid(int pathid) { g_sec_l_pathid=pathid;};
         int  getSecLPathid() { return g_sec_l_pathid;};
+        bool secLPerformed(int round, int pathid);
     public:
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;

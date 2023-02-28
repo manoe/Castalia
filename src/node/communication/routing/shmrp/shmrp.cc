@@ -51,8 +51,10 @@ void shmrp::startup() {
     fp.qos_pdr          = par("f_qos_pdr");
     fp.rt_recalc_w_emerg= par("f_rt_recalc_w_emerg");
     fp.reroute_pkt      = par("f_reroute_pkt");
-    fp.second_learn     = par("f_second_learn");
+    fp.second_learn     = strToSecLPar(par("f_second_learn").stringValue());
     fp.t_sec_l          = par("f_t_sec_l");
+    fp.t_sec_l_repeat   = par("f_t_sec_l_repeat");
+    fp.t_sec_l_timeout  = par("f_t_sec_l_timeout");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -63,7 +65,7 @@ void shmrp::startup() {
             setHop(0);
             setTimer(shmrpTimerDef::SINK_START,par("t_start"));
             setState(shmrpStateDef::WORK);
-            if(fp.second_learn) {
+            if(fp.second_learn != shmrpSecLParDef::OFF) {
                 setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
             }
         } else {
@@ -160,6 +162,19 @@ shmrpRinvTblAdminDef shmrp::strToRinvTblAdmin(string str) const {
     return shmrpRinvTblAdminDef::UNDEF_ADMIN;
 }
 
+shmrpSecLParDef shmrp::strToSecLPar(std::string str) const {
+    if("off" == str) {
+        return shmrpSecLParDef::OFF;
+    } else if("broadcast" == str) {
+        return shmrpSecLParDef::BROADCAST;
+    } else if("unicast" == str) {
+        return shmrpSecLParDef::UNICAST;
+    }
+    throw std::invalid_argument("[error] Unknown second_learn parameter");
+    return shmrpSecLParDef::OFF;
+}
+
+
 void shmrp::setHop(int hop) {
     trace()<<"[info] Entering shmrp::setHop(hop="<<hop<<")";  
     trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
@@ -193,7 +208,7 @@ int shmrp::calculateHop(bool max_hop=false) {
 
     int hop=std::numeric_limits<int>::max();
     bool (*gt_lt)(int,int)=[](int lh, int rh) { return lh > rh; };
-    
+
     if(max_hop) {
         hop=std::numeric_limits<int>::min();
         gt_lt=[](int lh, int rh) { return lh < rh; };
@@ -473,15 +488,15 @@ void shmrp::constructRreqTable() {
         std::map<int, std::vector<node_entry>> cl;
         std::for_each(rinv_table.begin(),rinv_table.end(),[&](std::pair<std::string,node_entry> ne){
                 if(ne.second.hop < getHop() && !ne.second.used) {
-                    if(cl.find(ne.second.pathid) == cl.end()) {
-                        trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                        cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-                    } else {
-                        trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                        cl[ne.second.pathid].push_back(ne.second);
-                    }
+                if(cl.find(ne.second.pathid) == cl.end()) {
+                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
+                } else {
+                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                cl[ne.second.pathid].push_back(ne.second);
                 }
-            });
+                }
+                });
         if(fp.cf_after_rresp) {
             trace()<<"[info] Selecting all RINV nodes to RREQ";
             for(auto l: cl) {
@@ -635,12 +650,19 @@ void shmrp::sendRresp(const char *dest, int round, int pathid) {
     toMacLayer(rresp_pkt, resolveNetworkAddress(dest));
 }
 
-void shmrp::sendLreq(int round, int pathid) {
-    trace()<<"[info] Entering sendLReq(round="<<round<<", pathid="<<pathid;
+
+void shmrp::sendLreqBroadcast(int round, int pathid) {
+    trace()<<"[info] Entering sendLReqBroadcast(round="<<round<<", pathid="<<pathid<<")";
+    sendLreq(BROADCAST_NETWORK_ADDRESS,round,pathid);
+}
+
+void shmrp::sendLreq(const char *nw_address, int round, int pathid) {
+    trace()<<"[info] Entering sendLReq(nw_address="<<nw_address<<", round="<<round<<", pathid="<<pathid<<")";
     shmrpLreqPacket *lreq_pkt=new shmrpLreqPacket("SHMRP LREQ packet",NETWORK_LAYER_PACKET);
     lreq_pkt->setByteLength(netDataFrameOverhead);
     lreq_pkt->setShmrpPacketKind(shmrpPacketDef::LREQ_PACKET);
     lreq_pkt->setSource(SELF_NETWORK_ADDRESS);
+    lreq_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     lreq_pkt->setRound(round);
     lreq_pkt->setPathid(pathid);
     lreq_pkt->setHop(getHop());
@@ -648,6 +670,28 @@ void shmrp::sendLreq(int round, int pathid) {
     toMacLayer(lreq_pkt, resolveNetworkAddress(BROADCAST_NETWORK_ADDRESS));
 }
 
+void shmrp::sendLreqUnicast(int round, int pathid) {
+    trace()<<"[info] Entering sendLReqUnicast(round="<<round<<", pathid="<<pathid<<")";
+    for(auto ne: recv_table) {
+        if(ne.second.pathid == pathid && !ne.second.secl) {
+            sendLreq(ne.second.nw_address.c_str(), round, pathid);
+        }
+    }
+}
+
+void shmrp::sendLresp(const char *nw_address, int round, int pathid) {
+    trace()<<"[info] Entering sendLResp(nw_address="<<nw_address<<", round="<<round<<", pathid="<<pathid<<")";
+    shmrpLreqPacket *lresp_pkt=new shmrpLreqPacket("SHMRP LRESP packet",NETWORK_LAYER_PACKET);
+    lresp_pkt->setByteLength(netDataFrameOverhead);
+    lresp_pkt->setShmrpPacketKind(shmrpPacketDef::LRESP_PACKET);
+    lresp_pkt->setSource(SELF_NETWORK_ADDRESS);
+    lresp_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+    lresp_pkt->setRound(round);
+    lresp_pkt->setPathid(pathid);
+    lresp_pkt->setHop(getHop());
+    lresp_pkt->setSequenceNumber(currentSequenceNumber++);
+    toMacLayer(lresp_pkt, resolveNetworkAddress(BROADCAST_NETWORK_ADDRESS));
+}
 
 void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
     trace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
@@ -704,7 +748,7 @@ void shmrp::constructRoutingTableFromRinvTable() {
         }
     }
 
-//    for(auto 
+    //    for(auto 
 }
 
 void shmrp::constructRoutingTable(bool rresp_req) {
@@ -753,15 +797,15 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
             // Either select only hop-based, if rresp is not required or based on rresp received
             // During update do not consider hop
             if((update || ne.second.hop < getHop()) && (ne.second.rresp || !fp.rresp_req) && calc_pdr(ne.second) >= pdr ) {
-                if(cl.find(ne.second.pathid) == cl.end()) {
-                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                    cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-                } else {
-                    trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                    cl[ne.second.pathid].push_back(ne.second);
-                }
+            if(cl.find(ne.second.pathid) == cl.end()) {
+            trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+            cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
+            } else {
+            trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+            cl[ne.second.pathid].push_back(ne.second);
             }
-        });
+            }
+            });
     for(auto l: cl) {
         trace()<<"[info] Selecting nodes per pathid to RREQ";
         node_entry c_ne=l.second[0];
@@ -866,10 +910,10 @@ bool shmrp::checkPathid(int pathid) {
 }
 
 
-void shmrp::incPktCountInRecvTable(std::string entry, int pathid) {
+void shmrp::incPktCountInRecvTable(std::string entry, int pathid, int round) {
     trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
     if(recv_table.find(entry) == recv_table.end()) {
-        recv_table[entry] = {entry,pathid,0,false,0,0,false,0,1};
+        recv_table[entry] = {entry,pathid,0,false,0,0,false,round,1};
     } else {
         recv_table[entry].pkt_count++;
     }
@@ -897,9 +941,29 @@ void shmrp::timerFiredCallback(int index) {
         case shmrpTimerDef::T_SEC_L: {
             trace()<<"[timer] T_SEC_L timer expired";
             if(isSink()) {
-               trace()<<"[info] Sink starting second learn";
-               sendLreq(getRound(),0);
-               break;
+                trace()<<"[info] Sink starting second learn";
+                switch(fp.second_learn) {
+                    case shmrpSecLParDef::OFF: {
+                        trace()<<"[error] second learn off, while T_SEC_L timer expired";
+                        throw std::runtime_error("[error] Invalid state");
+                    }
+                    case shmrpSecLParDef::BROADCAST: {
+                        sendLreqBroadcast(getRound(),0);
+                        break;
+                    }
+                    case shmrpSecLParDef::UNICAST: {
+                        // most probably true...
+                        if(!secLPerformed(getRound(), 0)) {
+                            sendLreqUnicast(getRound(),0);
+                            setTimer(shmrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                        }
+                        break;
+                    }
+                    default: {
+                        trace()<<"[error] How do we get here?";
+                    }
+                }
+                break;
             }
             if(shmrpStateDef::WORK != getState()) {
                 trace()<<"[info] Node still not in WORK state, starting T_SEC_L timer.";
@@ -914,19 +978,81 @@ void shmrp::timerFiredCallback(int index) {
                 }
                 case shmrpRingDef::INTERNAL: {
                     trace()<<"[info] Node is internal";
-                    sendLreq(getRound(),0);
+                    switch(fp.second_learn) {
+                        case shmrpSecLParDef::OFF: {
+                            trace()<<"[error] second learn off, while T_SEC_L timer expired";
+                            throw std::runtime_error("[error] Invalid state");
+                        }
+                        case shmrpSecLParDef::BROADCAST: {
+                            sendLreqBroadcast(getRound(),0);
+                            break;
+                        }
+                        case shmrpSecLParDef::UNICAST: {
+                            // most probably true...
+                            if(!secLPerformed(getRound(), 0)) {
+                                sendLreqUnicast(getRound(),0);
+                                setTimer(shmrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                            }
+                            break;
+                        }
+                        default: {
+                            trace()<<"[error] How do we get here?";
+                        }
+                    }
                     break;
                 }
                 case shmrpRingDef::BORDER: {
                     trace()<<"[info] Node is at border";
-                    sendLreq(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                    switch(fp.second_learn) {
+                        case shmrpSecLParDef::OFF: {
+                            trace()<<"[error] second learn off, while T_SEC_L timer expired";
+                            throw std::runtime_error("[error] Invalid state");
+                        }
+                        case shmrpSecLParDef::BROADCAST: {
+                            sendLreqBroadcast(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                            break;
+                        }
+                        case shmrpSecLParDef::UNICAST: {
+                            // most probably true...
+                            if(!secLPerformed(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS) )) {
+                                sendLreqUnicast(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                                setTimer(shmrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                            }
+                            break;
+                        }
+                        default: {
+                            trace()<<"[error] How do we get here?";
+                        }
+                    }
+
                     break;
                 }
                 case shmrpRingDef::EXTERNAL: {
                     trace()<<"[info] Node is external.";
                     if(1 < getRoutingTableSize()) {
                         trace()<<"[info] Enough routing entries";
-                        sendLreq(getRound(),getSecLPathid());
+                        switch(fp.second_learn) {
+                            case shmrpSecLParDef::OFF: {
+                                trace()<<"[error] second learn off, while T_SEC_L timer expired";
+                                throw std::runtime_error("[error] Invalid state");
+                            }
+                            case shmrpSecLParDef::BROADCAST: {
+                                sendLreqBroadcast(getRound(),getSecLPathid());
+                                break;
+                            }
+                            case shmrpSecLParDef::UNICAST: {
+                                // most probably true...
+                                if(!secLPerformed(getRound(),getSecLPathid() )) {
+                                    sendLreqUnicast(getRound(),getSecLPathid());
+                                    setTimer(shmrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                                }
+                                break;
+                            }
+                            default: {
+                                trace()<<"[error] How do we get here?";
+                            }
+                        }
+
                         break;
                     }
                     clearRreqTable();
@@ -946,6 +1072,16 @@ void shmrp::timerFiredCallback(int index) {
             } 
             break;
         }
+        case shmrpTimerDef::T_SEC_L_REPEAT: {
+            trace()<<"[timer] T_SEC_L_REPEAT timer expired";
+            if(!secLPerformed(getRound(),getSecLPathid()) && g_sec_l_timeout < fp.t_sec_l_timeout-1 ) {
+                sendLreqUnicast(getRound(),getSecLPathid());
+                ++g_sec_l_timeout;
+                setTimer(shmrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+            }
+            break;
+        }
+
         case shmrpTimerDef::T_REPEAT: {
             sendRinv(getRound());
             setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
@@ -1015,6 +1151,29 @@ void shmrp::timerFiredCallback(int index) {
             if(shmrpStateDef::S_ESTABLISH == getState()) {
                 trace()<<"[info] Second learn finished";
                 constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /*update */ );
+
+                switch(fp.second_learn) {
+                    case shmrpSecLParDef::OFF: {
+                        trace()<<"[error] second learn off, while T_SEC_L timer expired";
+                        throw std::runtime_error("[error] Invalid state");
+                    }
+                    case shmrpSecLParDef::BROADCAST: {
+                        sendLreqBroadcast(getRound(),getSecLPathid());
+                        break;
+                    }
+                    case shmrpSecLParDef::UNICAST: {
+                        // most probably true...
+                        if(!secLPerformed(getRound(),getSecLPathid() )) {
+                            sendLreqUnicast(getRound(),getSecLPathid());
+                            setTimer(shmrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                        }
+                        break;
+                    }
+                    default: {
+                        trace()<<"[error] How do we get here?";
+                    }
+                }
+
 
                 setState(shmrpStateDef::WORK);
                 break;
@@ -1103,16 +1262,16 @@ void shmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             trace()<<"[error] Routing table empty, can't route packet";
             return;
         }
-    
+
         auto pathid=selectPathid();
         std::string next_hop;
-    
+
         if(shmrpRingDef::EXTERNAL==getRingStatus()) {
             next_hop=getNextHop(pathid);
         } else {
             next_hop=getNextHop(pathid,fp.rand_ring_hop);
         }
-    
+
         incPktCountInRoutingTable(next_hop);
         sendData(pkt,next_hop,pathid);
     }
@@ -1130,7 +1289,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             trace()<<"[info] RINV_PACKET received";
             auto rinv_pkt=dynamic_cast<shmrpRinvPacket *>(pkt);
 
-            if(fp.second_learn) {
+            if(fp.second_learn != shmrpSecLParDef::OFF) {
                 trace()<<"[info] Second learn active";
                 if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
                     trace()<<"[info] T_SEC_L timer active, restarting";
@@ -1232,7 +1391,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] RREQ_PACKET's round: "<<rreq_pkt->getRound()<<" does not equal local round: "<<getRound();
                 break;
             }
-            if(fp.second_learn) {
+            if(fp.second_learn != shmrpSecLParDef::OFF) {
                 if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
                     trace()<<"[info] RREQ received,  T_SEC_L timer active, restarting";
                     cancelTimer(shmrpTimerDef::T_SEC_L);
@@ -1282,7 +1441,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             // This is not a real issue, isn't it?
             if(lreq_packet->getHop() >= getHop()) {
                 trace()<<"[info] LREQ_PACKET hop is higher than local hop. Packet hop: "<<lreq_packet->getRound()<<" own hop: "<<getHop();
-//                break;
+                //                break;
             }
 
             if(shmrpRingDef::EXTERNAL == getRingStatus()) {
@@ -1292,10 +1451,26 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 }
             }
 
+            if(0!=std::strcmp(lreq_packet->getDestination(),BROADCAST_NETWORK_ADDRESS)) {
+                sendLresp(lreq_packet->getSource(),getRound(),lreq_packet->getPathid());
+            }
+
             setSecL(true);
             setSecLPathid(lreq_packet->getPathid());
+            trace()<<"[info] Starting T_SEC_L timer";
             setTimer(shmrpTimerDef::T_SEC_L, fp.t_sec_l);
 
+            break;
+        }
+        case shmrpPacketDef::LRESP_PACKET: {
+            trace()<<"[info] LRESP_PACKET received";
+            auto lresp_packet=dynamic_cast<shmrpLrespPacket *>(pkt);
+            if(recv_table.find(std::string(lresp_packet->getSource())) != recv_table.end()) {
+                trace()<<"[info] Entry "<<lresp_packet->getSource()<<" exists";
+                if(recv_table[std::string(lresp_packet->getSource())].round == lresp_packet->getRound() && recv_table[std::string(lresp_packet->getSource())].pathid == lresp_packet->getPathid()) {
+                    recv_table[std::string(lresp_packet->getSource())].secl=true;
+                }
+            }
             break;
         }
         case shmrpPacketDef::RWARN_PACKET: {
@@ -1332,7 +1507,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         case shmrpPacketDef::DATA_PACKET: {
             trace()<<"[info] DATA_PACKET received";
             shmrpDataPacket *data_pkt=dynamic_cast<shmrpDataPacket *>(pkt);
-            incPktCountInRecvTable(std::string(data_pkt->getSource()), data_pkt->getPathid() );
+            incPktCountInRecvTable(std::string(data_pkt->getSource()), data_pkt->getPathid(), getRound() );
             if(isSink() && 0==std::strcmp(data_pkt->getDestination(),SELF_NETWORK_ADDRESS)) {
                 trace()<<"[info] DATA packet arrived, forwarding to Application layer";
                 data_pkt->setSource(data_pkt->getOrigin());
@@ -1670,31 +1845,44 @@ void shmrp::finishSpecific() {
         delete msg;
     }
 
+    bool shmrp::secLPerformed(int round, int pathid) {
+        trace()<<"[info] Entering secLPerformed(round="<<round<<", pathid="<<pathid<<")";
+        bool performed=true;
+        for(auto ne: recv_table) {
+            if(ne.second.round == round && ne.second.pathid == pathid && ne.second.secl == false) {
+                trace()<<"[info] "<<ne.second.nw_address<<" second learn still missing";
+                performed=false;
+            }
+        }
+        return performed;
+    }
 
-void shmrp::handleNetworkControlCommand(cMessage *msg) {
-   trace()<<"[info] Entering handleNetworkControlCommand()";
-   EmergencyMessage *app_msg=check_and_cast<EmergencyMessage *>(msg);
-   if(!msg) {
-       trace()<<"[error] Unknown Network Control Command Message";
-   }
-   if(MsgType::EMERGENCY == app_msg->getEvent()) {
-       trace()<<"[info] Application in Emergency state, start local re-learn";
-       sendRwarn();
-   }
-}
 
 
-void shmrp::sendRwarn() {
-    trace()<<"[info] Entering sendWarn()";
-    shmrpRwarnPacket *warn_pkt=new shmrpRwarnPacket("SHMRP RWARN packet", NETWORK_LAYER_PACKET);
-    warn_pkt->setByteLength(netDataFrameOverhead);
-    warn_pkt->setShmrpPacketKind(shmrpPacketDef::RWARN_PACKET);
-    warn_pkt->setSource(SELF_NETWORK_ADDRESS);
-    warn_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
-    warn_pkt->setRound(getRound());
-    warn_pkt->setPathid(selectPathid(true));
-    warn_pkt->setHop(getHop());
-    warn_pkt->setSequenceNumber(currentSequenceNumber++);
-    toMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);
+    void shmrp::handleNetworkControlCommand(cMessage *msg) {
+        trace()<<"[info] Entering handleNetworkControlCommand()";
+        EmergencyMessage *app_msg=check_and_cast<EmergencyMessage *>(msg);
+        if(!msg) {
+            trace()<<"[error] Unknown Network Control Command Message";
+        }
+        if(MsgType::EMERGENCY == app_msg->getEvent()) {
+            trace()<<"[info] Application in Emergency state, start local re-learn";
+            sendRwarn();
+        }
+    }
 
-}
+
+    void shmrp::sendRwarn() {
+        trace()<<"[info] Entering sendWarn()";
+        shmrpRwarnPacket *warn_pkt=new shmrpRwarnPacket("SHMRP RWARN packet", NETWORK_LAYER_PACKET);
+        warn_pkt->setByteLength(netDataFrameOverhead);
+        warn_pkt->setShmrpPacketKind(shmrpPacketDef::RWARN_PACKET);
+        warn_pkt->setSource(SELF_NETWORK_ADDRESS);
+        warn_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+        warn_pkt->setRound(getRound());
+        warn_pkt->setPathid(selectPathid(true));
+        warn_pkt->setHop(getHop());
+        warn_pkt->setSequenceNumber(currentSequenceNumber++);
+        toMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);
+
+    }
