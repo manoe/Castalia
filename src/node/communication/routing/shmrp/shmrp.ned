@@ -71,6 +71,8 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_reroute_pkt      = default(false); // Reroute data pkt, if routing table entry is missing
     string f_second_learn     = default("off"); // Perform a second learn, off: broadcast, unicast
     double f_t_sec_l          = default(10.0);  // Second learn's start timer. Restarts after every RINV
+    double f_t_sec_l_repeat   = default(2.0);   // Second learn's repeat timer in case of unicast
+    int    f_t_sec_l_timeout  = default(5);     // Timeout counter for second_learn, give after f_sec_l_timet tries
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
