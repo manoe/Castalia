@@ -55,6 +55,7 @@ void shmrp::startup() {
     fp.t_sec_l          = par("f_t_sec_l");
     fp.t_sec_l_repeat   = par("f_t_sec_l_repeat");
     fp.t_sec_l_timeout  = par("f_t_sec_l_timeout");
+    fp.t_sec_l_start    = par("f_t_sec_l_start");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -66,7 +67,7 @@ void shmrp::startup() {
             setTimer(shmrpTimerDef::SINK_START,par("t_start"));
             setState(shmrpStateDef::WORK);
             if(fp.second_learn != shmrpSecLParDef::OFF) {
-                setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
+                setTimer(shmrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
             }
         } else {
             setHop(std::numeric_limits<int>::max());
@@ -131,6 +132,19 @@ double shmrp::getTmeas() const {
 double shmrp::getTest() const {
     return fp.t_est;
 }
+
+void shmrp::handleTSecLTimer() {
+    trace()<<"[info] Entering handleTSecLTimer()";
+    if(fp.second_learn != shmrpSecLParDef::OFF) {
+        trace()<<"[info] Second learn active";
+        if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
+            trace()<<"[info] T_SEC_L timer active, restarting";
+            cancelTimer(shmrpTimerDef::T_SEC_L);
+            setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
+        }
+    }
+}
+
 
 shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
     if("hop" == str) {
@@ -938,6 +952,11 @@ void shmrp::timerFiredCallback(int index) {
             setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             break;
         }
+        case shmrpTimerDef::T_SEC_L_START: {
+            trace()<<"[timer] T_SEC_L_START timer expired, starting T_SEC_L timer";
+            setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
+            break;
+        }
         case shmrpTimerDef::T_SEC_L: {
             trace()<<"[timer] T_SEC_L timer expired";
             if(isSink()) {
@@ -1307,15 +1326,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             trace()<<"[info] RINV_PACKET received";
             auto rinv_pkt=dynamic_cast<shmrpRinvPacket *>(pkt);
 
-            if(fp.second_learn != shmrpSecLParDef::OFF) {
-                trace()<<"[info] Second learn active";
-                if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
-                    trace()<<"[info] T_SEC_L timer active, restarting";
-                    cancelTimer(shmrpTimerDef::T_SEC_L);
-                    setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
-                }
-            }
-
+            handleTSecLTimer();
 
             if(isSink()) {
                 trace()<<"[info] RINV_PACKET discarded by Sink";
@@ -1409,13 +1420,9 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] RREQ_PACKET's round: "<<rreq_pkt->getRound()<<" does not equal local round: "<<getRound();
                 break;
             }
-            if(fp.second_learn != shmrpSecLParDef::OFF) {
-                if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
-                    trace()<<"[info] RREQ received,  T_SEC_L timer active, restarting";
-                    cancelTimer(shmrpTimerDef::T_SEC_L);
-                    setTimer(shmrpTimerDef::T_SEC_L,fp.t_sec_l);
-                }
-            }
+
+            handleTSecLTimer();
+
             if(getHop()<fp.ring_radius) {
                 sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
             } else if(getHop()==fp.ring_radius) {
@@ -1523,6 +1530,8 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         case shmrpPacketDef::PING_PACKET: {
             trace()<<"[info] PING_PACKET received";
             sendPong(dynamic_cast<shmrpPingPacket *>(pkt)->getRound());
+            handleTSecLTimer();
+
             break;
         }
         case shmrpPacketDef::PONG_PACKET: {
