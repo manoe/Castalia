@@ -73,6 +73,7 @@ simple shmrp like node.communication.routing.iRouting
     double f_t_sec_l          = default(10.0);  // Second learn's start timer. Restarts after every RINV
     double f_t_sec_l_repeat   = default(2.0);   // Second learn's repeat timer in case of unicast
     int    f_t_sec_l_timeout  = default(5);     // Timeout counter for second_learn, give after f_sec_l_timet tries
+    double f_t_sec_l_start    = default(120);   // Grand delay to defer second learn's start
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ

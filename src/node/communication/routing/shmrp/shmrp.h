@@ -56,7 +56,8 @@ enum shmrpTimerDef {
     T_MEASURE        = 4,
     T_REPEAT         = 5,
     T_SEC_L          = 6,
-    T_SEC_L_REPEAT   = 7
+    T_SEC_L_REPEAT   = 7,
+    T_SEC_L_START    = 8
 };
 
 enum shmrpRingDef {
@@ -184,6 +185,7 @@ struct feat_par {
     double t_sec_l;
     double t_sec_l_repeat;
     int    t_sec_l_timeout;
+    double t_sec_l_start;
 };
 
 class shmrp: public VirtualRouting {
@@ -225,6 +227,7 @@ class shmrp: public VirtualRouting {
         double getTl();
         double getTmeas() const;
         double getTest() const;
+        void   handleTSecLTimer();
 
 
         void sendPing(int);
