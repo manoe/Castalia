@@ -80,6 +80,7 @@ packet shmrpLreqPacket extends shmrpPacket {
 packet shmrpLrespPacket extends shmrpPacket {
     int round;
     int pathid;
+    int hop;
 }
 
 packet shmrpDataPacket extends shmrpPacket {
