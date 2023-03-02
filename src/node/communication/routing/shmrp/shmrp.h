@@ -150,6 +150,7 @@ struct node_entry {
     int  round = 0;
     int  pkt_count = 0;
     int  ack_count = 0;
+    int  fail_count = 0;
     bool local = false;
     bool secl  = false;
 };
