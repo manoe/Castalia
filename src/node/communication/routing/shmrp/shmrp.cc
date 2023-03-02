@@ -688,7 +688,8 @@ void shmrp::sendLreq(const char *nw_address, int round, int pathid) {
 void shmrp::sendLreqUnicast(int round, int pathid) {
     trace()<<"[info] Entering sendLReqUnicast(round="<<round<<", pathid="<<pathid<<")";
     for(auto ne: recv_table) {
-        if(ne.second.pathid == pathid && !ne.second.secl) {
+        // pathid 0 means we are inside the ring
+        if((ne.second.pathid == pathid || pathid == 0) && !ne.second.secl) {
             sendLreq(ne.second.nw_address.c_str(), round, pathid);
         }
     }
