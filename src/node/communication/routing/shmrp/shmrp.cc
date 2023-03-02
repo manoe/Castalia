@@ -1879,7 +1879,11 @@ void shmrp::finishSpecific() {
                 routing_table[nw_address].ack_count++;
             }
         }
-
+        if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
+            if(routing_table.find(nw_address) != routing_table.end()) {
+                routing_table[nw_address].fail_count++;
+            }
+        }
         delete msg;
     }
 
