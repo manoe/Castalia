@@ -75,6 +75,9 @@ simple shmrp like node.communication.routing.iRouting
     int    f_t_sec_l_timeout  = default(5);     // Timeout counter for second_learn, give after f_sec_l_timet tries
     double f_t_sec_l_start    = default(120);   // Grand delay to defer second learn's start
 
+    bool   f_detect_link_fail = default(false); // Detect failing links
+    int    f_fail_count       = default(10);    // Declare a link failing after f_fail_count fail msgs.
+
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
     int t_pkt_hist  = default (5); // keep pkt history entry at least this long

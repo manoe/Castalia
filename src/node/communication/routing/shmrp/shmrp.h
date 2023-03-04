@@ -187,6 +187,9 @@ struct feat_par {
     double t_sec_l_repeat;
     int    t_sec_l_timeout;
     double t_sec_l_start;
+    bool   detect_link_fail;
+    int    fail_count;
+
 };
 
 class shmrp: public VirtualRouting {
@@ -206,6 +209,7 @@ class shmrp: public VirtualRouting {
         std::map<std::string,node_entry> routing_table;
         std::map<std::string,node_entry> pong_table;
         std::map<std::string,node_entry> recv_table;
+        std::map<std::string,node_entry> backup_rreq_table;
         YAML::Emitter y_out;
         std::unordered_set<int> local_id_table;
 
@@ -259,11 +263,14 @@ class shmrp: public VirtualRouting {
         int  getRinvTableSize() const;
         void updateRinvTableFromRreqTable();
         void clearRinvTableLocalFlags();
+        void removeRinvEntry(std::string);
         void markRinvEntryLocal(std::string);
         bool checkRinvEntry(std::string id) { return rinv_table.find(id) != rinv_table.end();};
 
 
         void clearRreqTable();
+        void saveRreqTable();
+        void retrieveAndMergeRreqTable();
         bool isRreqTableEmpty() const;
         void constructRreqTable();
         void constructRreqTable(std::vector<int>);
@@ -280,6 +287,7 @@ class shmrp: public VirtualRouting {
         void constructRoutingTable(bool,bool,double,bool);
         void constructRoutingTableFromRinvTable();
         void addRoute(std::string, int);
+        void removeRoute(std::string);
         bool isRoutingTableEmpty() const;
         int  selectPathid();
         int  selectPathid(bool);
