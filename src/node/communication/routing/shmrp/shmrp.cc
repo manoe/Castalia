@@ -25,37 +25,39 @@ void shmrp::startup() {
         trace()<<"[error] No sink address provisioned";
     }
 
-    fp.t_l              = par("t_l");
-    fp.ring_radius      = par("ring_radius");
-    fp.t_est            = par("t_est");
-    fp.t_meas           = par("t_meas");
-    fp.rresp_req        = par("f_rresp_required");
-    fp.rst_learn        = par("f_restart_learning");
-    fp.replay_rinv      = par("f_replay_rinv");
-    fp.cost_func        = strToCostFunc(par("f_cost_function").stringValue());
-    fp.cost_func_epsilon= par("f_cost_func_epsilon");
-    fp.cost_func_iota   = par("f_cost_func_iota");
-    fp.cost_func_pi     = par("f_cost_func_pi");
-    fp.cost_func_phi    = par("f_cost_func_phi");
-    fp.cf_after_rresp   = par("f_cf_after_rresp");
-    fp.random_t_l       = par("f_random_t_l");
-    fp.random_t_l_sigma = par("f_random_t_l_sigma");
-    fp.rinv_tbl_admin   = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
-    fp.interf_ping      = par("f_interf_ping");
-    fp.round_keep_pong  = par("f_round_keep_pong");
-    fp.rand_ring_hop    = par("f_rand_ring_hop");
-    fp.static_routing   = par("f_static_routing");
-    fp.measure_w_rreq   = par("f_measure_w_rreq");
-    fp.meas_rreq_count  = par("f_meas_rreq_count");
-    fp.calc_max_hop     = par("f_calc_max_hop");
-    fp.qos_pdr          = par("f_qos_pdr");
-    fp.rt_recalc_w_emerg= par("f_rt_recalc_w_emerg");
-    fp.reroute_pkt      = par("f_reroute_pkt");
-    fp.second_learn     = strToSecLPar(par("f_second_learn").stringValue());
-    fp.t_sec_l          = par("f_t_sec_l");
-    fp.t_sec_l_repeat   = par("f_t_sec_l_repeat");
-    fp.t_sec_l_timeout  = par("f_t_sec_l_timeout");
-    fp.t_sec_l_start    = par("f_t_sec_l_start");
+    fp.t_l               = par("t_l");
+    fp.ring_radius       = par("ring_radius");
+    fp.t_est             = par("t_est");
+    fp.t_meas            = par("t_meas");
+    fp.rresp_req         = par("f_rresp_required");
+    fp.rst_learn         = par("f_restart_learning");
+    fp.replay_rinv       = par("f_replay_rinv");
+    fp.cost_func         = strToCostFunc(par("f_cost_function").stringValue());
+    fp.cost_func_epsilon = par("f_cost_func_epsilon");
+    fp.cost_func_iota    = par("f_cost_func_iota");
+    fp.cost_func_pi      = par("f_cost_func_pi");
+    fp.cost_func_phi     = par("f_cost_func_phi");
+    fp.cf_after_rresp    = par("f_cf_after_rresp");
+    fp.random_t_l        = par("f_random_t_l");
+    fp.random_t_l_sigma  = par("f_random_t_l_sigma");
+    fp.rinv_tbl_admin    = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
+    fp.interf_ping       = par("f_interf_ping");
+    fp.round_keep_pong   = par("f_round_keep_pong");
+    fp.rand_ring_hop     = par("f_rand_ring_hop");
+    fp.static_routing    = par("f_static_routing");
+    fp.measure_w_rreq    = par("f_measure_w_rreq");
+    fp.meas_rreq_count   = par("f_meas_rreq_count");
+    fp.calc_max_hop      = par("f_calc_max_hop");
+    fp.qos_pdr           = par("f_qos_pdr");
+    fp.rt_recalc_w_emerg = par("f_rt_recalc_w_emerg");
+    fp.reroute_pkt       = par("f_reroute_pkt");
+    fp.second_learn      = strToSecLPar(par("f_second_learn").stringValue());
+    fp.t_sec_l           = par("f_t_sec_l");
+    fp.t_sec_l_repeat    = par("f_t_sec_l_repeat");
+    fp.t_sec_l_timeout   = par("f_t_sec_l_timeout");
+    fp.t_sec_l_start     = par("f_t_sec_l_start");
+    fp.detect_link_fail  = par("f_detect_link_fail");
+    fp.fail_count        = par("f_fail_count");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -423,6 +425,12 @@ void shmrp::clearRinvTableLocalFlags() {
     }
 }
 
+void shmrp::removeRinvEntry(std::string ne) {
+    trace()<<"[info] Entering removeRinvEntry(ne="<<ne<<")";
+    rinv_table.erase(ne);
+}
+
+
 void shmrp::markRinvEntryLocal(std::string id) {
     trace()<<"[info] Entering markRinvEntryLocal("<<id<<")";
     if(rinv_table.find(id) == rinv_table.end()) {
@@ -434,6 +442,22 @@ void shmrp::markRinvEntryLocal(std::string id) {
 void shmrp::clearRreqTable() {
     trace()<<"[info] RREQ table erased";
     rreq_table.clear();
+}
+
+void shmrp::saveRreqTable() {
+    trace()<<"[info] Entering saveRreqTable()";
+    rreq_table=backup_rreq_table;
+}
+
+void shmrp::retrieveAndMergeRreqTable() {
+    trace()<<"[info] Entering retrieveAndMergeRreqTable()";
+    for(auto ne: backup_rreq_table) {
+        if(rreq_table.find(ne.first) != rreq_table.end()) {
+            trace()<<"[error] Duplicate record: "<<ne.first;
+        } else {
+            rreq_table[ne.first]=ne.second;
+        }
+    }
 }
 
 bool shmrp::isRreqTableEmpty() const {
@@ -600,6 +624,7 @@ void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
     }
 }
 
+
 int  shmrp::getRreqPktCount() {
     if(rreq_table.empty()) {
         throw std::length_error("[error] RREQ table empty");
@@ -616,12 +641,23 @@ bool shmrp::rrespReceived() const {
     return false;
 }
 
+
 void shmrp::updateRreqEntryWithEmergency(const char *addr) {
     trace()<<"Entering shmrp::updateRreqEntryWithEmergency(addr="<<addr<<")";
     if(rreq_table.find(string(addr)) == rreq_table.end()) {
         throw no_available_entry("[error] Entry not present in routing table"); 
     }
     rreq_table[string(addr)].emerg++;
+}
+
+
+void shmrp::removeRreqEntry(std::string ne) {
+    trace()<<"Entering removeRreqEntry(ne="<<ne<<")";
+    if(rreq_table.find(ne) != rreq_table.end()) {
+        rreq_table.erase(ne);
+    } else {
+        throw no_available_entry("Entry not available in RREQ table"); 
+    }
 }
 
 void shmrp::sendRreqs(int count) {
@@ -767,6 +803,12 @@ void shmrp::constructRoutingTableFromRinvTable() {
     //    for(auto 
 }
 
+void shmrp::removeRoute(std::string ne) {
+    trace()<<"[info] Entering removeRoute(ne="<<ne<<")";
+    routing_table.erase(ne);
+}
+
+
 void shmrp::constructRoutingTable(bool rresp_req) {
     trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<")";
     for(auto ne: rreq_table) {
@@ -792,7 +834,8 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
     if(getHop() <= fp.ring_radius) {
         if(update) {
             trace()<<"[error] No routing table update inside the ring";
-            throw state_not_permitted("[error] No routing table update inside the ring");  
+            throw state_not_permitted("[error] No routing table update inside the ring");
+           /* but why? */ 
         }
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rreq_table) {
@@ -1060,6 +1103,7 @@ void shmrp::timerFiredCallback(int index) {
                         trace()<<"[info] Enough routing entries";
                         send_sec_l=true;
                     } else {
+                        saveRreqTable();
                         clearRreqTable();
                         try {
                             std::vector<int> pf;
@@ -1188,6 +1232,7 @@ void shmrp::timerFiredCallback(int index) {
             if(shmrpStateDef::S_ESTABLISH == getState()) {
                 trace()<<"[info] Second learn finished";
                 constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /*update */ );
+                retrieveAndMergeRreqTable();
 
                 switch(fp.second_learn) {
                     case shmrpSecLParDef::OFF: {
@@ -1868,6 +1913,7 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
     TMacControlMessage *mac_msg=check_and_cast<TMacControlMessage *>(msg);
     if(!mac_msg) {
         trace()<<"[error] Not TMacControlMessage";
+        throw cRuntimeError("[error] Message not a TMacControlMessage");
     }
     trace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
     std::string nw_address = std::to_string(mac_msg->getDestination());
@@ -1877,11 +1923,22 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
         }
         if(routing_table.find(nw_address) != routing_table.end()) {
             routing_table[nw_address].ack_count++;
+            if(fp.detect_link_fail) {
+                trace()<<"[info] Resetting fail_count";
+                routing_table[nw_address].fail_count = 0;
+            }
         }
     }
     if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
         if(routing_table.find(nw_address) != routing_table.end()) {
             routing_table[nw_address].fail_count++;
+            if(fp.detect_link_fail && fp.fail_count >= routing_table[nw_address].fail_count) {
+                trace()<<"[info] Link "<<nw_address<<" failed, removing";
+                removeRoute(nw_address);
+                removeRreqEntry(nw_address);
+                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
+                
+            }
         }
     }
     delete msg;
