@@ -86,6 +86,7 @@ packet shmrpLrespPacket extends shmrpPacket {
 packet shmrpDataPacket extends shmrpPacket {
     int pathid;
     int hop;
+    int reroute;
 }
 
 packet shmrpPingPacket extends shmrpPacket {
