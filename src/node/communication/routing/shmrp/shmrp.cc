@@ -624,6 +624,7 @@ void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
     }
 }
 
+
 int  shmrp::getRreqPktCount() {
     if(rreq_table.empty()) {
         throw std::length_error("[error] RREQ table empty");
@@ -640,12 +641,23 @@ bool shmrp::rrespReceived() const {
     return false;
 }
 
+
 void shmrp::updateRreqEntryWithEmergency(const char *addr) {
     trace()<<"Entering shmrp::updateRreqEntryWithEmergency(addr="<<addr<<")";
     if(rreq_table.find(string(addr)) == rreq_table.end()) {
         throw no_available_entry("[error] Entry not present in routing table"); 
     }
     rreq_table[string(addr)].emerg++;
+}
+
+
+void shmrp::removeRreqEntry(std::string ne) {
+    trace()<<"Entering removeRreqEntry(ne="<<ne<<")";
+    if(rreq_table.find(ne) != rreq_table.end()) {
+        rreq_table.erase(ne);
+    } else {
+        throw no_available_entry("Entry not available in RREQ table"); 
+    }
 }
 
 void shmrp::sendRreqs(int count) {
@@ -822,7 +834,8 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
     if(getHop() <= fp.ring_radius) {
         if(update) {
             trace()<<"[error] No routing table update inside the ring";
-            throw state_not_permitted("[error] No routing table update inside the ring");  
+            throw state_not_permitted("[error] No routing table update inside the ring");
+           /* but why? */ 
         }
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rreq_table) {
@@ -1911,6 +1924,7 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
         if(routing_table.find(nw_address) != routing_table.end()) {
             routing_table[nw_address].ack_count++;
             if(fp.detect_link_fail) {
+                trace()<<"[info] Resetting fail_count";
                 routing_table[nw_address].fail_count = 0;
             }
         }
@@ -1921,6 +1935,9 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
             if(fp.detect_link_fail && fp.fail_count >= routing_table[nw_address].fail_count) {
                 trace()<<"[info] Link "<<nw_address<<" failed, removing";
                 removeRoute(nw_address);
+                removeRreqEntry(nw_address);
+                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
+                
             }
         }
     }
