@@ -446,15 +446,17 @@ void shmrp::clearRreqTable() {
 
 void shmrp::saveRreqTable() {
     trace()<<"[info] Entering saveRreqTable()";
-    rreq_table=backup_rreq_table;
+    backup_rreq_table=rreq_table;
 }
 
 void shmrp::retrieveAndMergeRreqTable() {
     trace()<<"[info] Entering retrieveAndMergeRreqTable()";
     for(auto ne: backup_rreq_table) {
         if(rreq_table.find(ne.first) != rreq_table.end()) {
-            trace()<<"[error] Duplicate record: "<<ne.first;
+            trace()<<"[error] Duplicate record, overriding: "<<ne.first;
+            rreq_table[ne.first]=ne.second;
         } else {
+            trace()<<"[info] Merging element: "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
             rreq_table[ne.first]=ne.second;
         }
     }
@@ -652,7 +654,7 @@ void shmrp::updateRreqEntryWithEmergency(const char *addr) {
 
 
 void shmrp::removeRreqEntry(std::string ne) {
-    trace()<<"Entering removeRreqEntry(ne="<<ne<<")";
+    trace()<<"[info] Entering removeRreqEntry(ne="<<ne<<")";
     if(rreq_table.find(ne) != rreq_table.end()) {
         rreq_table.erase(ne);
     } else {
@@ -1692,6 +1694,8 @@ void shmrp::serializeRoutingTable(std::map<std::string,node_entry> table) {
         y_out<<YAML::Value<<i.second.pkt_count;
         y_out<<YAML::Key<<"ack_count";          
         y_out<<YAML::Value<<i.second.ack_count;
+        y_out<<YAML::Key<<"fail_count";
+        y_out<<YAML::Value<<i.second.fail_count;
         y_out<<YAML::EndMap;
     }
     y_out<<YAML::EndSeq;
@@ -1932,12 +1936,11 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
     if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
         if(routing_table.find(nw_address) != routing_table.end()) {
             routing_table[nw_address].fail_count++;
-            if(fp.detect_link_fail && fp.fail_count >= routing_table[nw_address].fail_count) {
+            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getSecL() && getHop() > 2 ) { // Ugly :-(
                 trace()<<"[info] Link "<<nw_address<<" failed, removing";
                 removeRoute(nw_address);
                 removeRreqEntry(nw_address);
                 constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
-                
             }
         }
     }
