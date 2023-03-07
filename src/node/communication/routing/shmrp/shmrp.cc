@@ -1936,7 +1936,7 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
     if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
         if(routing_table.find(nw_address) != routing_table.end()) {
             routing_table[nw_address].fail_count++;
-            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getSecL() && getHop() > 2 ) { // Ugly :-(
+            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getSecL() && getHop() > 2 && getState() == shmrpStateDef::WORK ) { // Ugly :-(
                 trace()<<"[info] Link "<<nw_address<<" failed, removing";
                 removeRoute(nw_address);
                 removeRreqEntry(nw_address);
