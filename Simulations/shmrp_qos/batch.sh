@@ -16,7 +16,7 @@ done
 
 for i in $(seq 1 $REP)
 do
-     SEED=1678182223
+     SEED=1678184087
      for j in $SEQ
 	do
 		./gen.sh omnetpp.ini qos_pdr=$j $SEED shmrp_meas_qos_pdr_`echo $j|sed 's/\./_/g'`.yaml
