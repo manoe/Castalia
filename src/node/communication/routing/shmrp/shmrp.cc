@@ -204,10 +204,15 @@ int shmrp::getHop() const {
 int shmrp::getHop(int pathid) {
     trace()<<"[info] Entering shmrp::getHop(pathid="<<pathid<<")";
     int hop=getHop();
+    bool fail=true;
     for(auto ne: routing_table) {
         if(pathid == ne.second.pathid) {
             hop = ne.second.hop;
+            fail=false;
         }
+    }
+    if(fail) {
+        throw no_available_entry("No route available for the path"); 
     }
     trace()<<"[info] Hop count for pathid "<<pathid<<" is "<<hop;
     return hop;
@@ -361,7 +366,12 @@ void shmrp::sendRinv(int round, int pathid, bool local=false, int local_id=0) {
     rinv_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     rinv_pkt->setRound(round);
     rinv_pkt->setPathid(pathid);
-    rinv_pkt->setHop(getHop(pathid)+1);
+    try {
+        rinv_pkt->setHop(getHop(pathid)+1);
+    } catch (exception &e) {
+        trace()<<"[info] "<<e.what()<<" fall back to normal hop";
+        rinv_pkt->setHop(getHop());
+    }
     rinv_pkt->setInterf(getPongTableSize());
     rinv_pkt->setLocal(local);
     rinv_pkt->setLocalid(local_id);
