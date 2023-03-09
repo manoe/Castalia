@@ -449,6 +449,14 @@ void shmrp::markRinvEntryLocal(std::string id) {
     rinv_table[id].local = true;
 }
 
+void shmrp::markRinvEntryFail(std::string id) {
+    trace()<<"[info] Entering markRinvEntryLocal(id="<<id<<")";
+    if(!checkRinvEntry(id)) {
+        throw no_available_entry("[error] No entry available in RINV table");
+    }
+    rinv_table[id].fail=true; 
+}
+
 void shmrp::clearRreqTable() {
     trace()<<"[info] RREQ table erased";
     rreq_table.clear();
@@ -847,7 +855,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
         if(update) {
             trace()<<"[error] No routing table update inside the ring";
             throw state_not_permitted("[error] No routing table update inside the ring");
-           /* but why? */ 
+            /* but why? */ 
         }
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rreq_table) {
@@ -1706,6 +1714,8 @@ void shmrp::serializeRoutingTable(std::map<std::string,node_entry> table) {
         y_out<<YAML::Value<<i.second.ack_count;
         y_out<<YAML::Key<<"fail_count";
         y_out<<YAML::Value<<i.second.fail_count;
+        y_out<<YAML::Key<<"fail";
+        y_out<<YAML::Value<<i.second.fail;
         y_out<<YAML::EndMap;
     }
     y_out<<YAML::EndSeq;
@@ -1950,6 +1960,7 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
                 trace()<<"[info] Link "<<nw_address<<" failed, removing";
                 removeRoute(nw_address);
                 removeRreqEntry(nw_address);
+                markRinvEntryFail(nw_address);
                 try {
                     constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
                 } catch (exception &e) {
