@@ -151,6 +151,7 @@ struct node_entry {
     int  pkt_count = 0;
     int  ack_count = 0;
     int  fail_count = 0;
+    bool fail;
     bool local = false;
     bool secl  = false;
 };
@@ -265,6 +266,7 @@ class shmrp: public VirtualRouting {
         void clearRinvTableLocalFlags();
         void removeRinvEntry(std::string);
         void markRinvEntryLocal(std::string);
+        void markRinvEntryFail(std::string);
         bool checkRinvEntry(std::string id) { return rinv_table.find(id) != rinv_table.end();};
 
 
