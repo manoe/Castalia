@@ -151,7 +151,7 @@ struct node_entry {
     int  pkt_count = 0;
     int  ack_count = 0;
     int  fail_count = 0;
-    bool fail;
+    bool fail = false;
     bool local = false;
     bool secl  = false;
 };
