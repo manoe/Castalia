@@ -35,6 +35,11 @@ void ResourceManager::initialize()
 	ramSize = par("ramSize");
 	baselineNodePower = par("baselineNodePower");
 	periodicEnergyCalculationInterval = (double)par("periodicEnergyCalculationInterval") / 1000;
+    selfDestructTimer = par("selfDestructTimer");
+
+    if(selfDestructTimer > 0.0) {
+        scheduleAt(simTime() + selfDestructTimer, new cMessage("Destroy node message", DESTROY_NODE));
+    }
 
 	if (baselineNodePower < 0 || periodicEnergyCalculationInterval < 0)
 		throw cRuntimeError("Illegal values for baselineNodePower and/or periodicEnergyCalculationInterval in resource manager module");
@@ -106,6 +111,12 @@ void ResourceManager::handleMessage(cMessage * msg)
 
         case TERMINAL_EVENT: {
             trace()<<"Terminal event message received, Node terminating.";
+            destroyNode();
+            break;
+        }
+
+        case DESTROY_NODE: {
+            trace()<<"selfDestructTimer expired";
             destroyNode();
             break;
         }
