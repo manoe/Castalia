@@ -36,6 +36,7 @@ class ResourceManager: public CastaliaModule {
 	double currentNodePower;
 	simtime_t timeOfLastCalculation;
 	double periodicEnergyCalculationInterval;
+    double selfDestructTimer;
 
 	/*--- Custom class parameters ---*/
 	double remainingEnergy;
