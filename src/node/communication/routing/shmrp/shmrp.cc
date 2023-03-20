@@ -900,7 +900,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
         c_ne.pkt_count = 0;
         c_ne.ack_count = 0;
         routing_table.insert({c_ne.nw_address,c_ne});
-
+        routing_table[c_ne.nw_address].secl=update; // Set secl parameter to true, if second learn
         rinv_table[c_ne.nw_address].used=true;
     }
     if(routing_table.empty()) {
@@ -1716,6 +1716,8 @@ void shmrp::serializeRoutingTable(std::map<std::string,node_entry> table) {
         y_out<<YAML::Value<<i.second.fail_count;
         y_out<<YAML::Key<<"fail";
         y_out<<YAML::Value<<i.second.fail;
+        y_out<<YAML::Key<<"secl";
+        y_out<<YAML::Value<<i.second.secl;
         y_out<<YAML::EndMap;
     }
     y_out<<YAML::EndSeq;
