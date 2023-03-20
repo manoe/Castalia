@@ -58,6 +58,7 @@ void shmrp::startup() {
     fp.t_sec_l_start     = par("f_t_sec_l_start");
     fp.detect_link_fail  = par("f_detect_link_fail");
     fp.fail_count        = par("f_fail_count");
+    fp.path_sel          = par("f_path_sel");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -921,8 +922,29 @@ int shmrp::selectPathid() {
     if(routing_table.empty()) {
         throw routing_table_empty("[error] Routing table empty");
     }
-    auto i=getRNG(0)->intRand(routing_table.size());
-    auto it=routing_table.begin();
+
+    auto tmp_table = routing_table;
+
+    if(0 != fp.path_sel) {
+        for(auto ne: routing_table) {
+            // Prefer primary
+            if(1 == fp.path_sel && ne.second.secl) {
+                tmp_table.erase(ne.first);
+            }
+            // Prefer secl
+            if(2 == fp.path_sel && !ne.second.secl) {
+                tmp_table.erase(ne.first);
+            }
+        }
+    }
+
+    if(tmp_table.empty()) {
+        trace()<<"[info] Cannot apply path selection policy"; 
+        tmp_table = routing_table;
+    }
+
+    auto i=getRNG(0)->intRand(tmp_table.size());
+    auto it=tmp_table.begin();
     std::advance(it,i);
     trace()<<"[info] Selected pathid: "<<it->second.pathid;
     return it->second.pathid;
