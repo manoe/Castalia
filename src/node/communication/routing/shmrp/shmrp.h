@@ -190,7 +190,7 @@ struct feat_par {
     double t_sec_l_start;
     bool   detect_link_fail;
     int    fail_count;
-
+    int    path_sel;
 };
 
 class shmrp: public VirtualRouting {

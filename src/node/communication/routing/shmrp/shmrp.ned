@@ -77,6 +77,7 @@ simple shmrp like node.communication.routing.iRouting
 
     bool   f_detect_link_fail = default(false); // Detect failing links
     int    f_fail_count       = default(10);    // Declare a link failing after f_fail_count fail msgs.
+    int    f_path_sel         = default(0);     // How to select path (initially): 0 - random, 1 - only primary - 2 - prefer second
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
