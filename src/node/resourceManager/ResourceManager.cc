@@ -168,6 +168,12 @@ double ResourceManager::getSpentEnergy(void)
 	return (initialEnergy - remainingEnergy);
 }
 
+double ResourceManager::getRemainingEnergy(void)
+{
+    Enter_Method("getRemainingEnergy()");
+    return remainingEnergy;
+}
+
 double ResourceManager::getCPUClockDrift(void)
 {
 	Enter_Method("getCPUClockDrift(void)");
