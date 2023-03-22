@@ -1927,6 +1927,10 @@ void shmrp::finishSpecific() {
             y_out<<"role";
             y_out<<YAML::Value;
             y_out<<(res_mgr->isDead()?"dead":ringToStr(shmrp_instance->getRingStatus()));
+            y_out<<YAML::Key<<"remaining_energy";
+            y_out<<YAML::Value<<res_mgr->getRemainingEnergy();
+            y_out<<YAML::Key<<"spent_energy";
+            y_out<<YAML::Value<<res_mgr->getSpentEnergy();
             y_out<<YAML::Key<<"pong_table";
             y_out<<YAML::Value<<shmrp_instance->getPongTableSize();
             y_out<<YAML::Key;
