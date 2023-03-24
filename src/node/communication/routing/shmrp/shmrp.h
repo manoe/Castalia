@@ -57,7 +57,8 @@ enum shmrpTimerDef {
     T_REPEAT         = 5,
     T_SEC_L          = 6,
     T_SEC_L_REPEAT   = 7,
-    T_SEC_L_START    = 8
+    T_SEC_L_START    = 8,
+    T_SEND_PKT       = 9
 };
 
 enum shmrpRingDef {
@@ -93,49 +94,49 @@ enum shmrpSecLParDef {
 
 
 //namespace shmrp {
-    class rreq_table_empty : public std::runtime_error {
-        public:
-            explicit rreq_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
-            explicit rreq_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
-    };
+class rreq_table_empty : public std::runtime_error {
+    public:
+        explicit rreq_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+        explicit rreq_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+};
 
-    class rinv_table_empty : public std::runtime_error {
-        public:
-            explicit rinv_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
-            explicit rinv_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
-    };
-    class rreq_table_non_empty : public std::runtime_error {
-        public:
-            explicit rreq_table_non_empty(const string &what_arg) : std::runtime_error(what_arg) {};
-            explicit rreq_table_non_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
-    };
-    class routing_table_empty : public std::runtime_error {
-        public:
-            explicit routing_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
-            explicit routing_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
-    };
-    class recv_table_empty : public std::runtime_error {
-        public:
-            explicit recv_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
-            explicit recv_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
-    };
+class rinv_table_empty : public std::runtime_error {
+    public:
+        explicit rinv_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+        explicit rinv_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+};
+class rreq_table_non_empty : public std::runtime_error {
+    public:
+        explicit rreq_table_non_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+        explicit rreq_table_non_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+};
+class routing_table_empty : public std::runtime_error {
+    public:
+        explicit routing_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+        explicit routing_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+};
+class recv_table_empty : public std::runtime_error {
+    public:
+        explicit recv_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
+        explicit recv_table_empty(const char   *what_arg) : std::runtime_error(what_arg) {};
+};
 
-    class unknown_cost_function : public std::runtime_error {
-        public:
-            explicit unknown_cost_function(const string &what_arg) : std::runtime_error(what_arg) {};
-            explicit unknown_cost_function(const char   *what_arg) : std::runtime_error(what_arg) {};
-    };
-    class no_available_entry : public std::runtime_error {
-        public:
-            explicit no_available_entry(const string &what_arg) : std::runtime_error(what_arg) {};
-            explicit no_available_entry(const char   *what_arg) : std::runtime_error(what_arg) {};
-    };
+class unknown_cost_function : public std::runtime_error {
+    public:
+        explicit unknown_cost_function(const string &what_arg) : std::runtime_error(what_arg) {};
+        explicit unknown_cost_function(const char   *what_arg) : std::runtime_error(what_arg) {};
+};
+class no_available_entry : public std::runtime_error {
+    public:
+        explicit no_available_entry(const string &what_arg) : std::runtime_error(what_arg) {};
+        explicit no_available_entry(const char   *what_arg) : std::runtime_error(what_arg) {};
+};
 
-    class state_not_permitted : public std::runtime_error {
-        public:
-            explicit state_not_permitted(const string &what_arg) : std::runtime_error(what_arg) {};
-            explicit state_not_permitted(const char   *what_arg) : std::runtime_error(what_arg) {};
-    };
+class state_not_permitted : public std::runtime_error {
+    public:
+        explicit state_not_permitted(const string &what_arg) : std::runtime_error(what_arg) {};
+        explicit state_not_permitted(const char   *what_arg) : std::runtime_error(what_arg) {};
+};
 
 //}
 
@@ -191,6 +192,8 @@ struct feat_par {
     bool   detect_link_fail;
     int    fail_count;
     int    path_sel;
+    double e2e_qos_pdr;
+    double t_send_pkt;
 };
 
 class shmrp: public VirtualRouting {
@@ -211,6 +214,8 @@ class shmrp: public VirtualRouting {
         std::map<std::string,node_entry> pong_table;
         std::map<std::string,node_entry> recv_table;
         std::map<std::string,node_entry> backup_rreq_table;
+        std::list<shmrpDataPacket *> pkt_list;
+
         YAML::Emitter y_out;
         std::unordered_set<int> local_id_table;
 
@@ -222,7 +227,7 @@ class shmrp: public VirtualRouting {
         void handleNetworkControlCommand(cMessage *);
         void timerFiredCallback(int);
         void finishSpecific();
-        
+
         shmrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         shmrpCostFuncDef strToCostFunc(string) const;
         shmrpSecLParDef strToSecLPar(string) const; 
@@ -298,6 +303,7 @@ class shmrp: public VirtualRouting {
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
         bool checkPathid(int);
+        int  calculateRepeat(const char *);
         int  getRoutingTableSize() { return routing_table.size();};
 
         void incPktCountInRecvTable(std::string, int, int);
@@ -314,7 +320,8 @@ class shmrp: public VirtualRouting {
 
         void sendLresp(const char *,int, int);
 
-        void sendData(cPacket *, std::string, int); 
+        void sendData(cPacket *, std::string, int);
+        void schedulePkt(cPacket *, std::string, int); 
         void forwardData(shmrpDataPacket *, std::string, int);
         void forwardData(shmrpDataPacket *, std::string);
         std::string ringToStr(shmrpRingDef pos) const;
@@ -331,7 +338,7 @@ class shmrp: public VirtualRouting {
         void serializeRadioStats(PktBreakdown);
 
         std::string StateToString(shmrpStateDef);
- 
+
         virtual void handleMacControlMessage(cMessage *);
 
         void setSecL(bool flag) { g_sec_l=flag;};

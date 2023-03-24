@@ -59,6 +59,7 @@ void shmrp::startup() {
     fp.detect_link_fail  = par("f_detect_link_fail");
     fp.fail_count        = par("f_fail_count");
     fp.path_sel          = par("f_path_sel");
+    fp.e2e_qos_pdr       = par("f_e2e_qos_pdr");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -780,6 +781,21 @@ void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
     toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
 }
 
+void shmrp::schedulePkt(cPacket *pkt, std::string dest, int pathid) {
+    trace()<<"[info] Entering schedulePkt(pkt, dest="<<dest<<", pathid="<<pathid<<")";
+    shmrpDataPacket *data_pkt=new shmrpDataPacket("SHMRP DATA packet",NETWORK_LAYER_PACKET);
+    data_pkt->setByteLength(netDataFrameOverhead);
+    data_pkt->setShmrpPacketKind(shmrpPacketDef::DATA_PACKET);
+    data_pkt->setSource(SELF_NETWORK_ADDRESS);
+    data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
+    data_pkt->setDestination(dest.c_str());
+    data_pkt->setPathid(pathid);
+    data_pkt->setSequenceNumber(currentSequenceNumber++);
+    data_pkt->setRepeat(0);
+    data_pkt->encapsulate(pkt);
+    pkt_list.push_back(data_pkt);
+}
+
 void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest) {
     trace()<<"[info] Entering forwardData(dest="<<dest<<")";
     forwardData(data_pkt, dest, data_pkt->getPathid());
@@ -1008,6 +1024,24 @@ bool shmrp::checkPathid(int pathid) {
     }
     trace()<<"[info] Pathid not found";
     return false;
+}
+
+int shmrp::calculateRepeat(const char *dest) {
+    trace()<<"[info] Entering shmrp::calculateRepeat(dest="<<dest<<")";
+
+    if(routing_table.find(std::string(dest)) == routing_table.end()) {
+        throw no_available_entry("[error] Entry not available in routing table");
+    }
+
+    double hop = static_cast<double>(routing_table[std::string(dest)].hop) + 1;
+
+    double rep = ceil( log(1.0 - fp.e2e_qos_pdr) / log(1.0 - pow(fp.qos_pdr,hop) ));
+
+    trace()<<"[info] Repeat for destination "<<dest<<" with hop "<<hop<<" is "<<rep;
+
+    return static_cast<int>(rep);
+
+    //    return rep;
 }
 
 
@@ -1353,6 +1387,10 @@ void shmrp::timerFiredCallback(int index) {
 
             } else {
                 trace()<<"[info] Establishment done, transitioning to WORK state";
+                if(fp.e2e_qos_pdr > 0) {
+                    trace()<<"[info] Starting T_SEND_PKT to schedule pkt sending";
+                    setTimer(shmrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
+                }
                 setState(shmrpStateDef::WORK);
                 sendRinvBasedOnHop();
             }
@@ -1366,6 +1404,25 @@ void shmrp::timerFiredCallback(int index) {
             sendRinvBasedOnHop();
             break;
         }
+        case shmrpTimerDef::T_SEND_PKT: {
+            trace()<<"[timer] T_SEND_PKT timer expired, pkt_list size: "<<pkt_list.size();
+            if(!pkt_list.empty()) {
+                std::list<shmrpDataPacket *> del_list;
+                for(auto it = pkt_list.begin() ; it != pkt_list.end() ; ++it ) {
+                    auto rep=calculateRepeat((*it)->getDestination());
+                    toMacLayer((*it)->dup(), resolveNetworkAddress((*it)->getDestination()));
+                    (*it)->setRepeat((*it)->getRepeat()+1);
+                    if((*it)->getRepeat() >= rep) {
+                        trace()<<"[info] Repeat count for pkt reached";
+                        delete (*it);
+                        pkt_list.erase(it);
+                    }
+                }
+            }
+            trace()<<"[timer] Re-scheduling T_SEND_PKT";
+            setTimer(shmrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
+        }
+
         default: {
             trace()<<"[error] Unknown timer expired: "<<index;
             break;
@@ -1397,9 +1454,13 @@ void shmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         }
 
         incPktCountInRoutingTable(next_hop);
-        sendData(pkt,next_hop,pathid);
+        if(fp.e2e_qos_pdr > 0.0) {
+            schedulePkt(pkt, next_hop, pathid);
+        }
+        else {
+            sendData(pkt,next_hop,pathid);
+        }
     }
-
 }
 
 void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
