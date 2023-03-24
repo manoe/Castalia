@@ -78,6 +78,10 @@ simple shmrp like node.communication.routing.iRouting
     bool   f_detect_link_fail = default(false); // Detect failing links
     int    f_fail_count       = default(10);    // Declare a link failing after f_fail_count fail msgs.
     int    f_path_sel         = default(0);     // How to select path (initially): 0 - random, 1 - only primary - 2 - prefer second
+    double f_e2e_qos_pdr      = default(0.0);   // Defines the e2e QoS PDR that has to be met. Based on the value,
+                                                // the link's hop number and the link-level QoS PDR a packet
+                                                // repetition count is identified.
+    double f_t_send_pkt       = default(1);     // Timer to repeatedly send scheduled packets to meet e2e QoS PDR
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
