@@ -60,6 +60,7 @@ void shmrp::startup() {
     fp.fail_count        = par("f_fail_count");
     fp.path_sel          = par("f_path_sel");
     fp.e2e_qos_pdr       = par("f_e2e_qos_pdr");
+    fp.t_send_pkt        = par("f_t_send_pkt");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -980,6 +981,7 @@ std::string shmrp::getNextHop(int pathid) {
     if(!found) {
         throw no_available_entry("Next hop not available");
     }
+    trace()<<"[info] Next hop: "<<next_hop.nw_address;
     return next_hop.nw_address;
 }
 
@@ -1399,6 +1401,11 @@ void shmrp::timerFiredCallback(int index) {
         case shmrpTimerDef::T_MEASURE: {
             trace()<<"[timer] T_MEASURE timer expired, PONG table size: "<<getPongTableSize();
             // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
+                trace()<<"[info] Measurement done, transitioning to WORK state";
+                if(fp.e2e_qos_pdr > 0) {
+                    trace()<<"[info] Starting T_SEND_PKT to schedule pkt sending";
+                    setTimer(shmrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
+                }
 
             setState(shmrpStateDef::WORK);
             sendRinvBasedOnHop();
@@ -1407,20 +1414,33 @@ void shmrp::timerFiredCallback(int index) {
         case shmrpTimerDef::T_SEND_PKT: {
             trace()<<"[timer] T_SEND_PKT timer expired, pkt_list size: "<<pkt_list.size();
             if(!pkt_list.empty()) {
-                std::list<shmrpDataPacket *> del_list;
-                for(auto it = pkt_list.begin() ; it != pkt_list.end() ; ++it ) {
-                    auto rep=calculateRepeat((*it)->getDestination());
+                for(auto it = pkt_list.begin() ; it != pkt_list.end(); ) {
+                    bool erased = false;
+                    trace()<<"[info] Entry's destination: "<<(*it)->getDestination();
+                    int rep;
+                    try {
+                        rep = calculateRepeat((*it)->getDestination());
+                    } catch (exception &e) {
+                        trace()<<e.what();
+                        throw e;
+                    }
                     toMacLayer((*it)->dup(), resolveNetworkAddress((*it)->getDestination()));
                     (*it)->setRepeat((*it)->getRepeat()+1);
                     if((*it)->getRepeat() >= rep) {
                         trace()<<"[info] Repeat count for pkt reached";
-                        delete (*it);
-                        pkt_list.erase(it);
+                          shmrpDataPacket *pkt_ptr = *it;
+                          pkt_list.erase(it++);
+                          erased=true;
+                          delete pkt_ptr;
+                    }
+                    if(!erased) {
+                        ++it;
                     }
                 }
             }
             trace()<<"[timer] Re-scheduling T_SEND_PKT";
             setTimer(shmrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
+            break;
         }
 
         default: {
