@@ -416,8 +416,16 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0) {
         std::vector<int> pathid;
         try {
             if(isMaster()) {
-
+                trace()<<"[info] Node is master node, selecting all pathids";
+                for(auto ne: routing_table) {
+                    for(auto p: ne.second.pathid) {
+                        if(pathid.end() == std::find(pathid.begin(), pathid.end(),p)) {
+                            pathid.push_back(p);
+                        }
+                    }
+                }
             } else {
+                trace()<<"[info] Node is sensor node, selecting random pathid";
                 pathid.push_back(selectPathid(false));
             }
         } catch (std::exception &e) {
