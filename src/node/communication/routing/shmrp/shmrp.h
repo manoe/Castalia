@@ -143,7 +143,7 @@ class state_not_permitted : public std::runtime_error {
 
 struct node_entry {
     string nw_address;
-    int  pathid;
+    vector<int> pathid;
     int  hop;
     bool rresp = false;
     int  interf;
@@ -207,6 +207,7 @@ class shmrp: public VirtualRouting {
         bool g_sec_l = false;
         int g_sec_l_pathid;
         int g_sec_l_timeout = 0;
+        bool g_is_master=false;
         feat_par fp;
         shmrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
@@ -234,6 +235,7 @@ class shmrp: public VirtualRouting {
         shmrpSecLParDef strToSecLPar(string) const; 
 
         bool isSink() const;
+        bool isMaster() const;
         void setSinkAddress(const char *);
         std::string getSinkAddress() const;
         double getTl();
@@ -249,7 +251,7 @@ class shmrp: public VirtualRouting {
         void clearPongTable(int);
 
         void sendRinv(int,bool,int);
-        void sendRinv(int,int,bool,int);
+        void sendRinv(int,vector<int>,bool,int);
         void sendRinvBasedOnHop(bool,int); 
 
         void setHop(int);
@@ -300,6 +302,9 @@ class shmrp: public VirtualRouting {
         bool isRoutingTableEmpty() const;
         int  selectPathid();
         int  selectPathid(bool);
+        std::vector<int> selectAllPathid();
+        std::string pathidToStr(vector<int> pathid);
+
         std::string getNextHop(int);
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
@@ -328,8 +333,6 @@ class shmrp: public VirtualRouting {
         std::string ringToStr(shmrpRingDef pos) const;
 
         void sendRwarn(); 
-
-        map<int,string> getPathsAndHops();
 
         void serializeRoutingTable();
         void serializeRoutingTable(std::map<std::string,node_entry>);

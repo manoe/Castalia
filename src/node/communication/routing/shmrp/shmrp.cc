@@ -19,6 +19,12 @@ void shmrp::startup() {
         g_is_sink=false;
     }
 
+    if(appModule->hasPar("isMaster")) {
+        g_is_master=appModule->par("isMaster");
+    } else {
+        g_is_master=false;
+    }
+
     if(hasPar("sink_address")) {
         g_sink_addr.assign(par("sink_address").stringValue());
     } else {
@@ -110,6 +116,10 @@ void shmrp::parseRouting(std::string file) {
 
 bool shmrp::isSink() const {
     return g_is_sink;
+}
+
+bool shmrp::isMaster() const {
+    return g_is_master;
 }
 
 void shmrp::setSinkAddress(const char *p_sink_addr) {
@@ -209,7 +219,8 @@ int shmrp::getHop(int pathid) {
     int hop=getHop();
     bool fail=true;
     for(auto ne: routing_table) {
-        if(pathid == ne.second.pathid) {
+        if( ne.second.pathid.end() != std::find(ne.second.pathid.begin(), ne.second.pathid.end(), pathid)) {
+//        if(pathid == ne.second.pathid) {
             hop = ne.second.hop;
             fail=false;
         }
@@ -340,7 +351,7 @@ void shmrp::sendPong(int round) {
 
 void shmrp::storePong(shmrpPongPacket *pong_pkt) {
     trace()<<"[info] Entering shmrp::storePong(pong_pkt.source="<<pong_pkt->getSource()<<")";
-    pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),0,0,false,0,0,false,pong_pkt->getRound()}});
+    pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),std::vector<int>(1,0),0,false,0,0,false,pong_pkt->getRound()}});
 }
 
 void shmrp::clearPongTable() {
@@ -360,17 +371,20 @@ int shmrp::getPongTableSize() const {
     return pong_table.size();
 }
 
-void shmrp::sendRinv(int round, int pathid, bool local=false, int local_id=0) {
-    trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<", pathid = "<<pathid<<")";
+void shmrp::sendRinv(int round, std::vector<int> pathid, bool local=false, int local_id=0) {
+    trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<", pathid = "<<pathidToStr(pathid)<<")";
     shmrpRinvPacket *rinv_pkt=new shmrpRinvPacket("SHMRP RINV packet", NETWORK_LAYER_PACKET);
     rinv_pkt->setByteLength(netDataFrameOverhead);
     rinv_pkt->setShmrpPacketKind(shmrpPacketDef::RINV_PACKET);
     rinv_pkt->setSource(SELF_NETWORK_ADDRESS);
     rinv_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     rinv_pkt->setRound(round);
-    rinv_pkt->setPathid(pathid);
+    rinv_pkt->setPathidArraySize(pathid.size());
+    for(int i=0 ; i < pathid.size() ; ++i) {
+        rinv_pkt->setPathid(i, pathid[i]);
+    }
     try {
-        rinv_pkt->setHop(getHop(pathid)+1);
+        rinv_pkt->setHop(getHop(pathid[0])+1);
     } catch (exception &e) {
         trace()<<"[info] "<<e.what()<<" fall back to normal hop";
         rinv_pkt->setHop(getHop());
@@ -384,7 +398,9 @@ void shmrp::sendRinv(int round, int pathid, bool local=false, int local_id=0) {
 
 void shmrp::sendRinv(int round, bool local=false, int localid=0) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<")";
-    sendRinv(round,0,local,localid);
+    std::vector<int> pathid;
+    pathid.push_back(0);
+    sendRinv(round,pathid,local,localid);
 }
 
 void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0) {
@@ -397,9 +413,13 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0) {
         sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS), local);
     } else {
         trace()<<"[info] Node outside mesh ring";
-        int pathid;
+        std::vector<int> pathid;
         try {
-            pathid=selectPathid(false);
+            if(isMaster()) {
+
+            } else {
+                pathid.push_back(selectPathid(false));
+            }
         } catch (std::exception &e) {
             trace()<<e.what();
             throw e;
@@ -415,10 +435,13 @@ void shmrp::clearRinvTable() {
 }
 
 void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
-    trace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid: "<<rinv_pkt->getPathid()<<" hop: "<<rinv_pkt->getHop()<<" interf: "<<rinv_pkt->getInterf();
+    trace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid size: "<<rinv_pkt->getPathidArraySize()<<" hop: "<<rinv_pkt->getHop()<<" interf: "<<rinv_pkt->getInterf();
     node_entry ne;
     ne.nw_address.assign(rinv_pkt->getSource());
-    ne.pathid = rinv_pkt->getPathid();
+    for(int i=0 ; i < rinv_pkt->getPathidArraySize() ; ++i) {
+        ne.pathid.push_back(rinv_pkt->getPathid(i));
+    }
+    trace()<<"[info] Pathid added: "<<pathidToStr(ne.pathid);
     ne.hop = rinv_pkt->getHop();
     ne.interf = rinv_pkt->getInterf();
     if(rinv_table.find(ne.nw_address) != rinv_table.end()) {
@@ -477,7 +500,7 @@ void shmrp::retrieveAndMergeRreqTable() {
             trace()<<"[error] Duplicate record, overriding: "<<ne.first;
             rreq_table[ne.first]=ne.second;
         } else {
-            trace()<<"[info] Merging element: "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
+            trace()<<"[info] Merging element: "<<ne.second.nw_address<<" with pathid: "<<pathidToStr(ne.second.pathid);
             rreq_table[ne.first]=ne.second;
         }
     }
@@ -539,7 +562,7 @@ void shmrp::constructRreqTable() {
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rinv_table) {
             if(ne.second.hop < getHop() && !ne.second.used) {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
                 rreq_table.insert(ne);
                 rinv_table[ne.second.nw_address].used=true;
             }
@@ -549,15 +572,17 @@ void shmrp::constructRreqTable() {
         std::map<int, std::vector<node_entry>> cl;
         std::for_each(rinv_table.begin(),rinv_table.end(),[&](std::pair<std::string,node_entry> ne){
                 if(ne.second.hop < getHop() && !ne.second.used) {
-                if(cl.find(ne.second.pathid) == cl.end()) {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-                } else {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-                cl[ne.second.pathid].push_back(ne.second);
+                    for(auto p: ne.second.pathid) {
+                        if(cl.find(p) == cl.end()) {
+                            trace()<<"[info] Creating entry for pathid: "<<p<<" and adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
+                            cl.insert({p,std::vector<node_entry>{ne.second}});
+                        } else {
+                            trace()<<"[info] Adding entry for pathid: "<<p<<" with address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
+                            cl[p].push_back(ne.second);
+                        }
+                    }
                 }
-                }
-                });
+            });
         if(fp.cf_after_rresp) {
             trace()<<"[info] Selecting all RINV nodes to RREQ";
             for(auto l: cl) {
@@ -572,14 +597,14 @@ void shmrp::constructRreqTable() {
             for(auto l: cl) {
                 trace()<<"[info] Selecting nodes per pathid to RREQ";
                 node_entry c_ne=l.second[0];
-                trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
+                trace()<<"[info] Candidate list entries for pathid "<<l.first<<" is " <<l.second.size();
                 for(auto ne: l.second) {
                     if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
                         trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
                         c_ne=ne;
                     }
                 }
-                trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
+                trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<pathidToStr(c_ne.pathid);
                 rreq_table.insert({c_ne.nw_address,c_ne});
 
                 rinv_table[c_ne.nw_address].used=true;
@@ -599,7 +624,7 @@ void shmrp::constructRreqTable() {
 }
 
 void shmrp::constructRreqTable(std::vector<int> path_filter) {
-    trace()<<"[info] Entering constructRreqTable(path_filter="<<path_filter[0]<<")";
+    trace()<<"[info] Entering constructRreqTable(path_filter="<<pathidToStr(path_filter)<<")";
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
@@ -612,13 +637,13 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
     for(auto it=rreq_table.begin() ; it != rreq_table.end(); ) {
         bool erase=false;
         for(auto i: path_filter) {
-            if(it->second.pathid == i) {
+            if(it->second.pathid.end() != std::find(it->second.pathid.begin(),it->second.pathid.end(), i)) {
                 erase=true;
                 continue;
             }
         }
         if(erase) {
-            trace()<<"[info] Erasing node: "<<it->second.nw_address<<" pathid: "<<it->second.pathid;
+            trace()<<"[info] Erasing node: "<<it->second.nw_address<<" pathid: "<<pathidToStr(it->second.pathid);
             rreq_table.erase(it++);
         } else {
             ++it;
@@ -632,7 +657,7 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
 
 
 bool shmrp::rreqEntryExists(const char *addr, int pathid) {
-    if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid == pathid) {
+    if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid.end() != std::find(rreq_table[string(addr)].pathid.begin(), rreq_table[string(addr)].pathid.end(), pathid)) {
         return true;
     }
     return false;
@@ -640,7 +665,7 @@ bool shmrp::rreqEntryExists(const char *addr, int pathid) {
 
 void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
     trace()<<"[info] Entering shmrp::updateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
-    if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid == pathid) {
+    if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid.end() != std::find(rreq_table[string(addr)].pathid.begin(), rreq_table[string(addr)].pathid.end(), pathid)) {
         rreq_table[string(addr)].rresp=true;
     } else {
         throw std::length_error("[error] Entry not found");
@@ -697,9 +722,9 @@ void shmrp::sendRreqs(int count) {
             rreq_pkt->setSource(SELF_NETWORK_ADDRESS);
             rreq_pkt->setDestination(ne.second.nw_address.c_str());
             rreq_pkt->setRound(getRound());
-            rreq_pkt->setPathid(ne.second.pathid);
+            rreq_pkt->setPathid(ne.second.pathid[0]);
             rreq_pkt->setSequenceNumber(currentSequenceNumber++);
-            trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid;
+            trace()<<"[info] Sending RREQ to "<<ne.second.nw_address<<" with pathid: "<<ne.second.pathid[0];
             ne.second.pkt_count++;
             toMacLayer(rreq_pkt, resolveNetworkAddress(ne.second.nw_address.c_str()));
         }
@@ -748,7 +773,7 @@ void shmrp::sendLreqUnicast(int round, int pathid) {
     trace()<<"[info] Entering sendLReqUnicast(round="<<round<<", pathid="<<pathid<<")";
     for(auto ne: recv_table) {
         // pathid 0 means we are inside the ring
-        if((ne.second.pathid == pathid || pathid == 0) && !ne.second.secl) {
+        if((ne.second.pathid.end() != std::find(ne.second.pathid.begin(), ne.second.pathid.end(),pathid) || pathid == 0) && !ne.second.secl) {
             sendLreq(ne.second.nw_address.c_str(), round, pathid);
         }
     }
@@ -819,7 +844,7 @@ void shmrp::clearRoutingTable() {
 void shmrp::addRoute(std::string next_hop, int pathid) {
     trace()<<"[info] Entering shmrp::addRoute(next_hop="<<next_hop<<", pathid="<<pathid<<")";
     if(routing_table.find(next_hop) == routing_table.end()) {
-        routing_table[next_hop]={next_hop,pathid };
+        routing_table[next_hop]={next_hop,std::vector(1,pathid) };
     } else {
         trace()<<"[error] Route already exists";
     }
@@ -851,7 +876,7 @@ void shmrp::constructRoutingTable(bool rresp_req) {
     trace()<<"[info] Entering shmrp::constructRoutingTable(rresp_req="<<rresp_req<<")";
     for(auto ne: rreq_table) {
         if(ne.second.rresp || !rresp_req) {
-            trace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<ne.second.pathid;
+            trace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<pathidToStr(ne.second.pathid);
             routing_table.insert(ne);
         }
     }
@@ -878,7 +903,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
         trace()<<"[info] Node inside mesh ring";
         for(auto ne: rreq_table) {
             if(ne.second.hop < getHop() && (ne.second.rresp || !fp.rresp_req ) && calc_pdr(ne.second) >= pdr ) {
-                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
+                trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
                 routing_table.insert(ne);
                 //                rinv_table[ne.second.nw_address].used=true;
             }
@@ -894,19 +919,21 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
             // Either select only hop-based, if rresp is not required or based on rresp received
             // During update do not consider hop
             if((update || ne.second.hop < getHop()) && (ne.second.rresp || !fp.rresp_req) && calc_pdr(ne.second) >= pdr ) {
-            if(cl.find(ne.second.pathid) == cl.end()) {
-            trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-            cl.insert({ne.second.pathid,std::vector<node_entry>{ne.second}});
-            } else {
-            trace()<<"[info] Adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<ne.second.pathid;
-            cl[ne.second.pathid].push_back(ne.second);
+                for(auto p: ne.second.pathid) {
+                    if(cl.find(p) == cl.end()) {
+                        trace()<<"[info] Creating pathid entry "<<p<<" and adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
+                        cl.insert({p,std::vector<node_entry>{ne.second}});
+                    } else {
+                        trace()<<"[info] Adding to pathid entry "<<p<<" entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
+                        cl[p].push_back(ne.second);
+                    }
+                }
             }
-            }
-            });
+       });
     for(auto l: cl) {
         trace()<<"[info] Selecting nodes per pathid to RREQ";
         node_entry c_ne=l.second[0];
-        trace()<<"[info] Candidate list entries for pathid "<<c_ne.pathid<<" is " <<l.second.size();
+        trace()<<"[info] Candidate list entries for pathid "<<l.first<<" is " <<l.second.size();
         for(auto ne: l.second) {
             trace()<<"[info] Node "<<ne.nw_address<<" pkt data - sent: "<<ne.pkt_count<<" ack: "<<ne.ack_count;
             if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
@@ -914,12 +941,18 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
                 c_ne=ne;
             }
         }
-        trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<c_ne.pathid;
+        trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<pathidToStr(c_ne.pathid);
         c_ne.pkt_count = 0;
         c_ne.ack_count = 0;
-        routing_table.insert({c_ne.nw_address,c_ne});
-        routing_table[c_ne.nw_address].secl=update; // Set secl parameter to true, if second learn
-        rinv_table[c_ne.nw_address].used=true;
+        c_ne.pathid.clear();
+        if(routing_table.find(c_ne.nw_address) == routing_table.end()) {
+            routing_table.insert({c_ne.nw_address,c_ne});
+            routing_table[c_ne.nw_address].secl=update; // Set secl parameter to true, if second learn
+            rinv_table[c_ne.nw_address].used=true;
+            routing_table[c_ne.nw_address].pathid.push_back(l.first);
+        } else {
+            routing_table[c_ne.nw_address].pathid.push_back(l.first);
+        }
     }
     if(routing_table.empty()) {
         throw routing_table_empty("[error] routing table empty after constructRoutingTable()");
@@ -932,6 +965,42 @@ int shmrp::selectPathid(bool replay) {
         g_pathid=selectPathid();
     }
     return g_pathid;
+}
+
+std::vector<int> shmrp::selectAllPathid() {
+    trace()<<"[info] Entering selectAllPathid()";
+     if(routing_table.empty()) {
+        throw routing_table_empty("[error] Routing table empty");
+    }
+
+    auto tmp_table = routing_table;
+
+    if(0 != fp.path_sel) {
+        for(auto ne: routing_table) {
+            // Prefer primary
+            if(1 == fp.path_sel && ne.second.secl) {
+                tmp_table.erase(ne.first);
+            }
+            // Prefer secl
+            if(2 == fp.path_sel && !ne.second.secl) {
+                tmp_table.erase(ne.first);
+            }
+        }
+    }
+
+    if(tmp_table.empty()) {
+        trace()<<"[info] Cannot apply path selection policy"; 
+        tmp_table = routing_table;
+    }
+
+    std::vector<int> pathid;
+    for(auto ne: routing_table) {
+        for(auto p: ne.second.pathid) {
+            pathid.push_back(p);
+        }
+    }
+    trace()<<"[info] Selected pathids: "<<pathidToStr(pathid);
+    return pathid;
 }
 
 int shmrp::selectPathid() {
@@ -960,12 +1029,29 @@ int shmrp::selectPathid() {
         tmp_table = routing_table;
     }
 
-    auto i=getRNG(0)->intRand(tmp_table.size());
-    auto it=tmp_table.begin();
+    std::set<int> pathid;
+    for(auto ne: tmp_table) {
+        for(auto p: ne.second.pathid) {
+            pathid.insert(p);
+        }
+    }
+
+    auto i=getRNG(0)->intRand(pathid.size());
+    auto it=pathid.begin();
     std::advance(it,i);
-    trace()<<"[info] Selected pathid: "<<it->second.pathid;
-    return it->second.pathid;
+    trace()<<"[info] Selected pathid: "<<*it;
+    return *it;
 }
+
+std::string shmrp::pathidToStr(vector<int> pathid) {
+    std::string str;
+    for(auto i: pathid) {
+        str.append(std::to_string(i));
+        str.append(" ");
+    }
+    return str;
+}
+
 
 std::string shmrp::getNextHop(int pathid) {
     trace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
@@ -973,7 +1059,7 @@ std::string shmrp::getNextHop(int pathid) {
     bool found=false;
     std::for_each(routing_table.begin(),routing_table.end(),
             [&](std::pair<std::string,node_entry> ne){
-            if(pathid==ne.second.pathid) {
+            if(ne.second.pathid.end() != std::find(ne.second.pathid.begin(), ne.second.pathid.end(), pathid)) {
             found=true;
             next_hop=ne.second;
             }
@@ -991,7 +1077,7 @@ std::string shmrp::getNextHop(int pathid, bool random_node) {
     if(random_node) {
         std::vector<node_entry> nodes;
         for(auto a : routing_table) {
-            if(a.second.pathid == pathid) {
+            if(a.second.pathid.end() != std::find(a.second.pathid.begin(), a.second.pathid.end(), pathid)) {
                 nodes.push_back(a.second);
             }
         }
@@ -1019,7 +1105,7 @@ void shmrp::incPktCountInRoutingTable(std::string next_hop) {
 bool shmrp::checkPathid(int pathid) {
     trace()<<"[info] Entering checkPathid(pathid="<<pathid<<")";
     for(auto ne: routing_table) {
-        if(pathid == ne.second.pathid) {
+        if(ne.second.pathid.end() != std::find(ne.second.pathid.begin(), ne.second.pathid.end(), pathid)) {
             trace()<<"[info] Pathid found";
             return true;
         }
@@ -1050,8 +1136,11 @@ int shmrp::calculateRepeat(const char *dest) {
 void shmrp::incPktCountInRecvTable(std::string entry, int pathid, int round) {
     trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
     if(recv_table.find(entry) == recv_table.end()) {
-        recv_table[entry] = {entry,pathid,0,false,0,0,false,round,1};
+        recv_table[entry] = {entry,std::vector<int>(1,pathid),0,false,0,0,false,round,1};
     } else {
+        if(recv_table[entry].pathid.end() == std::find(recv_table[entry].pathid.begin(), recv_table[entry].pathid.end(),pathid)) {
+            recv_table[entry].pathid.push_back(pathid);
+        }
         recv_table[entry].pkt_count++;
     }
 }
@@ -1671,7 +1760,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             auto lresp_packet=dynamic_cast<shmrpLrespPacket *>(pkt);
             if(recv_table.find(std::string(lresp_packet->getSource())) != recv_table.end()) {
                 trace()<<"[info] Entry "<<lresp_packet->getSource()<<" exists";
-                if(recv_table[std::string(lresp_packet->getSource())].round == lresp_packet->getRound() && recv_table[std::string(lresp_packet->getSource())].pathid == lresp_packet->getPathid()) {
+                if(recv_table[std::string(lresp_packet->getSource())].round == lresp_packet->getRound() && recv_table[std::string(lresp_packet->getSource())].pathid.end() != std::find(recv_table[std::string(lresp_packet->getSource())].pathid.begin(), recv_table[std::string(lresp_packet->getSource())].pathid.end() ,lresp_packet->getPathid())) {
                     recv_table[std::string(lresp_packet->getSource())].secl=true;
                 }
             }
@@ -1756,17 +1845,6 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             break;
         }
     }
-}
-
-map<int,string> shmrp::getPathsAndHops() {
-    map<int,string> ret;
-    if(0==routing_table.size()) {
-        throw std::length_error("Routing table empty");
-    }
-    for(auto it=routing_table.begin(); it != routing_table.end(); ++it) {
-        ret.insert(std::pair<int,string>(it->second.pathid,it->second.nw_address));
-    }
-    return ret;
 }
 
 shmrpRingDef shmrp::getRingStatus() const {
@@ -1971,14 +2049,6 @@ void shmrp::finishSpecific() {
             y_out<<YAML::Value;
             serializeRadioStats(radio->getStats());
 
-
-            map<int,string> routes;
-            try {
-                routes=shmrp_instance->getPathsAndHops();
-            } catch(std::length_error &e) {
-                trace()<<"[error] Can't retrieve paths and hops for node "<<i<<": "<<e.what();
-            }
-
             auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
             if(res_mgr->isDead()) {
                 r_out<<"'"<<i<<"':'"<<"dead',";
@@ -1987,15 +2057,6 @@ void shmrp::finishSpecific() {
             }
 
 
-            for(auto route: routes) {
-                // Format: [('Node1', 'Node2',{ 'path': 1}),
-                //          ('Node1','Node3', {'path': 2})]
-                g_out<<"('"<<i<<"','"<<route.second<<"',{'path':"<<route.first<<"}),";
-
-
-
-
-            }
 
             // Format: {'Node1': [0,0], 'Node2': [0,10],'Node3':[10,0]}
             auto loc=mob_mgr->getLocation();
@@ -2086,7 +2147,7 @@ bool shmrp::secLPerformed(int round, int pathid) {
     trace()<<"[info] Entering secLPerformed(round="<<round<<", pathid="<<pathid<<")";
     bool performed=true;
     for(auto ne: recv_table) {
-        if(ne.second.round == round && ne.second.pathid == pathid && ne.second.secl == false) {
+        if(ne.second.round == round && ne.second.pathid.end() != std::find(ne.second.pathid.begin(),ne.second.pathid.end(), pathid) && ne.second.secl == false) {
             trace()<<"[info] "<<ne.second.nw_address<<" second learn still missing";
             performed=false;
         }
