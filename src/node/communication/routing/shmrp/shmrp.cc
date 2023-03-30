@@ -410,7 +410,7 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0) {
         sendRinv(getRound(), local, localid);
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
-        sendRinv(getRound(), resolveNetworkAddress(SELF_NETWORK_ADDRESS), local);
+        sendRinv(getRound(), std::vector<int>(1,resolveNetworkAddress(SELF_NETWORK_ADDRESS)), local);
     } else {
         trace()<<"[info] Node outside mesh ring";
         std::vector<int> pathid;
@@ -674,6 +674,7 @@ bool shmrp::rreqEntryExists(const char *addr, int pathid) {
 void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
     trace()<<"[info] Entering shmrp::updateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
     if(rreq_table.find(string(addr)) != rreq_table.end() && rreq_table[string(addr)].pathid.end() != std::find(rreq_table[string(addr)].pathid.begin(), rreq_table[string(addr)].pathid.end(), pathid)) {
+        trace()<<"[info] RRESP received flag set to true";
         rreq_table[string(addr)].rresp=true;
     } else {
         throw std::length_error("[error] Entry not found");
@@ -900,7 +901,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
         return;
     }
 
-    auto calc_pdr=[](node_entry n){return static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);};
+    auto calc_pdr=[&](node_entry n){ trace()<<"[info] PDR: "<<static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);return static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);};
 
     if(getHop() <= fp.ring_radius) {
         if(update) {
