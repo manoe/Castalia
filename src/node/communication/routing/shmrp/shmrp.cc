@@ -1038,14 +1038,16 @@ int shmrp::selectPathid() {
         tmp_table = routing_table;
     }
 
-    std::set<int> pathid;
+    std::vector<int> pathid;
     for(auto ne: tmp_table) {
         for(auto p: ne.second.pathid) {
-            pathid.insert(p);
+            trace()<<"[info] Pathid collected: "<<p;
+            pathid.push_back(p);
         }
     }
 
     auto i=getRNG(0)->intRand(pathid.size());
+    trace()<<"[info] Random number: "<<i;
     auto it=pathid.begin();
     std::advance(it,i);
     trace()<<"[info] Selected pathid: "<<*it;
