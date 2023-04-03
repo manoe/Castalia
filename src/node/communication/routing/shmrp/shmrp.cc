@@ -435,7 +435,7 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
                             }
                         }
                         if(!found) {
-                            pathid.push_back({p.pathid, p.nmas});
+                            pathid.push_back({p.pathid, p.nmas+1});
                         }
                     }
                 }
@@ -566,6 +566,11 @@ double shmrp::calculateCostFunction(node_entry ne) {
             throw unknown_cost_function("[error] Unknown cost function");
         }
     }
+    if(ne.pathid.size() != 1) {
+        trace()<<"[error] Ambigous pathid array";
+        throw state_not_permitted("[error] pathid array size not 1");
+    }
+    ret_val=ret_val/pow(static_cast<double>(ne.pathid[0].nmas+1), fp.cost_func_mu);
     trace()<<"[info] Cost function for node entry "<<ne.nw_address<<": "<<ret_val;
     return ret_val;
 }
