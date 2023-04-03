@@ -156,6 +156,7 @@ struct node_entry {
     bool fail = false;
     bool local = false;
     bool secl  = false;
+    int  nmas = 0;
 };
 
 struct feat_par {

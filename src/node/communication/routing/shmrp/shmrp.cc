@@ -417,6 +417,7 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0) {
         try {
             if(isMaster()) {
                 trace()<<"[info] Node is master node, selecting all pathids";
+                trace()<<"[info] Master hack, let's consume 1 random number, to keep simulation in-sync: "<<getRNG(0)->intRand(pathid.size());
                 for(auto ne: routing_table) {
                     for(auto p: ne.second.pathid) {
                         if(pathid.end() == std::find(pathid.begin(), pathid.end(),p)) {
