@@ -141,9 +141,14 @@ class state_not_permitted : public std::runtime_error {
 
 //}
 
+struct pathid_entry {
+    int pathid;
+    int nmas;
+};
+
 struct node_entry {
     string nw_address;
-    vector<int> pathid;
+    vector<pathid_entry> pathid;
     int  hop;
     bool rresp = false;
     int  interf;
@@ -172,6 +177,7 @@ struct feat_par {
     double cost_func_iota;
     double cost_func_pi;
     double cost_func_phi;
+    double cost_func_mu;
     bool   cf_after_rresp;
     bool   random_t_l;
     double random_t_l_sigma;
@@ -204,7 +210,7 @@ class shmrp: public VirtualRouting {
         string g_sink_addr;
         int g_hop;
         int g_round;
-        int g_pathid; // this is dangerous
+        pathid_entry g_pathid; // this is dangerous, even more dangerous
         bool g_sec_l = false;
         int g_sec_l_pathid;
         int g_sec_l_timeout = 0;
@@ -251,9 +257,9 @@ class shmrp: public VirtualRouting {
         void clearPongTable();
         void clearPongTable(int);
 
-        void sendRinv(int,bool,int);
-        void sendRinv(int,vector<int>,bool,int);
-        void sendRinvBasedOnHop(bool,int); 
+        void sendRinv(int,bool,int,int);
+        void sendRinv(int,vector<pathid_entry>,bool,int,int);
+        void sendRinvBasedOnHop(bool,int,int);
 
         void setHop(int);
         int  calculateHop(bool);
@@ -301,9 +307,10 @@ class shmrp: public VirtualRouting {
         void addRoute(std::string, int);
         void removeRoute(std::string);
         bool isRoutingTableEmpty() const;
-        int  selectPathid();
-        int  selectPathid(bool);
+        pathid_entry selectPathid();
+        pathid_entry selectPathid(bool);
         std::vector<int> selectAllPathid();
+        std::string pathidToStr(vector<pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
 
         std::string getNextHop(int);

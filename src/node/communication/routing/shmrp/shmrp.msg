@@ -33,6 +33,10 @@ enum shmrpWarnDef {
     NODE_FAILURE_EVENT  = 2;
 }
 
+struct shmrpPathDef {
+    int pathid;
+    int nmas;
+}
 
 // RREQ = { R, S, P, len, nmas }
 packet shmrpPacket extends RoutingPacket {
@@ -42,7 +46,7 @@ packet shmrpPacket extends RoutingPacket {
 
 packet shmrpRinvPacket extends shmrpPacket {
     int  round;      // 2 byte
-    int  pathid[];   // 1 byte
+    shmrpPathDef pathid[];   // 1 byte
     int  hop;        // 2 byte
     int  interf;     // 1 byte
     int  emerg;      // 1 byte

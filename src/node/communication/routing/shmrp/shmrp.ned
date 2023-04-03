@@ -52,6 +52,7 @@ simple shmrp like node.communication.routing.iRouting
     double f_cost_func_iota   = default(1.0);   // Iota coeff. in cost function, controls interference term
     double f_cost_func_pi     = default(1.0);   // Pi coeff. in cost function, controls pdr term
     double f_cost_func_phi    = default(1.0);   // Phi coeff. in cost function, controls hop term
+    double f_cost_func_mu     = default(1.0);   // Mu coeff. in cost function, controls nmas term
     bool   f_cf_after_rresp   = default(false); // Apply cost function based selection after RREQ/RRESP
 
     bool   f_random_t_l       = default(false); // Randomize Tl timer
