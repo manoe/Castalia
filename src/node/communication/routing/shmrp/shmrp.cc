@@ -1480,6 +1480,10 @@ void shmrp::timerFiredCallback(int index) {
                 constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /*update */ );
                 retrieveAndMergeRreqTable();
 
+                if(shmrpSecLParDef::OFF != fp.second_learn && isMaster()) {
+                    sendRinvBasedOnHop();
+                }
+
                 switch(fp.second_learn) {
                     case shmrpSecLParDef::OFF: {
                         trace()<<"[error] second learn off, while T_SEC_L timer expired";
