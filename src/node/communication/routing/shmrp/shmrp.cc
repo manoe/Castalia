@@ -68,6 +68,7 @@ void shmrp::startup() {
     fp.path_sel          = par("f_path_sel");
     fp.e2e_qos_pdr       = par("f_e2e_qos_pdr");
     fp.t_send_pkt        = par("f_t_send_pkt");
+    fp.rep_m_pdr          = par("f_rep_m_pdr");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -1190,13 +1191,20 @@ bool shmrp::checkPathid(int pathid) {
 int shmrp::calculateRepeat(const char *dest) {
     trace()<<"[info] Entering shmrp::calculateRepeat(dest="<<dest<<")";
 
-    if(routing_table.find(std::string(dest)) == routing_table.end()) {
+    auto entry_it = routing_table.find(std::string(dest));
+
+    if(entry_it == routing_table.end()) {
         throw no_available_entry("[error] Entry not available in routing table");
+    } 
+
+    double hop = static_cast<double>(entry_it->second.hop) + 1;
+    double rep = 0;
+    if(fp.rep_m_pdr) {
+        double m_pdr=static_cast<double>(entry_it->second.ack_count)/static_cast<double>(entry_it->second.pkt_count);
+        rep = ceil( log(1.0 - fp.e2e_qos_pdr) / log(1.0 - pow(m_pdr,hop) ));
+    } else {
+        rep = ceil( log(1.0 - fp.e2e_qos_pdr) / log(1.0 - pow(fp.qos_pdr,hop) ));
     }
-
-    double hop = static_cast<double>(routing_table[std::string(dest)].hop) + 1;
-
-    double rep = ceil( log(1.0 - fp.e2e_qos_pdr) / log(1.0 - pow(fp.qos_pdr,hop) ));
 
     trace()<<"[info] Repeat for destination "<<dest<<" with hop "<<hop<<" is "<<rep;
 
