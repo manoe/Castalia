@@ -83,6 +83,7 @@ simple shmrp like node.communication.routing.iRouting
                                                 // the link's hop number and the link-level QoS PDR a packet
                                                 // repetition count is identified.
     double f_t_send_pkt       = default(1);     // Timer to repeatedly send scheduled packets to meet e2e QoS PDR
+    bool   f_rep_m_pdr        = default(false); // Calculate packet repetition (e2e pdr) based on measured link PDR
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
