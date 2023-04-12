@@ -242,7 +242,6 @@ class shmrp: public VirtualRouting {
         shmrpSecLParDef strToSecLPar(string) const; 
 
         bool isSink() const;
-        bool isMaster() const;
         void setSinkAddress(const char *);
         std::string getSinkAddress() const;
         double getTl();
@@ -364,6 +363,8 @@ class shmrp: public VirtualRouting {
         int getHop(int);
         int  getRound() const;
         bool getSecL() { return g_sec_l; };
+        bool isMaster() const;
+
 
         int getPongTableSize() const;
 
