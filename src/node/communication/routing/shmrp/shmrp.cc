@@ -1597,6 +1597,8 @@ void shmrp::timerFiredCallback(int index) {
                         throw e;
                     }
                     toMacLayer((*it)->dup(), resolveNetworkAddress((*it)->getDestination()));
+                    incPktCountInRoutingTable(std::string((*it)->getDestination()));
+
                     (*it)->setRepeat((*it)->getRepeat()+1);
                     if((*it)->getRepeat() >= rep) {
                         trace()<<"[info] Repeat count for pkt reached";
