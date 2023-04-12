@@ -2195,6 +2195,11 @@ void shmrp::finishSpecific() {
             y_out<<"hop";
             y_out<<YAML::Value;
             y_out<<shmrp_instance->getHop();
+            y_out<<YAML::Key;
+            y_out<<"master";
+            y_out<<YAML::Value;
+            y_out<<shmrp_instance->isMaster();
+
             y_out<<YAML::EndMap;
 
             // seek back one character
