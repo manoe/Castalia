@@ -1901,12 +1901,14 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[info] DATA packet arrived, forwarding to Application layer";
                 data_pkt->setSource(data_pkt->getOrigin());
                 toApplicationLayer(decapsulatePacket(data_pkt));
+                incPktCountInTrafficTable(std::string(data_pkt->getOrigin()));
                 break;
             } else if(0==std::strcmp(data_pkt->getDestination(), BROADCAST_NETWORK_ADDRESS)) {
                 trace()<<"[info] Broadcast packet, forwarding to Application layer";
                 toApplicationLayer(decapsulatePacket(data_pkt));
             } else {
                 trace()<<"[info] DATA packet at interim node, routing forward";
+                incPktCountInTrafficTable(std::string(data_pkt->getOrigin()));
 
                 std::string next_hop;
                 try {
@@ -2317,3 +2319,14 @@ void shmrp::sendRwarn() {
     toMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);
 
 }
+
+
+void shmrp::incPktCountInTrafficTable(std::string node) {
+    if(traffic_table.find(node) == traffic_table.end()) {
+        traffic_table[node]=1;
+    }
+    else {
+        ++traffic_table[node];
+    }
+}
+

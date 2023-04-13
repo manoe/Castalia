@@ -225,6 +225,7 @@ class shmrp: public VirtualRouting {
         std::map<std::string,node_entry> recv_table;
         std::map<std::string,node_entry> backup_rreq_table;
         std::list<shmrpDataPacket *> pkt_list;
+        std::map<std::string,int> traffic_table;
 
         YAML::Emitter y_out;
         std::unordered_set<int> local_id_table;
@@ -357,6 +358,8 @@ class shmrp: public VirtualRouting {
         void setSecLPathid(int pathid) { g_sec_l_pathid=pathid;};
         int  getSecLPathid() { return g_sec_l_pathid;};
         bool secLPerformed(int round, int pathid);
+
+        void incPktCountInTrafficTable(std::string);
     public:
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
