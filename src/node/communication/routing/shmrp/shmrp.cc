@@ -2209,7 +2209,18 @@ void shmrp::finishSpecific() {
             y_out<<"master";
             y_out<<YAML::Value;
             y_out<<shmrp_instance->isMaster();
-
+            y_out<<YAML::Key<<"traffic_table";
+            y_out<<YAML::Value;
+            y_out<<YAML::BeginSeq;
+            for(auto ne: traffic_table) {
+                y_out<<YAML::BeginMap;
+                y_out<<YAML::Key<<"node";
+                y_out<<YAML::Value<<ne.first;
+                y_out<<YAML::Key<<"pkt";
+                y_out<<YAML::Value<<ne.second;
+                y_out<<YAML::EndMap;
+            }
+            y_out<<YAML::EndSeq;
             y_out<<YAML::EndMap;
 
             // seek back one character
