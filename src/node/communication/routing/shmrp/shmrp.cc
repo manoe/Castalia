@@ -2115,6 +2115,8 @@ void shmrp::finishSpecific() {
         y_out<<YAML::Key<<"role";
         y_out<<YAML::Value;
         y_out<<ringToStr(getRingStatus());
+        y_out<<YAML::Key<<"master";
+        y_out<<YAML::Value<<isMaster();
         y_out<<YAML::Key<<"pong_table";
         y_out<<YAML::Value<<getPongTableSize();
         y_out<<YAML::Key<<"radio";
