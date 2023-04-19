@@ -162,6 +162,10 @@ void ThroughputTest::timerFiredCallback(int index)
                 y_per_out<<YAML::Value<<queue.first;
                 y_per_out<<YAML::Key<<"pdr";
                 y_per_out<<YAML::Value<<static_cast<double>(countPackets(queue.second,getSentQueueFromNode(queue.first)))/static_cast<double>(getSentQueueFromNode(queue.first).size());
+                y_per_out<<YAML::Key<<"recv";
+                y_per_out<<YAML::Value<<countPackets(queue.second,getSentQueueFromNode(queue.first));
+                y_per_out<<YAML::Key<<"sent";
+                y_per_out<<YAML::Value<<getSentQueueFromNode(queue.first).size();
                 y_per_out<<YAML::EndMap;
                 trace()<<"[info] Counted packets for node "<<queue.first<<": "<<countPackets(queue.second,getSentQueueFromNode(queue.first));
             }
