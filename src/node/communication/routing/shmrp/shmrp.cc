@@ -2214,7 +2214,7 @@ void shmrp::finishSpecific() {
             y_out<<YAML::Key<<"traffic_table";
             y_out<<YAML::Value;
             y_out<<YAML::BeginSeq;
-            for(auto ne: traffic_table) {
+            for(auto ne: shmrp_instance->getTrafficTable()) {
                 y_out<<YAML::BeginMap;
                 y_out<<YAML::Key<<"node";
                 y_out<<YAML::Value<<ne.first;
