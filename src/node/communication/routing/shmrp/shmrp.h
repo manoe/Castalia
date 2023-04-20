@@ -396,6 +396,9 @@ class shmrp: public VirtualRouting {
             }
             return rinv_table;
         };
+        std::map<std::string,int> getTrafficTable() {
+            return traffic_table;
+        }
 };
 
 #endif // _SHMRP_H_
