@@ -2248,6 +2248,12 @@ void shmrp::finishSpecific() {
 
 void shmrp::handleMacControlMessage(cMessage *msg) {
     trace()<<"[info] Entering handleMacControlMessage()";
+    /* Something we should do about buffer overflow */
+    MacControlMessage *mac_ctrl_msg=check_and_cast<MacControlMessage *>(msg);
+    if(MacControlMessage_type::MAC_BUFFER_FULL == mac_ctrl_msg->getMacControlMessageKind()) {
+        trace()<<"[error] MAC buffer full";
+        return;
+    }
     TMacControlMessage *mac_msg=check_and_cast<TMacControlMessage *>(msg);
     if(!mac_msg) {
         trace()<<"[error] Not TMacControlMessage";
