@@ -288,6 +288,7 @@ class shmrp: public VirtualRouting {
 
         void clearRreqTable();
         void saveRreqTable();
+        void retrieveRreqTable();
         void retrieveAndMergeRreqTable();
         bool isRreqTableEmpty() const;
         void constructRreqTable();

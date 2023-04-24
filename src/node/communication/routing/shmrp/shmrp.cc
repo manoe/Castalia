@@ -518,6 +518,11 @@ void shmrp::saveRreqTable() {
     backup_rreq_table=rreq_table;
 }
 
+void shmrp::retrieveRreqTable() {
+    trace()<<"[info] Entering retrieveRreqTable()";
+    rreq_table=backup_rreq_table;
+}
+
 void shmrp::retrieveAndMergeRreqTable() {
     trace()<<"[info] Entering retrieveAndMergeRreqTable()";
     for(auto ne: backup_rreq_table) {
@@ -741,7 +746,7 @@ void shmrp::removeRreqEntry(std::string ne) {
     if(rreq_table.find(ne) != rreq_table.end()) {
         rreq_table.erase(ne);
     } else {
-        throw no_available_entry("Entry not available in RREQ table"); 
+        throw no_available_entry("[error] Entry not available in RREQ table"); 
     }
 }
 
@@ -1367,6 +1372,7 @@ void shmrp::timerFiredCallback(int index) {
                             trace()<<e.what();
                             trace()<<"[info] No alternate path possible to learn, propagate second learn.";
                             send_sec_l=true;
+                            retrieveRreqTable();
                         }
                         catch (exception &e) {
                             trace()<<e.what();
@@ -1602,7 +1608,13 @@ void shmrp::timerFiredCallback(int index) {
                         rep = calculateRepeat((*it)->getDestination());
                     } catch (exception &e) {
                         trace()<<e.what();
-                        throw e;
+                        trace()<<"[info] Remove entry";
+                        shmrpDataPacket *pkt_ptr = *it;
+                        pkt_list.erase(it++);
+                        erased=true;
+                        delete pkt_ptr;
+                        ++it;
+                        continue;
                     }
                     toMacLayer((*it)->dup(), resolveNetworkAddress((*it)->getDestination()));
                     incPktCountInRoutingTable(std::string((*it)->getDestination()));
@@ -1610,10 +1622,10 @@ void shmrp::timerFiredCallback(int index) {
                     (*it)->setRepeat((*it)->getRepeat()+1);
                     if((*it)->getRepeat() >= rep) {
                         trace()<<"[info] Repeat count for pkt reached";
-                          shmrpDataPacket *pkt_ptr = *it;
-                          pkt_list.erase(it++);
-                          erased=true;
-                          delete pkt_ptr;
+                        shmrpDataPacket *pkt_ptr = *it;
+                        pkt_list.erase(it++);
+                        erased=true;
+                        delete pkt_ptr;
                     }
                     if(!erased) {
                         ++it;
