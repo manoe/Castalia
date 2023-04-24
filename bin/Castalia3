@@ -69,12 +69,9 @@ customConfigList = []
 
 def makeConfig(c,dictionary):
 	name,value = c.split('=',1)
-	print(c)
 	if name not in dictionary:
 		quit("\nERROR: no such configuration, '" + name + "'\nAvailable configurations: " + ", ".join(dictionary.keys()))
 	c = dictionary[name]
-	print(c)
-	print(customConfigList)
 	if len(c.keys()) > 1:
 		quit("\nERROR: configuration '" + name + "' has more than one parameter and cannot be used with '=' syntax")
 	return { list(c.keys())[0] : customConfigList[int(value)] }
@@ -133,9 +130,6 @@ def detectCPUs():
 		if ncpus > 0:
 			return ncpus
 	return 1 # Default
-
-print('path'+' '+pathToExtract)
-print('options.input'+' '+options.input)
 
 ini = str(subprocess.check_output([str(pathToExtract), str(options.input)], shell=True, text=True)).split('\n')
 #ini = commands.getoutput(pathToExtract + " " + options.input).split("\n")
