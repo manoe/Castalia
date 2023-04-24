@@ -162,6 +162,7 @@ struct node_entry {
     bool local = false;
     bool secl  = false;
     int  nmas = 0;
+    int reroute_count = 0;
 };
 
 struct feat_par {
@@ -225,7 +226,7 @@ class shmrp: public VirtualRouting {
         std::map<std::string,node_entry> recv_table;
         std::map<std::string,node_entry> backup_rreq_table;
         std::list<shmrpDataPacket *> pkt_list;
-        std::map<std::string,int> traffic_table;
+        std::map<std::string,node_entry> traffic_table;
 
         YAML::Emitter y_out;
         std::unordered_set<int> local_id_table;
@@ -360,7 +361,7 @@ class shmrp: public VirtualRouting {
         int  getSecLPathid() { return g_sec_l_pathid;};
         bool secLPerformed(int round, int pathid);
 
-        void incPktCountInTrafficTable(std::string);
+        void incPktCountInTrafficTable(std::string, int, int);
     public:
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
@@ -397,7 +398,7 @@ class shmrp: public VirtualRouting {
             }
             return rinv_table;
         };
-        std::map<std::string,int> getTrafficTable() {
+        std::map<std::string,node_entry> getTrafficTable() {
             return traffic_table;
         }
 };

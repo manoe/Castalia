@@ -1916,14 +1916,14 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[info] DATA packet arrived, forwarding to Application layer";
                 data_pkt->setSource(data_pkt->getOrigin());
                 toApplicationLayer(decapsulatePacket(data_pkt));
-                incPktCountInTrafficTable(std::string(data_pkt->getOrigin()));
+                incPktCountInTrafficTable(std::string(data_pkt->getOrigin()), data_pkt->getPathid(), data_pkt->getReroute());
                 break;
             } else if(0==std::strcmp(data_pkt->getDestination(), BROADCAST_NETWORK_ADDRESS)) {
                 trace()<<"[info] Broadcast packet, forwarding to Application layer";
                 toApplicationLayer(decapsulatePacket(data_pkt));
             } else {
                 trace()<<"[info] DATA packet at interim node, routing forward";
-                incPktCountInTrafficTable(std::string(data_pkt->getOrigin()));
+                incPktCountInTrafficTable(std::string(data_pkt->getOrigin()), data_pkt->getPathid(), data_pkt->getReroute());
 
                 std::string next_hop;
                 bool reroute=false;
@@ -2139,6 +2139,31 @@ void shmrp::finishSpecific() {
         y_out<<YAML::Key<<"radio";
         y_out<<YAML::Value;
         serializeRadioStats(radio->getStats());
+            y_out<<YAML::Key<<"traffic_table";
+            y_out<<YAML::Value;
+            y_out<<YAML::BeginSeq;
+            for(auto ne: shmrp_instance->getTrafficTable()) {
+                y_out<<YAML::BeginMap;
+                y_out<<YAML::Key<<"node";
+                y_out<<YAML::Value<<ne.first;
+                y_out<<YAML::Key<<"pkt";
+                y_out<<YAML::Value<<ne.second.pkt_count;
+                y_out<<YAML::Key<<"pathid";
+                y_out<<YAML::Value;
+                y_out<<YAML::BeginSeq;
+                for(auto p: ne.second.pathid) {
+                    y_out<<YAML::BeginMap;
+                    y_out<<YAML::Key<<"pathid";
+                    y_out<<YAML::Value<<p.pathid;
+                    y_out<<YAML::EndMap;
+                }
+                y_out<<YAML::EndSeq;
+                y_out<<YAML::Key<<"reroute_count";
+                y_out<<YAML::Value<<ne.second.reroute_count;
+                y_out<<YAML::EndMap;
+            }
+            y_out<<YAML::EndSeq;
+
         y_out<<YAML::EndMap;
 
         for (int i = 1; i < topo->getNumNodes(); ++i) {
@@ -2236,7 +2261,19 @@ void shmrp::finishSpecific() {
                 y_out<<YAML::Key<<"node";
                 y_out<<YAML::Value<<ne.first;
                 y_out<<YAML::Key<<"pkt";
-                y_out<<YAML::Value<<ne.second;
+                y_out<<YAML::Value<<ne.second.pkt_count;
+                y_out<<YAML::Key<<"pathid";
+                y_out<<YAML::Value;
+                y_out<<YAML::BeginSeq;
+                for(auto p: ne.second.pathid) {
+                    y_out<<YAML::BeginMap;
+                    y_out<<YAML::Key<<"pathid";
+                    y_out<<YAML::Value<<p.pathid;
+                    y_out<<YAML::EndMap;
+                }
+                y_out<<YAML::EndSeq;
+                y_out<<YAML::Key<<"reroute_count";
+                y_out<<YAML::Value<<ne.second.reroute_count;
                 y_out<<YAML::EndMap;
             }
             y_out<<YAML::EndSeq;
@@ -2357,12 +2394,24 @@ void shmrp::sendRwarn() {
 }
 
 
-void shmrp::incPktCountInTrafficTable(std::string node) {
+void shmrp::incPktCountInTrafficTable(std::string node, int pathid, int reroute) {
     if(traffic_table.find(node) == traffic_table.end()) {
-        traffic_table[node]=1;
-    }
-    else {
-        ++traffic_table[node];
+        traffic_table[node].nw_address=node;
+        traffic_table[node].pkt_count=1;
+        traffic_table[node].reroute_count=reroute;
+        traffic_table[node].pathid.push_back({pathid,0});
+    } else {
+        ++(traffic_table[node].pkt_count);
+        traffic_table[node].reroute_count+=reroute;
+        bool add=true;
+        for(auto ne: traffic_table[node].pathid) {
+            if(ne.pathid==pathid) {
+                add=false;
+            }
+        }
+        if(add) {
+            traffic_table[node].pathid.push_back({pathid,0});
+        }
     }
 }
 
