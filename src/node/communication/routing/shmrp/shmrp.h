@@ -338,8 +338,8 @@ class shmrp: public VirtualRouting {
 
         void sendData(cPacket *, std::string, int);
         void schedulePkt(cPacket *, std::string, int); 
-        void forwardData(shmrpDataPacket *, std::string, int);
-        void forwardData(shmrpDataPacket *, std::string);
+        void forwardData(shmrpDataPacket *, std::string, int, bool);
+        void forwardData(shmrpDataPacket *, std::string, bool);
         std::string ringToStr(shmrpRingDef pos) const;
 
         void sendRwarn(); 
