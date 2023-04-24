@@ -870,16 +870,19 @@ void shmrp::schedulePkt(cPacket *pkt, std::string dest, int pathid) {
     pkt_list.push_back(data_pkt);
 }
 
-void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest) {
+void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest, bool reroute=false) {
     trace()<<"[info] Entering forwardData(dest="<<dest<<")";
-    forwardData(data_pkt, dest, data_pkt->getPathid());
+    forwardData(data_pkt, dest, data_pkt->getPathid(),reroute);
 }
 
-void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest, int pathid) {
-    trace()<<"[info] Entering forwardData(dest="<<dest<<", pathid="<<pathid<<")";
+void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest, int pathid, bool reroute) {
+    trace()<<"[info] Entering forwardData(dest="<<dest<<", pathid="<<pathid<<", reroute="<<reroute<<")";
     data_pkt->setSource(SELF_NETWORK_ADDRESS);
     data_pkt->setDestination(dest.c_str());
     data_pkt->setPathid(pathid);
+    if(reroute) {
+        data_pkt->setReroute(data_pkt->getReroute()+1);
+    }
     data_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
 }
@@ -1923,6 +1926,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 incPktCountInTrafficTable(std::string(data_pkt->getOrigin()));
 
                 std::string next_hop;
+                bool reroute=false;
                 try {
                     if(shmrpRingDef::EXTERNAL==getRingStatus()) {
                         next_hop=getNextHop(data_pkt->getPathid());
@@ -1934,13 +1938,14 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     if(fp.reroute_pkt) {
                         trace()<<"[info] Rerouting packet";
                         next_hop=getNextHop(selectPathid().pathid);
+                        reroute=true;
                     } else {
                         break;
                     }
                 }
 
                 incPktCountInRoutingTable(next_hop);
-                forwardData(data_pkt->dup(),next_hop);
+                forwardData(data_pkt->dup(),next_hop,reroute);
             }
             break;
         }
