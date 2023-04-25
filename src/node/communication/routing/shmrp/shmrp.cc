@@ -1904,7 +1904,8 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 break;
             }
             switch (rwarn_pkt->getCause()) {
-                case shmrpWarnDef::EMERGENCY_EVENT: { 
+                case shmrpWarnDef::EMERGENCY_EVENT: {
+                    trace()<<"[info] EMERGENCY_EVENT";
                     if(fp.rt_recalc_w_emerg) {
                         try {
                             updateRreqEntryWithEmergency(rwarn_pkt->getSource());
@@ -1920,6 +1921,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     break;
                 }
                 case shmrpWarnDef::PATH_FAILURE_EVENT: {
+                    trace()<<"[info] PATH_FAILURE_EVENT";
                     if(checkRoute(std::string(rwarn_pkt->getSource()))) {
                        removeRoute(std::string(rwarn_pkt->getSource()));
                        removeRreqEntry(std::string(rwarn_pkt->getSource()));
