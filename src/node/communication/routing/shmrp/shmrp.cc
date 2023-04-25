@@ -2465,12 +2465,12 @@ void shmrp::handleNetworkControlCommand(cMessage *msg) {
 
 
 void shmrp::sendRwarn() {
-    trace()<<"[info] Entering sendWarn()";
+    trace()<<"[info] Entering sendRwarn()";
     sendRwarn(shmrpWarnDef::EMERGENCY_EVENT,selectPathid(true).pathid);
 }
 
 void shmrp::sendRwarn(shmrpWarnDef cause, int pathid) {
-    trace()<<"[info] Entering sendWarn(cause="<<cause<<", pathid="<<pathid<<")";
+    trace()<<"[info] Entering sendRwarn(cause="<<cause<<", pathid="<<pathid<<")";
     shmrpRwarnPacket *warn_pkt=new shmrpRwarnPacket("SHMRP RWARN packet", NETWORK_LAYER_PACKET);
     warn_pkt->setByteLength(netDataFrameOverhead);
     warn_pkt->setCause(cause);
