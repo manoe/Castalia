@@ -31,6 +31,7 @@ enum shmrpWarnDef {
     UNDEF_WARN          = 0;
     EMERGENCY_EVENT     = 1;
     NODE_FAILURE_EVENT  = 2;
+    PATH_FAILURE_EVENT  = 3;
 }
 
 struct shmrpPathDef {

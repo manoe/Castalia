@@ -65,6 +65,7 @@ void shmrp::startup() {
     fp.t_sec_l_start     = par("f_t_sec_l_start");
     fp.detect_link_fail  = par("f_detect_link_fail");
     fp.rt_fallb_wo_qos   = par("f_rt_fallb_wo_qos");
+    fp.send_pfail_rwarn  = par("f_send_pfail_rwarn");
     fp.fail_count        = par("f_fail_count");
     fp.path_sel          = par("f_path_sel");
     fp.e2e_qos_pdr       = par("f_e2e_qos_pdr");
@@ -1886,16 +1887,33 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[warn] Warning node's round is greater than receiving node's round. Exiting.";
                 break;
             }
-            if(fp.rt_recalc_w_emerg) {
-                try {
-                    updateRreqEntryWithEmergency(rwarn_pkt->getSource());
-                    if(fp.cf_after_rresp) {
-                        constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
-                    } else {
-                        constructRoutingTable(fp.rresp_req);
+            switch (rwarn_pkt->getCause()) {
+                case shmrpWarnDef::EMERGENCY_EVENT: { 
+                    if(fp.rt_recalc_w_emerg) {
+                        try {
+                            updateRreqEntryWithEmergency(rwarn_pkt->getSource());
+                            if(fp.cf_after_rresp) {
+                                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
+                            } else {
+                                constructRoutingTable(fp.rresp_req);
+                            }
+                        } catch (no_available_entry &e) {
+                            trace()<<"[info] Entry not available (not a real error): "<<e.what();
+                        }
                     }
-                } catch (no_available_entry &e) {
-                    trace()<<"[info] Entry not available (not a real error): "<<e.what();
+                    break;
+                }
+                case shmrpWarnDef::PATH_FAILURE_EVENT: {
+                    removeRoute(std::string(rwarn_pkt->getSource()));
+                    removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                    markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                    try {
+                        constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
+                    } catch (routing_table_empty &e) {
+                        trace()<<"[error] "<<e.what();
+                        throw e;
+                    }
+                    break;
                 }
             }
             break;
@@ -1959,6 +1977,9 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                                         }
                                     } catch (exception &e) {
                                     trace()<<"[error] "<<e.what()<<" returning to INIT";
+                                    if(fp.send_pfail_rwarn) {
+                                        sendRwarn(shmrpWarnDef::PATH_FAILURE_EVENT,data_pkt->getPathid());
+                                    }
                                     setState(shmrpStateDef::INIT);
                                     }
 
@@ -2378,6 +2399,10 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
                 } catch (exception &e) {
                     trace()<<"[error] "<<e.what()<<" returning to INIT";
                     setState(shmrpStateDef::INIT);
+                    if(fp.send_pfail_rwarn) {
+                        sendRwarn(shmrpWarnDef::PATH_FAILURE_EVENT,selectPathid(true).pathid);
+                    }
+
                 }
             }
         }
@@ -2418,13 +2443,19 @@ void shmrp::handleNetworkControlCommand(cMessage *msg) {
 
 void shmrp::sendRwarn() {
     trace()<<"[info] Entering sendWarn()";
+    sendRwarn(shmrpWarnDef::EMERGENCY_EVENT,selectPathid(true).pathid);
+}
+
+void shmrp::sendRwarn(shmrpWarnDef cause, int pathid) {
+    trace()<<"[info] Entering sendWarn(cause="<<cause<<", pathid="<<pathid<<")";
     shmrpRwarnPacket *warn_pkt=new shmrpRwarnPacket("SHMRP RWARN packet", NETWORK_LAYER_PACKET);
     warn_pkt->setByteLength(netDataFrameOverhead);
+    warn_pkt->setCause(cause);
     warn_pkt->setShmrpPacketKind(shmrpPacketDef::RWARN_PACKET);
     warn_pkt->setSource(SELF_NETWORK_ADDRESS);
     warn_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     warn_pkt->setRound(getRound());
-    warn_pkt->setPathid(selectPathid(true).pathid);
+    warn_pkt->setPathid(pathid);
     warn_pkt->setHop(getHop());
     warn_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);
