@@ -64,6 +64,8 @@ void shmrp::startup() {
     fp.t_sec_l_timeout   = par("f_t_sec_l_timeout");
     fp.t_sec_l_start     = par("f_t_sec_l_start");
     fp.detect_link_fail  = par("f_detect_link_fail");
+    fp.rt_fallb_wo_qos   = par("f_rt_fallb_wo_qos");
+    fp.send_pfail_rwarn  = par("f_send_pfail_rwarn");
     fp.fail_count        = par("f_fail_count");
     fp.path_sel          = par("f_path_sel");
     fp.e2e_qos_pdr       = par("f_e2e_qos_pdr");
@@ -709,6 +711,7 @@ void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
     if(rreqEntryExists(addr,pathid)) {
         trace()<<"[info] RRESP received flag set to true";
         rreq_table[string(addr)].rresp=true;
+        rreq_table[string(addr)].ack_count++;
     } else {
         throw std::length_error("[error] Entry not found");
     }
@@ -850,6 +853,7 @@ void shmrp::sendData(cPacket *pkt, std::string dest, int pathid) {
     data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
     data_pkt->setDestination(dest.c_str());
     data_pkt->setPathid(pathid);
+    data_pkt->setReroute(0);
     data_pkt->setSequenceNumber(currentSequenceNumber++);
     data_pkt->encapsulate(pkt);
     toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
@@ -866,6 +870,7 @@ void shmrp::schedulePkt(cPacket *pkt, std::string dest, int pathid) {
     data_pkt->setPathid(pathid);
     data_pkt->setSequenceNumber(currentSequenceNumber++);
     data_pkt->setRepeat(0);
+    data_pkt->setReroute(0);
     data_pkt->encapsulate(pkt);
     pkt_list.push_back(data_pkt);
 }
@@ -1882,16 +1887,33 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[warn] Warning node's round is greater than receiving node's round. Exiting.";
                 break;
             }
-            if(fp.rt_recalc_w_emerg) {
-                try {
-                    updateRreqEntryWithEmergency(rwarn_pkt->getSource());
-                    if(fp.cf_after_rresp) {
-                        constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
-                    } else {
-                        constructRoutingTable(fp.rresp_req);
+            switch (rwarn_pkt->getCause()) {
+                case shmrpWarnDef::EMERGENCY_EVENT: { 
+                    if(fp.rt_recalc_w_emerg) {
+                        try {
+                            updateRreqEntryWithEmergency(rwarn_pkt->getSource());
+                            if(fp.cf_after_rresp) {
+                                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
+                            } else {
+                                constructRoutingTable(fp.rresp_req);
+                            }
+                        } catch (no_available_entry &e) {
+                            trace()<<"[info] Entry not available (not a real error): "<<e.what();
+                        }
                     }
-                } catch (no_available_entry &e) {
-                    trace()<<"[info] Entry not available (not a real error): "<<e.what();
+                    break;
+                }
+                case shmrpWarnDef::PATH_FAILURE_EVENT: {
+                    removeRoute(std::string(rwarn_pkt->getSource()));
+                    removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                    markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                    try {
+                        constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
+                    } catch (routing_table_empty &e) {
+                        trace()<<"[error] "<<e.what();
+                        throw e;
+                    }
+                    break;
                 }
             }
             break;
@@ -1937,8 +1959,41 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"[error] Next hop not available for pathid: "<<data_pkt->getPathid();
                     if(fp.reroute_pkt) {
                         trace()<<"[info] Rerouting packet";
-                        next_hop=getNextHop(selectPathid().pathid);
-                        reroute=true;
+                        try {
+                            next_hop=getNextHop(selectPathid().pathid);
+                            if(next_hop == std::string(data_pkt->getSource())) {
+                                trace()<<"[error] Possible loop due to reroute, aborting, removing route: "<<next_hop;
+                                removeRoute(next_hop);
+                                removeRreqEntry(next_hop);
+                                markRinvEntryFail(next_hop);
+
+                                if(getRoutingTableSize() == 0) {
+                                    trace()<<"[error] Routing table empty";
+                                    try {
+                                        if(fp.rt_fallb_wo_qos) {
+                                            constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, 0.0, true /* update */);
+                                        } else {
+                                            constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
+                                        }
+                                    } catch (exception &e) {
+                                    trace()<<"[error] "<<e.what()<<" returning to INIT";
+                                    if(fp.send_pfail_rwarn) {
+                                        sendRwarn(shmrpWarnDef::PATH_FAILURE_EVENT,data_pkt->getPathid());
+                                    }
+                                    setState(shmrpStateDef::INIT);
+                                    }
+
+                                }
+                                break;
+                            }
+                            reroute=true;
+                        } catch (no_available_entry &e) {
+                            trace()<<"[error] "<<e.what();
+                            break;
+                        } catch (routing_table_empty &e) {
+                            trace()<<"[error] "<<e.what();
+                            break;
+                        }
                     } else {
                         break;
                     }
@@ -2142,7 +2197,7 @@ void shmrp::finishSpecific() {
             y_out<<YAML::Key<<"traffic_table";
             y_out<<YAML::Value;
             y_out<<YAML::BeginSeq;
-            for(auto ne: shmrp_instance->getTrafficTable()) {
+            for(auto ne: getTrafficTable()) {
                 y_out<<YAML::BeginMap;
                 y_out<<YAML::Key<<"node";
                 y_out<<YAML::Value<<ne.first;
@@ -2316,9 +2371,9 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
     trace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
     std::string nw_address = std::to_string(mac_msg->getDestination());
     if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
-        if(rreq_table.find(nw_address) != rreq_table.end() && (shmrpStateDef::ESTABLISH == getState() || shmrpStateDef::S_ESTABLISH == getState() ) ){
-            rreq_table[nw_address].ack_count++;
-        }
+//        if(rreq_table.find(nw_address) != rreq_table.end() && (shmrpStateDef::ESTABLISH == getState() || shmrpStateDef::S_ESTABLISH == getState() ) ){
+//            rreq_table[nw_address].ack_count++;
+//        }
         if(routing_table.find(nw_address) != routing_table.end()) {
             routing_table[nw_address].ack_count++;
             if(fp.detect_link_fail) {
@@ -2336,10 +2391,18 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
                 removeRreqEntry(nw_address);
                 markRinvEntryFail(nw_address);
                 try {
-                    constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
+                    if(fp.rt_fallb_wo_qos) {
+                        constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, 0, true /* update */);
+                    } else {
+                        constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
+                    }
                 } catch (exception &e) {
                     trace()<<"[error] "<<e.what()<<" returning to INIT";
                     setState(shmrpStateDef::INIT);
+                    if(fp.send_pfail_rwarn) {
+                        sendRwarn(shmrpWarnDef::PATH_FAILURE_EVENT,selectPathid(true).pathid);
+                    }
+
                 }
             }
         }
@@ -2380,13 +2443,19 @@ void shmrp::handleNetworkControlCommand(cMessage *msg) {
 
 void shmrp::sendRwarn() {
     trace()<<"[info] Entering sendWarn()";
+    sendRwarn(shmrpWarnDef::EMERGENCY_EVENT,selectPathid(true).pathid);
+}
+
+void shmrp::sendRwarn(shmrpWarnDef cause, int pathid) {
+    trace()<<"[info] Entering sendWarn(cause="<<cause<<", pathid="<<pathid<<")";
     shmrpRwarnPacket *warn_pkt=new shmrpRwarnPacket("SHMRP RWARN packet", NETWORK_LAYER_PACKET);
     warn_pkt->setByteLength(netDataFrameOverhead);
+    warn_pkt->setCause(cause);
     warn_pkt->setShmrpPacketKind(shmrpPacketDef::RWARN_PACKET);
     warn_pkt->setSource(SELF_NETWORK_ADDRESS);
     warn_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     warn_pkt->setRound(getRound());
-    warn_pkt->setPathid(selectPathid(true).pathid);
+    warn_pkt->setPathid(pathid);
     warn_pkt->setHop(getHop());
     warn_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);

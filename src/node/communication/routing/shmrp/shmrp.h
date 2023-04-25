@@ -199,6 +199,8 @@ struct feat_par {
     int    t_sec_l_timeout;
     double t_sec_l_start;
     bool   detect_link_fail;
+    bool   rt_fallb_wo_qos;
+    bool   send_pfail_rwarn;
     int    fail_count;
     int    path_sel;
     double e2e_qos_pdr;
@@ -343,7 +345,9 @@ class shmrp: public VirtualRouting {
         void forwardData(shmrpDataPacket *, std::string, bool);
         std::string ringToStr(shmrpRingDef pos) const;
 
-        void sendRwarn(); 
+        void sendRwarn();
+        void sendRwarn(shmrpWarnDef, int);
+
 
         void serializeRoutingTable();
         void serializeRoutingTable(std::map<std::string,node_entry>);

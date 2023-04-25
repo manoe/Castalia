@@ -77,6 +77,8 @@ simple shmrp like node.communication.routing.iRouting
     double f_t_sec_l_start    = default(120);   // Grand delay to defer second learn's start
 
     bool   f_detect_link_fail = default(false); // Detect failing links
+    bool   f_rt_fallb_wo_qos  = default(false); // Create routing table during fallback without enforcing QoS
+    bool   f_send_pfail_rwarn = default(false); // Send Path failure RWARN message
     int    f_fail_count       = default(10);    // Declare a link failing after f_fail_count fail msgs.
     int    f_path_sel         = default(0);     // How to select path (initially): 0 - random, 1 - only primary - 2 - prefer second
     double f_e2e_qos_pdr      = default(0.0);   // Defines the e2e QoS PDR that has to be met. Based on the value,
