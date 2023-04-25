@@ -297,6 +297,7 @@ class shmrp: public VirtualRouting {
         void constructRreqTable();
         void constructRreqTable(std::vector<int>);
         bool rreqEntryExists(const char *, int);
+        bool rreqEntryExists(std::string);
         int  getRreqPktCount();
         void updateRreqTableWithRresp(const char *, int);
         bool rrespReceived() const;
@@ -322,6 +323,7 @@ class shmrp: public VirtualRouting {
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
         bool checkPathid(int);
+        bool checkRoute(std::string);
         int  calculateRepeat(const char *);
         int  getRoutingTableSize() { return routing_table.size();};
 

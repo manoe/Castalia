@@ -706,6 +706,13 @@ bool shmrp::rreqEntryExists(const char *addr, int pathid) {
     return false;
 }
 
+bool shmrp::rreqEntryExists(std::string ne) {
+    if(rreq_table.find(ne) != rreq_table.end()) {
+        return true;
+    }
+    return false;
+}
+
 void shmrp::updateRreqTableWithRresp(const char *addr, int pathid) {
     trace()<<"[info] Entering shmrp::updateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
     if(rreqEntryExists(addr,pathid)) {
@@ -1200,6 +1207,15 @@ bool shmrp::checkPathid(int pathid) {
     trace()<<"[info] Pathid not found";
     return false;
 }
+
+bool shmrp::checkRoute(std::string ne) {
+    trace()<<"Entering checkRoute(ne="<<ne<<")";
+    if(routing_table.find(ne)!=routing_table.end()) {
+        return true;
+    }
+    return false;
+}
+
 
 int shmrp::calculateRepeat(const char *dest) {
     trace()<<"[info] Entering shmrp::calculateRepeat(dest="<<dest<<")";
@@ -1904,14 +1920,19 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     break;
                 }
                 case shmrpWarnDef::PATH_FAILURE_EVENT: {
-                    removeRoute(std::string(rwarn_pkt->getSource()));
-                    removeRreqEntry(std::string(rwarn_pkt->getSource()));
-                    markRinvEntryFail(std::string(rwarn_pkt->getSource()));
-                    try {
-                        constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
-                    } catch (routing_table_empty &e) {
-                        trace()<<"[error] "<<e.what();
-                        throw e;
+                    if(checkRoute(std::string(rwarn_pkt->getSource()))) {
+                       removeRoute(std::string(rwarn_pkt->getSource()));
+                       removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                       markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                       try {
+                           constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
+                       } catch (routing_table_empty &e) {
+                            trace()<<"[error] "<<e.what();
+                           throw e;
+                       }
+                    } else if(rreqEntryExists(std::string(rwarn_pkt->getSource()))) {
+                        removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                        markRinvEntryFail(std::string(rwarn_pkt->getSource()));
                     }
                     break;
                 }
