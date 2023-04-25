@@ -199,6 +199,7 @@ struct feat_par {
     int    t_sec_l_timeout;
     double t_sec_l_start;
     bool   detect_link_fail;
+    bool   rt_fallb_wo_qos;
     int    fail_count;
     int    path_sel;
     double e2e_qos_pdr;
