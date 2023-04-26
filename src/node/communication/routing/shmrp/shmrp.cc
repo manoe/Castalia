@@ -1930,7 +1930,8 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                            constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
                        } catch (routing_table_empty &e) {
                             trace()<<"[error] "<<e.what();
-                           throw e;
+                            sendRwarn(shmrpWarnDef::PATH_FAILURE_EVENT,rwarn_pkt->getPathid());
+                            setState(shmrpStateDef::INIT);
                        }
                     } else if(rreqEntryExists(std::string(rwarn_pkt->getSource()))) {
                         removeRreqEntry(std::string(rwarn_pkt->getSource()));
