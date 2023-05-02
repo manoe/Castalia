@@ -1,0 +1,1 @@
+role={'0':'Sink','1':'dead','2':'dead','3':'dead','4':'non-root','5':'dead','6':'dead','7':'dead','8':'dead','9':'dead','10':'dead','11':'dead','12':'dead','13':'dead','14':'dead','15':'dead','16':'dead','17':'dead','18':'dead','19':'dead','20':'dead','21':'dead','22':'dead','23':'dead','24':'non-root'}
