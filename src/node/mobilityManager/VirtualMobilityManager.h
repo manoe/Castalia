@@ -25,6 +25,7 @@ struct NodeLocation_type {
 	double phi;		// orientation info provided by 2 angles.
 	double theta;
 	int cell;		// store the cell ID that corresponds to coordinates xyz so we do not have to recompute it
+    double rnd_range;
 };
 
 class VirtualMobilityManager: public CastaliaModule {

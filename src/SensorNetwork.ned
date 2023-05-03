@@ -24,6 +24,8 @@ network SN {
 	int numNodes;						// the number of nodes
 
 	string deployment = default ("");
+    double rnd_range  = default(0.3);
+
 
 	int numPhysicalProcesses = default (1);
 	string physicalProcessName = default ("CustomizablePhysicalProcess");

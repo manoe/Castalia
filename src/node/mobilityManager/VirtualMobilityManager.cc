@@ -38,6 +38,7 @@ void VirtualMobilityManager::parseDeployment() {
 	double xlen = network->par("field_x");
 	double ylen = network->par("field_y");
 	double zlen = network->par("field_z");
+    double rnd_range = network->par("rnd_range");
 	nodeLocation.phi = node->par("phi");
 	nodeLocation.theta = node->par("theta");
 
@@ -126,18 +127,18 @@ void VirtualMobilityManager::parseDeployment() {
 		}
 		
 		if (random_flag) {
-			nodeLocation.x += normal(0, (xlen / gridx) * 0.3);
+			nodeLocation.x += normal(0, (xlen / gridx) * rnd_range);
 			if (nodeLocation.x > xlen)
 				nodeLocation.x = xlen;
 			if (nodeLocation.x < 0)
 				nodeLocation.x = 0;
-			nodeLocation.y += normal(0, (ylen / gridy) * 0.3);
+			nodeLocation.y += normal(0, (ylen / gridy) * rnd_range);
 			if (nodeLocation.y > ylen)
 				nodeLocation.y = ylen;
 			if (nodeLocation.y < 0)
 				nodeLocation.y = 0;
 			if (gridz > 0 && zlen > 0) {
-				nodeLocation.z += normal(0, (zlen / gridz) * 0.3);
+				nodeLocation.z += normal(0, (zlen / gridz) * rnd_range);
 				if (nodeLocation.z > zlen)
 					nodeLocation.z = zlen;
 				if (nodeLocation.z < 0)
