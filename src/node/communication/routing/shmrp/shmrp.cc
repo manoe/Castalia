@@ -554,19 +554,19 @@ double shmrp::calculateCostFunction(node_entry ne) {
             break;
         }
         case shmrpCostFuncDef::HOP_AND_INTERF: {
-            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.interf,fp.cost_func_iota);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * log10(pow(ne.interf,fp.cost_func_iota));
             break;
         }
         case shmrpCostFuncDef::HOP_PDR_AND_INTERF: {
-            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.interf,fp.cost_func_iota) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * log10(pow(ne.interf,fp.cost_func_iota)) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
             break;
         }
         case shmrpCostFuncDef::HOP_EMERG_AND_INTERF: {
-            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg+1,fp.cost_func_epsilon) * pow(ne.interf,fp.cost_func_iota);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg+1,fp.cost_func_epsilon) * log10(pow(ne.interf,fp.cost_func_iota));
             break;
         }
         case shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF: {
-            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg+1,fp.cost_func_epsilon) * pow(ne.interf,fp.cost_func_iota) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
+            ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg+1,fp.cost_func_epsilon) * log10(pow(ne.interf,fp.cost_func_iota)) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
             break;
         }
         default: {
