@@ -79,6 +79,7 @@ void shmrp::startup() {
     } else {
         if(isSink()) {
             setHop(0);
+            initPongTableSize();
             setTimer(shmrpTimerDef::SINK_START,par("t_start"));
             setState(shmrpStateDef::WORK);
             if(fp.second_learn != shmrpSecLParDef::OFF) {
@@ -178,6 +179,8 @@ shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
         return shmrpCostFuncDef::HOP_PDR_AND_INTERF;
     } else if("hop_emerg_pdr_and_interf" == str) {
         return shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF;
+    } else if("xpr_interf" == str) {
+        return shmrpCostFuncDef::XPR_INTERF;
     }
     throw std::invalid_argument("[error] Unkown cost function");
     return shmrpCostFuncDef::NOT_DEFINED; 
@@ -376,6 +379,13 @@ int shmrp::getPongTableSize() const {
     return pong_table.size();
 }
 
+void shmrp::initPongTableSize() {
+    trace()<<"Entering setPongTableSize()";
+    node_entry ne;
+    pong_table[std::string(SELF_NETWORK_ADDRESS)]=ne;
+}
+
+
 void shmrp::sendRinv(int round, std::vector<pathid_entry> pathid, bool local=false, int local_id=0, int nmas=0) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<", pathid = "<<pathidToStr(pathid)<<")";
     shmrpRinvPacket *rinv_pkt=new shmrpRinvPacket("SHMRP RINV packet", NETWORK_LAYER_PACKET);
@@ -567,6 +577,10 @@ double shmrp::calculateCostFunction(node_entry ne) {
         }
         case shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF: {
             ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg+1,fp.cost_func_epsilon) * log10(pow(ne.interf,fp.cost_func_iota)) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
+            break;
+        }
+        case shmrpCostFuncDef::XPR_INTERF: {
+            ret_val=log10(pow(ne.interf,fp.cost_func_iota));
             break;
         }
         default: {

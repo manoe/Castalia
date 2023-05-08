@@ -77,7 +77,8 @@ enum shmrpCostFuncDef {
     HOP_EMERG_AND_INTERF     = 3,
     HOP_AND_PDR              = 4,
     HOP_PDR_AND_INTERF       = 5,
-    HOP_EMERG_PDR_AND_INTERF = 6
+    HOP_EMERG_PDR_AND_INTERF = 6,
+    XPR_INTERF               = 7
 };
 
 enum shmrpRinvTblAdminDef {
@@ -379,6 +380,7 @@ class shmrp: public VirtualRouting {
 
 
         int getPongTableSize() const;
+        void initPongTableSize();
 
         std::map<std::string,node_entry> getRoutingTable() {
             if(routing_table.empty()) {
