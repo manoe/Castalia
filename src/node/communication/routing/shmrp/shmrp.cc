@@ -179,6 +179,8 @@ shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
         return shmrpCostFuncDef::HOP_PDR_AND_INTERF;
     } else if("hop_emerg_pdr_and_interf" == str) {
         return shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF;
+    } else if("xpr_interf" == str) {
+        return shmrpCostFuncDef::XPR_INTERF;
     }
     throw std::invalid_argument("[error] Unkown cost function");
     return shmrpCostFuncDef::NOT_DEFINED; 
@@ -575,6 +577,10 @@ double shmrp::calculateCostFunction(node_entry ne) {
         }
         case shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF: {
             ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_pi) * pow(ne.emerg+1,fp.cost_func_epsilon) * log10(pow(ne.interf,fp.cost_func_iota)) * pow(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count),fp.cost_func_phi);
+            break;
+        }
+        case shmrpCostFuncDef::XPR_INTERF: {
+            ret_val=log10(pow(ne.interf,fp.cost_func_iota));
             break;
         }
         default: {

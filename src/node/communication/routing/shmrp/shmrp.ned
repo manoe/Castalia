@@ -47,7 +47,7 @@ simple shmrp like node.communication.routing.iRouting
     int    f_meas_rreq_count  = default(10);    // How many RREQs should we send
     bool   f_restart_learning = default(false); // Restart learning if isolated
     bool   f_replay_rinv      = default(false); // Ask neighbours to re-send RINVs within round
-    string f_cost_function    = default("hop"); // Cost Functions, available: hop, hop_and_interf, hop_emerg_and_interf, hop_and_pdr, hop_pdr_and_interf, hop_emerg_pdr_and_interf
+    string f_cost_function    = default("hop"); // Cost Functions, available: hop, hop_and_interf, hop_emerg_and_interf, hop_and_pdr, hop_pdr_and_interf, hop_emerg_pdr_and_interf, xpr_interf
     double f_cost_func_epsilon= default(1.0);   // Epsilon coeff. in cost function,  controls emerg term
     double f_cost_func_iota   = default(1.0);   // Iota coeff. in cost function, controls interference term
     double f_cost_func_pi     = default(1.0);   // Pi coeff. in cost function, controls pdr term
