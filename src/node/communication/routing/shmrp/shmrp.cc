@@ -79,6 +79,7 @@ void shmrp::startup() {
     } else {
         if(isSink()) {
             setHop(0);
+            initPongTableSize();
             setTimer(shmrpTimerDef::SINK_START,par("t_start"));
             setState(shmrpStateDef::WORK);
             if(fp.second_learn != shmrpSecLParDef::OFF) {
@@ -375,6 +376,13 @@ void shmrp::clearPongTable(int round) {
 int shmrp::getPongTableSize() const {
     return pong_table.size();
 }
+
+void shmrp::initPongTableSize() {
+    trace()<<"Entering setPongTableSize()";
+    node_entry ne;
+    pong_table[std::string(SELF_NETWORK_ADDRESS)]=ne;
+}
+
 
 void shmrp::sendRinv(int round, std::vector<pathid_entry> pathid, bool local=false, int local_id=0, int nmas=0) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<", pathid = "<<pathidToStr(pathid)<<")";

@@ -379,6 +379,7 @@ class shmrp: public VirtualRouting {
 
 
         int getPongTableSize() const;
+        void initPongTableSize();
 
         std::map<std::string,node_entry> getRoutingTable() {
             if(routing_table.empty()) {
