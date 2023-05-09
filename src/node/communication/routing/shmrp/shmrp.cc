@@ -1398,24 +1398,23 @@ void shmrp::timerFiredCallback(int index) {
                     bool send_sec_l=false;
                     if(1 < getRoutingTableSize()) {
                         trace()<<"[info] Enough routing entries";
+                    } 
+                    saveRreqTable();
+                    clearRreqTable();
+                    try {
+                        std::vector<int> pf;
+                        pf.push_back(getSecLPathid());
+                        constructRreqTable(pf);
+                    } catch (rreq_table_empty &e) {
+                        trace()<<e.what();
+                        trace()<<"[info] No alternate path possible to learn, propagate second learn.";
                         send_sec_l=true;
-                    } else {
-                        saveRreqTable();
-                        clearRreqTable();
-                        try {
-                            std::vector<int> pf;
-                            pf.push_back(getSecLPathid());
-                            constructRreqTable(pf);
-                        } catch (rreq_table_empty &e) {
-                            trace()<<e.what();
-                            trace()<<"[info] No alternate path possible to learn, propagate second learn.";
-                            send_sec_l=true;
-                            retrieveRreqTable();
-                        }
-                        catch (exception &e) {
-                            trace()<<e.what();
-                            break;
-                        }
+                        retrieveRreqTable();
+                    }
+                    catch (exception &e) {
+                        trace()<<e.what();
+                        break;
+                    
                     }
                     if(send_sec_l) {
                         switch(fp.second_learn) {
