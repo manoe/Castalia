@@ -2027,6 +2027,10 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             reroute=true;
                         } catch (no_available_entry &e) {
                             trace()<<"[error] "<<e.what();
+                            if(fp.send_pfail_rwarn) {
+                                sendRwarn(shmrpWarnDef::PATH_FAILURE_EVENT,data_pkt->getPathid());
+                            }
+
                             break;
                         } catch (routing_table_empty &e) {
                             trace()<<"[error] "<<e.what();
