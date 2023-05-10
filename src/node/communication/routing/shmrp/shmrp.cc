@@ -583,6 +583,14 @@ double shmrp::calculateCostFunction(node_entry ne) {
             ret_val=log10(pow(ne.interf,fp.cost_func_iota));
             break;
         }
+        case shmrpCostFuncDef::XPR_HOP_AND_PDR: {
+            ret_val=fp.cost_func_pi * log10(static_cast<double>(ne.hop)) + fp.cost_func_phi * log10(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count));
+            break;
+        }
+        case shmrpCostFuncDef::XPR_HOP_PDR_AND_INTERF: {
+            ret_val=fp.cost_func_pi * log10(static_cast<double>(ne.hop)) + fp.cost_func_phi * log10(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count)) + fp.cost_func_iota * log10(ne.interf);
+            break;
+        }
         default: {
             trace()<<"[error] Unknown cost function: "<<fp.cost_func;
             throw unknown_cost_function("[error] Unknown cost function");
@@ -1982,6 +1990,15 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 toApplicationLayer(decapsulatePacket(data_pkt));
             } else {
                 trace()<<"[info] DATA packet at interim node, routing forward";
+                if(data_pkt->getOrigin() == std::string(SELF_NETWORK_ADDRESS)) {
+                    trace()<<"[error] Loop detected at path: "<<data_pkt->getPathid();
+                    auto entry = getNextHop(data_pkt->getPathid());
+                    removeRoute(entry);
+                    removeRreqEntry(entry);
+                    markRinvEntryFail(entry);
+                    break;
+                }
+                        
                 incPktCountInTrafficTable(std::string(data_pkt->getOrigin()), data_pkt->getPathid(), data_pkt->getReroute());
 
                 std::string next_hop;
