@@ -78,7 +78,9 @@ enum shmrpCostFuncDef {
     HOP_AND_PDR              = 4,
     HOP_PDR_AND_INTERF       = 5,
     HOP_EMERG_PDR_AND_INTERF = 6,
-    XPR_INTERF               = 7
+    XPR_INTERF               = 7,
+    XPR_HOP_AND_PDR          = 8,
+    XPR_HOP_PDR_AND_INTERF   = 9
 };
 
 enum shmrpRinvTblAdminDef {

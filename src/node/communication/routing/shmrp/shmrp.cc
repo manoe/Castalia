@@ -181,6 +181,10 @@ shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
         return shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF;
     } else if("xpr_interf" == str) {
         return shmrpCostFuncDef::XPR_INTERF;
+    } else if("xpr_hop_and_pdr" == str) {
+        return shmrpCostFuncDef::XPR_HOP_AND_PDR;
+    } else if("xpr_hop_pdr_and_interf" == str) {
+        return shmrpCostFuncDef::XPR_HOP_PDR_AND_INTERF;
     }
     throw std::invalid_argument("[error] Unkown cost function");
     return shmrpCostFuncDef::NOT_DEFINED; 
@@ -581,6 +585,14 @@ double shmrp::calculateCostFunction(node_entry ne) {
         }
         case shmrpCostFuncDef::XPR_INTERF: {
             ret_val=log10(pow(ne.interf,fp.cost_func_iota));
+            break;
+        }
+        case shmrpCostFuncDef::XPR_HOP_AND_PDR: {
+            ret_val=fp.cost_func_pi * log10(static_cast<double>(ne.hop)) + fp.cost_func_phi * log10(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count));
+            break;
+        }
+        case shmrpCostFuncDef::XPR_HOP_PDR_AND_INTERF: {
+            ret_val=fp.cost_func_pi * log10(static_cast<double>(ne.hop)) + fp.cost_func_phi * log10(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count)) + fp.cost_func_iota * log10(ne.interf);
             break;
         }
         default: {
@@ -1982,6 +1994,15 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 toApplicationLayer(decapsulatePacket(data_pkt));
             } else {
                 trace()<<"[info] DATA packet at interim node, routing forward";
+                if(data_pkt->getOrigin() == std::string(SELF_NETWORK_ADDRESS)) {
+                    trace()<<"[error] Loop detected at path: "<<data_pkt->getPathid();
+                    auto entry = getNextHop(data_pkt->getPathid());
+                    removeRoute(entry);
+                    removeRreqEntry(entry);
+                    markRinvEntryFail(entry);
+                    break;
+                }
+                        
                 incPktCountInTrafficTable(std::string(data_pkt->getOrigin()), data_pkt->getPathid(), data_pkt->getReroute());
 
                 std::string next_hop;
