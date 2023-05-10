@@ -181,6 +181,10 @@ shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
         return shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF;
     } else if("xpr_interf" == str) {
         return shmrpCostFuncDef::XPR_INTERF;
+    } else if("xpr_hop_and_pdr" == str) {
+        return shmrpCostFuncDef::XPR_HOP_AND_PDR;
+    } else if("xpr_hop_pdr_and_interf" == str) {
+        return shmrpCostFuncDef::XPR_HOP_PDR_AND_INTERF;
     }
     throw std::invalid_argument("[error] Unkown cost function");
     return shmrpCostFuncDef::NOT_DEFINED; 
