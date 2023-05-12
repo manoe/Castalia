@@ -147,6 +147,8 @@ class state_not_permitted : public std::runtime_error {
 struct pathid_entry {
     int pathid;
     int nmas;
+    bool secl;
+    bool secl_performed;
 };
 
 struct node_entry {
@@ -319,6 +321,7 @@ class shmrp: public VirtualRouting {
         pathid_entry selectPathid();
         pathid_entry selectPathid(bool);
         std::vector<int> selectAllPathid();
+        std::vector<int> selectAllPathid(int);
         std::string pathidToStr(vector<pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
 
@@ -365,10 +368,12 @@ class shmrp: public VirtualRouting {
 
         virtual void handleMacControlMessage(cMessage *);
 
-        void setSecL(bool flag) { g_sec_l=flag;};
+        void setSecL(bool flag);
+        void setSecL(int pathid, bool flag);
         void setSecLPathid(int pathid) { g_sec_l_pathid=pathid;};
         int  getSecLPathid() { return g_sec_l_pathid;};
         bool secLPerformed(int round, int pathid);
+        bool getSecL(int pathid);
 
         void incPktCountInTrafficTable(std::string, int, int);
     public:
@@ -377,7 +382,7 @@ class shmrp: public VirtualRouting {
         int getHop() const;
         int getHop(int);
         int  getRound() const;
-        bool getSecL() { return g_sec_l; };
+        bool getSecL();
         bool isMaster() const;
 
 

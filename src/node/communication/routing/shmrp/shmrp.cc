@@ -127,6 +127,55 @@ bool shmrp::isMaster() const {
     return g_is_master;
 }
 
+bool shmrp::getSecL() {
+    trace()<<"[info] Entering getSecL()";
+    for(auto ne: routing_table) {
+        for(auto p: ne.second.pathid) {
+            if(true==p.secl_performed) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool shmrp::getSecL(int pathid) {
+    trace()<<"[info] Entering getSecL(pathid="<<pathid<<")";
+    for(auto ne: routing_table) {
+        for(auto p: ne.second.pathid) {
+            if(p.pathid == pathid && p.secl_performed == true) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void shmrp::setSecL(bool flag) {
+    trace()<<"[info] Entering setSecL(flag="<<flag<<")";
+    if(false==flag) {
+        for(auto i: routing_table) {
+            for(auto p: i.second.pathid) {
+                p.secl_performed=false;
+            }
+        }
+    } else {
+        trace()<<"[info] set to true not implemented";
+    }
+}
+
+void shmrp::setSecL(int pathid, bool flag) {
+    trace()<<"Entering setSecL(pathid="<<pathid<<", flag="<<flag<<")";
+    for(auto ne: routing_table) {
+        for(auto p: ne.second.pathid) {
+            if(p.pathid == pathid) {
+                p.secl_performed = true;
+            }
+        }
+    }
+}
+
 void shmrp::setSinkAddress(const char *p_sink_addr) {
     g_sink_addr.assign(p_sink_addr);
 }
@@ -700,14 +749,17 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
     for(auto it=rreq_table.begin() ; it != rreq_table.end(); ) {
         bool erase=false;
         for(auto i: path_filter) {
-            for(auto p: it->second.pathid) {
-            if(i==p.pathid) {
-                erase=true;
-                continue;
-            }
+            for(auto p_it=it->second.pathid.begin() ; p_it != it->second.pathid.end() ;) {
+                if(i==p_it->pathid) {
+                    // torol+leptet
+                    trace()<<"[info] Erasing path: "<<p_it->pathid;
+                    it->second.pathid.erase(p_it++);
+                } else {
+                    ++p_it;
+                }
             }
         }
-        if(erase) {
+        if(0==it->second.pathid.size()) {
             trace()<<"[info] Erasing node: "<<it->second.nw_address<<" pathid: "<<pathidToStr(it->second.pathid);
             rreq_table.erase(it++);
         } else {
@@ -1027,8 +1079,6 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
     for(auto l: cl) {
         trace()<<"[info] Selecting nodes per pathid to RREQ";
         node_entry c_ne=l.second[0];
-        
-
 
         trace()<<"[info] Candidate list entries for pathid "<<l.first<<" is " <<l.second.size();
         for(auto ne: l.second) {
@@ -1047,7 +1097,7 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
        
         // quite dangerous 
         auto p=c_ne.pathid[0];
-
+        p.secl=update;
         c_ne.pathid.clear();
         if(routing_table.find(c_ne.nw_address) == routing_table.end()) {
             routing_table.insert({c_ne.nw_address,c_ne});
@@ -1071,7 +1121,12 @@ pathid_entry shmrp::selectPathid(bool replay) {
     return g_pathid;
 }
 
+
 std::vector<int> shmrp::selectAllPathid() {
+    return selectAllPathid(fp.path_sel);
+}
+
+std::vector<int> shmrp::selectAllPathid(int path_sel) {
     trace()<<"[info] Entering selectAllPathid()";
      if(routing_table.empty()) {
         throw routing_table_empty("[error] Routing table empty");
@@ -1079,14 +1134,14 @@ std::vector<int> shmrp::selectAllPathid() {
 
     auto tmp_table = routing_table;
 
-    if(0 != fp.path_sel) {
+    if(0 != path_sel) {
         for(auto ne: routing_table) {
             // Prefer primary
-            if(1 == fp.path_sel && ne.second.secl) {
+            if(1 == path_sel && ne.second.secl) {
                 tmp_table.erase(ne.first);
             }
             // Prefer secl
-            if(2 == fp.path_sel && !ne.second.secl) {
+            if(2 == path_sel && !ne.second.secl) {
                 tmp_table.erase(ne.first);
             }
         }
@@ -1414,9 +1469,7 @@ void shmrp::timerFiredCallback(int index) {
                     saveRreqTable();
                     clearRreqTable();
                     try {
-                        std::vector<int> pf;
-                        pf.push_back(getSecLPathid());
-                        constructRreqTable(pf);
+                        constructRreqTable(selectAllPathid(0));
                     } catch (rreq_table_empty &e) {
                         trace()<<e.what();
                         trace()<<"[info] No alternate path possible to learn, propagate second learn.";
@@ -1568,7 +1621,6 @@ void shmrp::timerFiredCallback(int index) {
                         trace()<<"[error] How do we get here?";
                     }
                 }
-
 
                 setState(shmrpStateDef::WORK);
                 break;
@@ -1869,15 +1921,16 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
             auto lreq_packet=dynamic_cast<shmrpLreqPacket *>(pkt);
 
-            if(getSecL()) {
+            if(lreq_packet->getRound() != getRound()) {
+                trace()<<"LREQ_PACKET out of round. Packet round: "<<lreq_packet->getRound()<<" own round: "<<getRound();
+                break;
+            }
+
+            if(getSecL(lreq_packet->getPathid())) {
                 trace()<<"[info] Second learn already performed";
                 if(0==std::strcmp(lreq_packet->getDestination(),SELF_NETWORK_ADDRESS)) {
                     sendLresp(lreq_packet->getSource(),getRound(),lreq_packet->getPathid());
                 }
-                break;
-            }
-            if(lreq_packet->getRound() != getRound()) {
-                trace()<<"LREQ_PACKET out of round. Packet round: "<<lreq_packet->getRound()<<" own round: "<<getRound();
                 break;
             }
 
@@ -1888,6 +1941,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
 
             if(shmrpRingDef::EXTERNAL == getRingStatus()) {
+                // Most probably always true
                 if(!checkPathid(lreq_packet->getPathid())) {
                     trace()<<"[info] LREQ_PACKET indicates unknown pathid, discarding.";
                     break;
@@ -1898,7 +1952,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 sendLresp(lreq_packet->getSource(),getRound(),lreq_packet->getPathid());
             }
 
-            setSecL(true);
+            setSecL(lreq_packet->getPathid(),true);
             if(getRingStatus() == shmrpRingDef::BORDER) {
                 setSecLPathid(resolveNetworkAddress(SELF_NETWORK_ADDRESS));
             } else {
