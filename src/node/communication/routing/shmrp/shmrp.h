@@ -298,6 +298,7 @@ class shmrp: public VirtualRouting {
         void saveRreqTable();
         void retrieveRreqTable();
         void retrieveAndMergeRreqTable();
+        void mergePathids(std::vector<pathid_entry>&, std::vector<pathid_entry>&);
         bool isRreqTableEmpty() const;
         void constructRreqTable();
         void constructRreqTable(std::vector<int>);
@@ -356,6 +357,7 @@ class shmrp: public VirtualRouting {
         void sendRwarn();
         void sendRwarn(shmrpWarnDef, int);
 
+        void handleLinkFailure(int);
 
         void serializeRoutingTable();
         void serializeRoutingTable(std::map<std::string,node_entry>);
