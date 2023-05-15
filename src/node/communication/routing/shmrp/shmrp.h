@@ -149,6 +149,7 @@ struct pathid_entry {
     int nmas;
     bool secl;
     bool secl_performed;
+    bool used;
 };
 
 struct node_entry {
@@ -221,7 +222,7 @@ class shmrp: public VirtualRouting {
         int g_round;
         pathid_entry g_pathid; // this is dangerous, even more dangerous
         bool g_sec_l = false;
-        int g_sec_l_pathid;
+        std::queue<int> g_sec_l_pathid;
         int g_sec_l_timeout = 0;
         bool g_is_master=false;
         feat_par fp;
@@ -372,8 +373,10 @@ class shmrp: public VirtualRouting {
 
         void setSecL(bool flag);
         void setSecL(int pathid, bool flag);
-        void setSecLPathid(int pathid) { g_sec_l_pathid=pathid;};
-        int  getSecLPathid() { return g_sec_l_pathid;};
+        void pushSecLPathid(int);
+        int  popSecLPathid();
+        int getSecLPathid();
+        bool isSecLPathidEmpty();
         bool secLPerformed(int round, int pathid);
         bool getSecL(int pathid);
 

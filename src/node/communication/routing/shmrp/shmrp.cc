@@ -155,8 +155,8 @@ bool shmrp::getSecL(int pathid) {
 void shmrp::setSecL(bool flag) {
     trace()<<"[info] Entering setSecL(flag="<<flag<<")";
     if(false==flag) {
-        for(auto i: routing_table) {
-            for(auto p: i.second.pathid) {
+        for(auto &&i: routing_table) {
+            for(auto &&p: i.second.pathid) {
                 p.secl_performed=false;
             }
         }
@@ -167,14 +167,35 @@ void shmrp::setSecL(bool flag) {
 
 void shmrp::setSecL(int pathid, bool flag) {
     trace()<<"Entering setSecL(pathid="<<pathid<<", flag="<<flag<<")";
-    for(auto ne: routing_table) {
-        for(auto p: ne.second.pathid) {
+    for(auto &&ne: routing_table) {
+        for(auto &&p: ne.second.pathid) {
             if(p.pathid == pathid) {
                 p.secl_performed = true;
             }
         }
     }
 }
+
+void shmrp::pushSecLPathid(int pathid) {
+    trace()<<"Entering pushSecLPathid(pathid="<<pathid<<")";
+    g_sec_l_pathid.push(pathid);
+}
+
+int  shmrp::popSecLPathid() {
+   trace()<<"Entering popSecLPathid()";
+   auto ret_val=g_sec_l_pathid.front();
+   g_sec_l_pathid.pop();
+   return ret_val;
+}
+
+int  shmrp::getSecLPathid() {
+    return g_sec_l_pathid.front();
+
+}
+bool shmrp::isSecLPathidEmpty() {
+    return g_sec_l_pathid.empty();
+}
+
 
 void shmrp::setSinkAddress(const char *p_sink_addr) {
     g_sink_addr.assign(p_sink_addr);
@@ -581,6 +602,9 @@ void shmrp::clearRreqTable() {
 void shmrp::saveRreqTable() {
     trace()<<"[info] Entering saveRreqTable()";
     backup_rreq_table=rreq_table;
+    for(auto ne: rreq_table) {
+        trace()<<"[info] ne: "<<ne.first<<" pathid: "<<pathidToStr(ne.second.pathid);
+    }
 }
 
 void shmrp::retrieveRreqTable() {
@@ -715,7 +739,7 @@ void shmrp::constructRreqTable() {
                 for(auto n: l.second) {
                     if(n.hop < getHop()) {
                         rreq_table.insert({n.nw_address,n});
-                        //                        rinv_table[n.nw_address].used = true;
+                        rinv_table[n.nw_address].used = true;
                     }
                 }
             }
@@ -767,17 +791,19 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
                 if(i==p_it->pathid) {
                     // torol+leptet
                     trace()<<"[info] Erasing path: "<<p_it->pathid;
-                    it->second.pathid.erase(p_it++);
+                    trace()<<"ne: "<<it->second.nw_address;
+                    p_it=it->second.pathid.erase(p_it);
                 } else {
                     p_it->secl=true;
                     ++p_it;
                 }
             }
         }
-        if(0==it->second.pathid.size()) {
+        if(0==it->second.pathid.size() || it->second.used) {
             trace()<<"[info] Erasing node: "<<it->second.nw_address<<" pathid: "<<pathidToStr(it->second.pathid);
             rreq_table.erase(it++);
         } else {
+            rinv_table[it->first].used=true;
             ++it;
         }
     }
@@ -785,6 +811,10 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
     if(rreq_table.empty()) {
         throw rreq_table_empty("[error] RREQ table empty after construction");
     }
+    for(auto ne: rreq_table) {
+        trace()<<"[info] ne: "<<ne.first<<" pathid: "<<pathidToStr(ne.second.pathid);
+    }
+
 }
 
 
@@ -1621,8 +1651,9 @@ void shmrp::timerFiredCallback(int index) {
                         throw std::runtime_error("[error] Invalid state");
                     }
                     case shmrpSecLParDef::BROADCAST: {
-                        sendLreqBroadcast(getRound(),getSecLPathid());
-                        break;
+                        while(!isSecLPathidEmpty()) {
+                            sendLreqBroadcast(getRound(),popSecLPathid());
+                        }
                     }
                     case shmrpSecLParDef::UNICAST: {
                         // most probably true...
@@ -1881,9 +1912,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             break;
                         }
                     }
-                }
-                else 
-                    if(shmrpStateDef::LEARN != getState() && shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
+                } else if(shmrpStateDef::LEARN != getState() && shmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
                         trace()<<"[info] RINV packet discarded by node, not in learning state anymore";
                         break;
                     }
@@ -1969,13 +1998,16 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
             setSecL(lreq_packet->getPathid(),true);
             if(getRingStatus() == shmrpRingDef::BORDER) {
-                setSecLPathid(resolveNetworkAddress(SELF_NETWORK_ADDRESS));
+                pushSecLPathid(resolveNetworkAddress(SELF_NETWORK_ADDRESS));
             } else {
-                setSecLPathid(lreq_packet->getPathid());
+                pushSecLPathid(lreq_packet->getPathid());
             }
-            trace()<<"[info] Starting T_SEC_L timer";
-            setTimer(shmrpTimerDef::T_SEC_L, fp.t_sec_l);
-
+            if(getTimer(shmrpTimerDef::T_SEC_L)!=-1 || getState()==shmrpStateDef::S_ESTABLISH ) {
+                trace()<<"[info] T_SEC_L timer active or S_ESTABLISH state, no restart";
+            } else {
+                trace()<<"[info] Starting T_SEC_L timer";
+                setTimer(shmrpTimerDef::T_SEC_L, fp.t_sec_l);
+            }
             break;
         }
         case shmrpPacketDef::LRESP_PACKET: {
