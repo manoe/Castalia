@@ -49,7 +49,9 @@ jobs:
         make makefiles
 
     - name: Install dependencies
-      run: make
+      run: |
+        source omnetpp/setenv
+        make
 
     - name: Run check
       run: make check
