@@ -14,6 +14,8 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v3
+      with:
+        path: castalia
     
     - name: Check out omnetpp
       uses: actions/checkout@v3
@@ -22,7 +24,7 @@ jobs:
         path: omnetpp
         ref: omnetpp-5.7.x
     - name: Update ubuntu
-      run: sudo apt update && sudo apt upgrade
+      run: sudo apt update
     
     - name: Install debs
       run: sudo apt-get install -y libqt5concurrent5 libqt5core5a libqt5dbus5 
@@ -41,7 +43,9 @@ jobs:
         make
 
     - name: configure
-      run: make makefiles
+      run: |
+        source omnetpp/setenv
+        make makefiles
 
     - name: Install dependencies
       run: make
