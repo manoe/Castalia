@@ -20,6 +20,7 @@ jobs:
       with:
         repository: omnetpp/omnetpp
         path: omnetpp
+        ref: omnetpp-5.7.x
 
     - name: configure
       run: make makefiles
