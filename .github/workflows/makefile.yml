@@ -18,7 +18,7 @@ jobs:
     - name: Check out omnetpp
       uses: actions/checkout@v3
       with:
-        repository: https://github.com/omnetpp/omnetpp/tree/omnetpp-5.7.x
+        repository: omnetpp/omnetpp
         path: omnetpp
 
     - name: configure
