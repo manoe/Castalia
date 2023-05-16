@@ -36,6 +36,7 @@ jobs:
       run: |
         source omnetpp/setenv
         cd omnetpp/
+        echo "WITH_OSG=no" >> configure.user
         ./configure
 
     - name: configure
