@@ -21,7 +21,10 @@ jobs:
         repository: omnetpp/omnetpp
         path: omnetpp
         ref: omnetpp-5.7.x
-        
+    
+    - name: Install debs
+    - run: sudo apt-get install -y qt6-base-dev
+    
     - name: Init omnetpp
       run: |
         source omnetpp/setenv
