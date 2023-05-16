@@ -46,11 +46,13 @@ jobs:
     - name: configure
       run: |
         source omnetpp/setenv
+        cd castalia
         make makefiles
 
     - name: Install dependencies
       run: |
         source omnetpp/setenv
+        cd castalia
         make
 
     - name: Run check
