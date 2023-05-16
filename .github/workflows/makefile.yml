@@ -23,7 +23,7 @@ jobs:
         ref: omnetpp-5.7.x
         
     - name: Init omnetpp
-      run: setenv omnetpp/setenv
+      run: source omnetpp/setenv
 
     - name: configure
       run: make makefiles
