@@ -23,7 +23,7 @@ jobs:
         ref: omnetpp-5.7.x
     
     - name: Install debs
-      run: sudo apt-get install -y qt6-base-dev
+      run: sudo apt-get install -y qt6-base-dev qt5-base-dev
     
     - name: Init omnetpp
       run: |
