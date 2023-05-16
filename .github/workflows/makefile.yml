@@ -21,6 +21,9 @@ jobs:
         repository: omnetpp/omnetpp
         path: omnetpp
         ref: omnetpp-5.7.x
+        
+    - name: Init omnetpp
+      run: setenv omnetpp/setenv
 
     - name: configure
       run: make makefiles
