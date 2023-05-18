@@ -46,14 +46,21 @@ jobs:
         ./configure
         make
 
-    - name: configure
+    - name: Configure Castalia
       run: |
         source omnetpp/setenv
         cd castalia
         make makefiles
 
-    - name: Install dependencies
+    - name: Compile Castalia
       run: |
         source omnetpp/setenv
         cd castalia
         make
+    
+    - name: Test Castalia
+      run: |
+        source omnetpp/setenv
+        cd castalia/Simulations/shmrp_nf
+        ./batch.sh
+        
