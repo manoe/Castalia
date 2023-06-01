@@ -70,7 +70,9 @@ void shmrp::startup() {
     fp.path_sel          = par("f_path_sel");
     fp.e2e_qos_pdr       = par("f_e2e_qos_pdr");
     fp.t_send_pkt        = par("f_t_send_pkt");
-    fp.rep_m_pdr          = par("f_rep_m_pdr");
+    fp.rep_m_pdr         = par("f_rep_m_pdr");
+    fp.drop_1st_rt_c     = par("f_drop_1st_rt_c");
+    fp.drop_prob         = par("f_drop_prob");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -1126,14 +1128,37 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
         node_entry c_ne=l.second[0];
 
         trace()<<"[info] Candidate list entries for pathid "<<l.first<<" is " <<l.second.size();
-        for(auto ne: l.second) {
-            trace()<<"[info] Node "<<ne.nw_address<<" pkt data - sent: "<<ne.pkt_count<<" ack: "<<ne.ack_count;
-
-
-
-            if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
-                trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
-                c_ne=ne;
+        if(fp.drop_1st_rt_c && getRNG(0)->doubleRand() > 1.0-fp.drop_prob) {
+            trace()<<"[info] Drop 1st routing table candidate active";
+            if(l.second.size()>1) {
+                for(auto ne: l.second) {
+                    trace()<<"[info] Node "<<ne.nw_address<<" pkt data - sent: "<<ne.pkt_count<<" ack: "<<ne.ack_count;
+                    if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
+                        trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
+                        c_ne=ne;
+                    }
+                }
+                auto it=l.second.begin();
+                while(it->nw_address != c_ne.nw_address) {
+                    ++it;
+                }
+                l.second.erase(it);
+                c_ne=l.second[0];
+                for(auto ne: l.second) {
+                    trace()<<"[info] Node "<<ne.nw_address<<" pkt data - sent: "<<ne.pkt_count<<" ack: "<<ne.ack_count;
+                    if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
+                        trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
+                        c_ne=ne;
+                    }
+                }
+            }
+        } else {
+            for(auto ne: l.second) {
+                trace()<<"[info] Node "<<ne.nw_address<<" pkt data - sent: "<<ne.pkt_count<<" ack: "<<ne.ack_count;
+                if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
+                    trace()<<"[info] Node "<<ne.nw_address<<" preferred over node "<<c_ne.nw_address;
+                    c_ne=ne;
+                }
             }
         }
         trace()<<"[info] Selecting node "<<c_ne.nw_address<<" with pathid "<<pathidToStr(c_ne.pathid);

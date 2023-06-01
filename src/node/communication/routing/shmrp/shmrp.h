@@ -212,6 +212,8 @@ struct feat_par {
     double e2e_qos_pdr;
     double t_send_pkt;
     bool   rep_m_pdr;
+    bool   drop_1st_rt_c;
+    double drop_prob;
 };
 
 class shmrp: public VirtualRouting {
