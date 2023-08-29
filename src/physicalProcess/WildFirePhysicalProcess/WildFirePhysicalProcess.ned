@@ -33,9 +33,9 @@ parameters:
     double  l                = default(90);     // - l    - cell's side length, m
     bool    sp               = default(false);  // - sp   - fire spotting enabled/disabled
     int     seed             = default(0);      // - seed - random seed
-    bool    spatial_sense    = default(false)   // - sense neighbouring cells
-    int     sense_distance   = default(5)       // - how far the sensor reaches
-    int     sense_attn       = default(1)       // - how fast sense attenuated
+    bool    spatial_sense    = default(false);  // - sense neighbouring cells
+    int     sense_distance   = default(5);      // - how far the sensor reaches
+    int     sense_attn       = default(1);      // - how fast sense attenuated
 	string  description      = default ("CA based wildfire");
 
  gates:
