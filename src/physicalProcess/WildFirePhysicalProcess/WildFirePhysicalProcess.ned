@@ -19,21 +19,24 @@ parameters:
 	bool    collectTraceInfo = default (false);
     int     wf_start_x_coord = default (0);
     int     wf_start_y_coord = default (0);
-    bool    no_map_file = default (false);
+    bool    no_map_file      = default (false);
     string  map_file;
-    int     map_scale = default (90);
+    int     map_scale        = default (90);
     int     ca_step_period;
     int     ca_start_timer;
-    double  p_h  = default(0.58);   // - p_h  - corrective probability coefficent
-    double  c_1  = default(0.045);  // - c_1  - wind model's first coefficient - affects speed
-    double  c_2  = default(0.131);  // - c_2  - wind model's second coefficient - affects angle
-    double  a    = default(0.078);  // - a    - slope model's coefficient
-    double  w_a  = default(0);   // - w_a  - wind angle (North: 0, East: Pi/2, South: Pi, West: 3PI/2), rad
-    double  w_s  = default(8.1);    // - w_s  - wind speed, m/s
-    double  l    = default(90);     // - l    - cell's side length, m
-    bool    sp   = default(false);  // - sp   - fire spotting enabled/disabled
-    int     seed = default(0);      // - seed - random seed 
-	string  description = default ("CA based wildfire");
+    double  p_h              = default(0.58);   // - p_h  - corrective probability coefficent
+    double  c_1              = default(0.045);  // - c_1  - wind model's first coefficient - affects speed
+    double  c_2              = default(0.131);  // - c_2  - wind model's second coefficient - affects angle
+    double  a                = default(0.078);  // - a    - slope model's coefficient
+    double  w_a              = default(0);   // - w_a  - wind angle (North: 0, East: Pi/2, South: Pi, West: 3PI/2), rad
+    double  w_s              = default(8.1);    // - w_s  - wind speed, m/s
+    double  l                = default(90);     // - l    - cell's side length, m
+    bool    sp               = default(false);  // - sp   - fire spotting enabled/disabled
+    int     seed             = default(0);      // - seed - random seed
+    bool    spatial_sense    = default(false)   // - sense neighbouring cells
+    int     sense_distance   = default(5)       // - how far the sensor reaches
+    int     sense_attn       = default(1)       // - how fast sense attenuated
+	string  description      = default ("CA based wildfire");
 
  gates:
 	output toNode[];

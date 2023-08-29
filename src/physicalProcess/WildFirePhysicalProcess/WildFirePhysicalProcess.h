@@ -46,6 +46,9 @@ class WildFirePhysicalProcess: public CastaliaModule {
     std::vector<nodeLocation> subs;
     WildFireParams wf_params;
     bool first_step;
+    bool spatial_sense;
+    int sense_distance;
+    double sense_attn;
 
  protected:
 	virtual void initialize();
