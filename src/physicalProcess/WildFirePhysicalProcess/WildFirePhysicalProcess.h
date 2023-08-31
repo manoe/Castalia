@@ -69,6 +69,9 @@ class WildFirePhysicalProcess: public CastaliaModule {
     std::vector<int> getDestroyedNodes(std::vector<CellPosition> cells);
     void signalTermination(std::vector<int> nodes);
 
+    double calculateSensorValue(CellState** states);
+    void deleteCellStates(CellState** states);
+    double calculateDistance(CellPosition x, CellPosition y);
 
 };
 

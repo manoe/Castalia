@@ -66,6 +66,33 @@ void WildFirePhysicalProcess::initialize()
     first_step=true;
 }
 
+double WildFirePhysicalProcess::calculateDistance(CellPosition x, CellPosition y) {
+    return sqrt(pow(static_cast<double>(x.x) - static_cast<double>(y.x),2) + pow(static_cast<double>(x.y) - static_cast<double>(y.y),2));
+}
+
+double WildFirePhysicalProcess::calculateSensorValue(CellState** states) {
+    double ret_val=0;
+    for(int i=0 ; i < sense_distance*2+1 ; ++i) {
+        for(int j=0 ; j < sense_distance*2+1 ; ++j) {
+            if(states[i][j] == CellState::BURNING) {
+                ret_val+= pow(1/calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance) ),sense_attn);
+            }
+        }
+    }
+    if(states[sense_distance][sense_distance] == CellState::BURNING) {
+        ret_val=8;
+    }
+    return ret_val;
+}
+
+void WildFirePhysicalProcess::deleteCellStates(CellState** states) {
+    for(int i=0 ; i < sense_distance*2+1 ; ++i) {
+        delete states[i];
+    }
+    delete states;
+
+}
+
 void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 {
     switch (msg->getKind()) {
@@ -79,6 +106,8 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             double value;
             if(spatial_sense) {
                 auto states=wf_ca->getStates(pos,sense_distance);
+                value=calculateSensorValue(states);
+                deleteCellStates(states);
             } else {
                 try {
                     state=wf_ca->getState(pos);
