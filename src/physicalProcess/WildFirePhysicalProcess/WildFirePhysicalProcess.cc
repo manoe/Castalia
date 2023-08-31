@@ -76,13 +76,19 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 //            std::cout<<pos<<std::endl;
 //
             CellState state;
-            try {
-                state=wf_ca->getState(pos);
-            } catch(std::string &e) {
-                trace()<<"Error: "<<e<<" x: "<<pos.x<<" y: "<<pos.y;
-                return;
+            double value;
+            if(spatial_sense) {
+                auto states=wf_ca->getStates(pos,sense_distance);
+            } else {
+                try {
+                    state=wf_ca->getState(pos);
+                    value=convertStateToSensedValue(state);
+                } catch(std::string &e) {
+                    trace()<<"Error: "<<e<<" x: "<<pos.x<<" y: "<<pos.y;
+                    return;
+                }
             }
-            phyMsg->setValue(convertStateToSensedValue(state));
+            phyMsg->setValue(value);
             // Send reply back to the node who made the request
             send(phyMsg, "toNode", phyMsg->getSrcID());
             return;
