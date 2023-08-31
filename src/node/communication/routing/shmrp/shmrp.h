@@ -158,7 +158,7 @@ struct node_entry {
     int  hop;
     bool rresp = false;
     int  interf;
-    int  emerg = 0;
+    double emerg = 0;
     bool used = false;
     int  round = 0;
     int  pkt_count = 0;
@@ -169,6 +169,8 @@ struct node_entry {
     bool secl  = false;
     int  nmas = 0;
     int reroute_count = 0;
+    double enrgy = 0;
+    double pdr   = 0;
 };
 
 struct feat_par {
@@ -197,7 +199,7 @@ struct feat_par {
     int    meas_rreq_count;
     bool   calc_max_hop;
     double qos_pdr;
-    bool   rt_recalc_w_emerg;
+    bool   rt_recalc_warn;
     bool   reroute_pkt;
     shmrpSecLParDef second_learn;
     double t_sec_l;

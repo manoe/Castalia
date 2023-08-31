@@ -4,5 +4,7 @@ enum MsgType {
 }
 
 message EmergencyMessage {
-   int event enum(MsgType);
+    int event enum(MsgType);
+    double environment;
+    double energy;
 }
