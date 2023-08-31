@@ -35,8 +35,11 @@ enum shmrpWarnDef {
 }
 
 struct shmrpPathDef {
-    int pathid;
-    int nmas;
+    int    pathid;
+    int    nmas;
+    double emerg;    // 1 byte
+    double enrgy;
+    double pdr;
 }
 
 // RREQ = { R, S, P, len, nmas }
@@ -46,21 +49,22 @@ packet shmrpPacket extends RoutingPacket {
 }
 
 packet shmrpRinvPacket extends shmrpPacket {
-    int  round;      // 2 byte
-    shmrpPathDef pathid[];   // 1 byte
-    int  hop;        // 2 byte
-    int  interf;     // 1 byte
-    int  emerg;      // 1 byte
-    int  nmas;       // 1 byte
-    bool local;      // 1 byte
-    int  localid;    // 1 byte
+    int          round;    // 2 byte
+    shmrpPathDef pathid[]; // 1 byte
+    int          hop;      // 2 byte
+    int          interf;   // 1 byte
+    int          nmas;     // 1 byte
+    bool         local;    // 1 byte
+    int          localid;  // 1 byte
 }
 
 packet shmrpRwarnPacket extends shmrpPacket {
-    int cause enum (shmrpWarnDef); // 1 byte
-    int round;      // 2 byte
-    int pathid;     // 1 byte
-    int hop;        // 2 byte
+    int    cause enum (shmrpWarnDef); // 1 byte
+    int    round;      // 2 byte
+    int    pathid;     // 1 byte
+    int    hop;        // 2 byte
+    double emerg;   // 1 byte
+    double enrgy;   // 1 byte
 }
 
 packet shmrpRreqPacket extends shmrpPacket {

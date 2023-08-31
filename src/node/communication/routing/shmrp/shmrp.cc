@@ -56,7 +56,7 @@ void shmrp::startup() {
     fp.meas_rreq_count   = par("f_meas_rreq_count");
     fp.calc_max_hop      = par("f_calc_max_hop");
     fp.qos_pdr           = par("f_qos_pdr");
-    fp.rt_recalc_w_emerg = par("f_rt_recalc_w_emerg");
+    fp.rt_recalc_warn    = par("f_rt_recalc_warn");
     fp.reroute_pkt       = par("f_reroute_pkt");
     fp.second_learn      = strToSecLPar(par("f_second_learn").stringValue());
     fp.t_sec_l           = par("f_t_sec_l");
@@ -2057,7 +2057,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             switch (rwarn_pkt->getCause()) {
                 case shmrpWarnDef::EMERGENCY_EVENT: {
                     trace()<<"[info] EMERGENCY_EVENT";
-                    if(fp.rt_recalc_w_emerg) {
+                    if(fp.rt_recalc_warn) {
                         try {
                             updateRreqEntryWithEmergency(rwarn_pkt->getSource());
                             if(fp.cf_after_rresp) {
