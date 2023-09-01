@@ -29,6 +29,7 @@
 #include "node/communication/mac/tMac/TMacPacket_m.h"
 #include "node/communication/radio/Radio.h"
 #include "node/application/ForestFire/forest_fire_message_m.h"
+#include "node/application/ForestFire/forest_fire.h"
 
 ////enum hdmrpRoleDef {
 ////    SINK        = 1;
@@ -150,6 +151,10 @@ struct pathid_entry {
     bool secl;
     bool secl_performed;
     bool used;
+    double enrgy = 0;
+    double emerg = 0;
+    double pdr   = 0;
+
 };
 
 struct node_entry {
@@ -169,8 +174,6 @@ struct node_entry {
     bool secl  = false;
     int  nmas = 0;
     int reroute_count = 0;
-    double enrgy = 0;
-    double pdr   = 0;
 };
 
 struct feat_par {
@@ -216,6 +219,7 @@ struct feat_par {
     bool   rep_m_pdr;
     bool   drop_1st_rt_c;
     double drop_prob;
+    bool   e2e_cost;
 };
 
 class shmrp: public VirtualRouting {
@@ -242,6 +246,8 @@ class shmrp: public VirtualRouting {
 
         YAML::Emitter y_out;
         std::unordered_set<int> local_id_table;
+
+        ForestFire *ff_app;
 
     protected:
         void startup();

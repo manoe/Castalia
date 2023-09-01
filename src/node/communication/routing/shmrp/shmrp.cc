@@ -19,6 +19,9 @@ void shmrp::startup() {
         g_is_sink=false;
     }
 
+    ff_app = dynamic_cast<ForestFire *>(appModule);
+
+
     if(appModule->hasPar("isMaster")) {
         g_is_master=appModule->par("isMaster");
     } else {
@@ -73,6 +76,7 @@ void shmrp::startup() {
     fp.rep_m_pdr         = par("f_rep_m_pdr");
     fp.drop_1st_rt_c     = par("f_drop_1st_rt_c");
     fp.drop_prob         = par("f_drop_prob");
+    fp.e2e_cost          = par("f_e2e_cost");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -507,7 +511,7 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
         // With this the master/sensor node capabilities inside the ring won't matter
-        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster())}), local, nmas);
+        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  ff_app->getEnergyValue(), ff_app->getEmergencyValue(),1.0}), local, nmas);
     } else {
         trace()<<"[info] Node outside mesh ring";
         std::vector<pathid_entry> pathid;
