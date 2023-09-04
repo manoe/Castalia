@@ -33,6 +33,7 @@ simple efmrp like node.communication.routing.iRouting
 	int    maxNetFrameSize = default (0);	    // bytes
 	int    netDataFrameOverhead = default (10); // bytes
 	int    netBufferSize = default (32);	    // number of messages
+    double t_ttl = default(20);                 // TTL timer to cancel broadcast
     double t_l = default (1);                   // Tl timer, default 1 sec
     double t_est = default(2);                  // Test timer, default 2 sec
     double t_meas = default(2);                 // Tmeas timer, default 2 sec
