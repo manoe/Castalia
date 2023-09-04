@@ -72,16 +72,19 @@ enum shmrpRingDef {
 };
 
 enum shmrpCostFuncDef {
-    NOT_DEFINED              = 0,
-    HOP                      = 1,
-    HOP_AND_INTERF           = 2,
-    HOP_EMERG_AND_INTERF     = 3,
-    HOP_AND_PDR              = 4,
-    HOP_PDR_AND_INTERF       = 5,
-    HOP_EMERG_PDR_AND_INTERF = 6,
-    XPR_INTERF               = 7,
-    XPR_HOP_AND_PDR          = 8,
-    XPR_HOP_PDR_AND_INTERF   = 9
+    NOT_DEFINED                    = 0,
+    HOP                            = 1,
+    HOP_AND_INTERF                 = 2,
+    HOP_EMERG_AND_INTERF           = 3,
+    HOP_AND_PDR                    = 4,
+    HOP_PDR_AND_INTERF             = 5,
+    HOP_EMERG_PDR_AND_INTERF       = 6,
+    HOP_ENRGY_EMERG_PDR_AND_INTERF = 7,
+    HOP_ENRGY_EMERG_AND_PDR        = 8,
+    HOP_ENRGY_AND_PDR              = 9,
+    XPR_INTERF                     = 10,
+    XPR_HOP_AND_PDR                = 11,
+    XPR_HOP_PDR_AND_INTERF         = 12
 };
 
 enum shmrpRinvTblAdminDef {
