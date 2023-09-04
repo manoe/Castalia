@@ -37,8 +37,8 @@ enum shmrpWarnDef {
 struct shmrpPathDef {
     int    pathid;
     int    nmas;
-    double emerg;    // 1 byte
     double enrgy;
+    double emerg;    // 1 byte
     double pdr;
 }
 

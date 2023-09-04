@@ -19,6 +19,9 @@ void shmrp::startup() {
         g_is_sink=false;
     }
 
+    ff_app = dynamic_cast<ForestFire *>(appModule);
+
+
     if(appModule->hasPar("isMaster")) {
         g_is_master=appModule->par("isMaster");
     } else {
@@ -73,6 +76,7 @@ void shmrp::startup() {
     fp.rep_m_pdr         = par("f_rep_m_pdr");
     fp.drop_1st_rt_c     = par("f_drop_1st_rt_c");
     fp.drop_prob         = par("f_drop_prob");
+    fp.e2e_cost          = par("f_e2e_cost");
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -251,6 +255,12 @@ shmrpCostFuncDef shmrp::strToCostFunc(string str) const {
         return shmrpCostFuncDef::HOP_PDR_AND_INTERF;
     } else if("hop_emerg_pdr_and_interf" == str) {
         return shmrpCostFuncDef::HOP_EMERG_PDR_AND_INTERF;
+    } else if("hop_enrgy_emerg_pdr_and_interf" == str) {
+        return shmrpCostFuncDef::HOP_ENRGY_EMERG_PDR_AND_INTERF;
+    } else if("hop_enrgy_emerg_and_pdr" == str) {
+        return shmrpCostFuncDef::HOP_ENRGY_EMERG_AND_PDR;
+    } else if("hop_enrgy_and_pdr" == str) {
+        return shmrpCostFuncDef::HOP_ENRGY_AND_PDR;
     } else if("xpr_interf" == str) {
         return shmrpCostFuncDef::XPR_INTERF;
     } else if("xpr_hop_and_pdr" == str) {
@@ -507,7 +517,7 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
         // With this the master/sensor node capabilities inside the ring won't matter
-        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster())}), local, nmas);
+        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  ff_app->getEnergyValue(), ff_app->getEmergencyValue(),1.0}), local, nmas);
     } else {
         trace()<<"[info] Node outside mesh ring";
         std::vector<pathid_entry> pathid;
@@ -551,7 +561,7 @@ void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
     node_entry ne;
     ne.nw_address.assign(rinv_pkt->getSource());
     for(int i=0 ; i < rinv_pkt->getPathidArraySize() ; ++i) {
-        ne.pathid.push_back({rinv_pkt->getPathid(i).pathid,rinv_pkt->getPathid(i).nmas});
+        ne.pathid.push_back({rinv_pkt->getPathid(i).pathid,rinv_pkt->getPathid(i).nmas, false, false, false, rinv_pkt->getPathid(i).emerg, rinv_pkt->getPathid(i).enrgy, rinv_pkt->getPathid(i).pdr  });
     }
     trace()<<"[info] Pathid added: "<<pathidToStr(ne.pathid);
     ne.hop = rinv_pkt->getHop();
@@ -647,6 +657,12 @@ bool shmrp::isRreqTableEmpty() const {
 
 double shmrp::calculateCostFunction(node_entry ne) {
     double ret_val;
+
+    // FIXME
+    if(fp.e2e_cost) {
+        ne.pathid[0].pdr;
+    }
+
     switch (fp.cost_func) {
         case shmrpCostFuncDef::HOP: {
             ret_val=pow(static_cast<double>(ne.hop),fp.cost_func_phi) ;
@@ -1119,7 +1135,6 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
                 }
             }
        });
-
 
 
 

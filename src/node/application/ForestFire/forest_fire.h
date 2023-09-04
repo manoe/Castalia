@@ -86,6 +86,8 @@ class ForestFire : public VirtualApplication {
  public:
     int getReportSent();
     int getEventSent();
+    double getEnergyValue();
+    double getEmergencyValue();
 };
 
 #endif				// _FOREST_FIRE_H_

@@ -317,60 +317,10 @@ void ForestFire::finishSpecific()
     
 }
 
-//int ForestFire::updateReportTable(int src, int seq)
-//{
-//	int pos = -1;
-//	for (int i = 0; i < (int)report_info_table.size(); i++) {
-//		if (report_info_table[i].source == src)
-//			pos = i;
-//	}
-//
-//	if (pos == -1) {
-//		report_info newInfo;
-//		newInfo.source = src;
-//		newInfo.parts.clear();
-//		newInfo.parts.push_back(seq);
-//		newInfo.seq = seq;
-//		report_info_table.push_back(newInfo);
-//	} else {
-//		for (int i = 0; i < (int)report_info_table[pos].parts.size(); i++) {
-//			if (report_info_table[pos].parts[i] == seq)
-//				return 0;
-//		}
-//		report_info_table[pos].parts.push_back(seq);
-//		if (seq > report_info_table[pos].seq) {
-//			report_info_table[pos].seq = seq;
-//		}
-//	}
-//	return 1;
-//}
-//
-//int ForestFire::updateVersionTable(double version, int seq)
-//{
-//	int pos = -1;
-//	for (int i = 0; i < (int)version_info_table.size(); i++) {
-//		if (version_info_table[i].version == version)
-//			pos = i;
-//	}
-//
-//	if (pos == -1) {
-//		version_info newInfo;
-//		newInfo.version = version;
-//		newInfo.parts.clear();
-//		newInfo.parts.push_back(seq);
-//		newInfo.seq = seq;
-//		version_info_table.push_back(newInfo);
-//	} else {
-//		for (int i = 0; i < (int)version_info_table[pos].parts.size(); i++) {
-//			if (version_info_table[pos].parts[i] == seq)
-//				return 0;
-//		}
-//		version_info_table[pos].parts.push_back(seq);
-//		if (seq > version_info_table[pos].seq) {
-//			version_info_table[pos].seq = seq;
-//		}
-//
-//	}
-//	return 1;
-//}
-//
+double ForestFire::getEnergyValue() {
+    return 0.0;
+}
+
+double ForestFire::getEmergencyValue() {
+    return 0.0;
+}
