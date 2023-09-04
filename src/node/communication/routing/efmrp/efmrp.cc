@@ -34,6 +34,8 @@ void efmrp::startup() {
         setState(efmrpStateDef::INIT);
     }
     setRound(0);
+    fp.ttl              = par("ttl");
+
     fp.t_l              = par("t_l");
     fp.ring_radius      = par("ring_radius");
     fp.t_est            = par("t_est");
@@ -456,12 +458,32 @@ void efmrp::incPktCountInRecvTable(std::string entry) {
     }
 }
 
+void efmrp::sendHello() {
+    trace()<<"[info] Entering sendHello()";
+    sendHello(0, getClock().dbl());
+}
+
+void efmrp::sendHello(int hop, double timestamp) {
+    trace()<<"[info] Entering sendHello(hop="<<hop<<", timestamp="<<timestamp<<")";
+    auto *hello_pkt=new efmrpHelloPacket("EFMRP HELLO packet", NETWORK_LAYER_PACKET);
+    hello_pkt->setByteLength(netDataFrameOverhead);
+    hello_pkt->setEfmrpPacketKind(efmrpPacketDef::HELLO_PACKET);
+    hello_pkt->setOrigin(SELF_NETWORK_ADDRESS);
+    hello_pkt->setSource(SELF_NETWORK_ADDRESS);
+    hello_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+
+    hello_pkt->setHop(hop);
+    hello_pkt->setTimestamp(timestamp);
+
+    toMacLayer(hello_pkt, BROADCAST_MAC_ADDRESS);
+}
+
+
 void efmrp::timerFiredCallback(int index) {
     switch (index) {
         case efmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
-            setRound(1+getRound());
-            sendRinv(getRound());
+
             break;
         }
         case efmrpTimerDef::T_L: {

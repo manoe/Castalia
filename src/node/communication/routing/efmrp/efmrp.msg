@@ -16,8 +16,9 @@ class RoutingPacket;
 
 enum efmrpPacketDef {
     UNDEF_PACKET        = 0;
-    DATA_PACKET         = 1;
-    RINV_PACKET         = 2;
+    HELLO_PACKET        = 1;
+    DATA_PACKET         = 2;
+    RINV_PACKET         = 3;
     RUPD_PACKET         = 4;
     PING_PACKET         = 16;
     PONG_PACKET         = 32;
@@ -28,6 +29,11 @@ enum efmrpPacketDef {
 packet efmrpPacket extends RoutingPacket {
     int efmrpPacketKind enum (efmrpPacketDef); // 1 byte
     string origin;
+}
+
+packet efmrpHelloPacket extends efmrpPacket {
+    int    hop;
+    double timestamp;
 }
 
 packet efmrpRinvPacket extends efmrpPacket {

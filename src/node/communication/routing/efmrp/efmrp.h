@@ -132,23 +132,27 @@ struct node_entry {
 };
 
 struct feat_par {
-        int    ring_radius;
-        double t_l;
-        double t_est;
-        double t_meas;
-        bool   rresp_req;
-        bool   rst_learn;
-        bool   replay_rinv;
-        efmrpCostFuncDef cost_func;
-        double cost_func_alpha;
-        double cost_func_beta;
-        bool   cf_after_rresp;
-        bool   random_t_l;
-        double random_t_l_sigma;
-        efmrpRinvTblAdminDef rinv_tbl_admin;
-        bool   interf_ping;
-        bool   round_keep_pong;
-        bool   rand_ring_hop;
+    double ttl;
+    
+    
+    
+    int    ring_radius;
+    double t_l;
+    double t_est;
+    double t_meas;
+    bool   rresp_req;
+    bool   rst_learn;
+    bool   replay_rinv;
+    efmrpCostFuncDef cost_func;
+    double cost_func_alpha;
+    double cost_func_beta;
+    bool   cf_after_rresp;
+    bool   random_t_l;
+    double random_t_l_sigma;
+    efmrpRinvTblAdminDef rinv_tbl_admin;
+    bool   interf_ping;
+    bool   round_keep_pong;
+    bool   rand_ring_hop;
 };
 
 class efmrp: public VirtualRouting {
@@ -172,6 +176,9 @@ class efmrp: public VirtualRouting {
         void fromMacLayer(cPacket *, int, double, double);
         void timerFiredCallback(int);
         void finishSpecific();
+
+        void sendHello();
+        void sendHello(int, double);
         
         efmrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         efmrpCostFuncDef strToCostFunc(string) const;
