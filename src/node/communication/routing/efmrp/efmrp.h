@@ -51,7 +51,8 @@ enum efmrpTimerDef {
     NEW_ROUND        = 5,
     T_RELAY          = 6,
     ACK_HIST_PURGE   = 7,
-    PACKET_TIMER_1   = 8
+    PACKET_TIMER_1   = 8,
+    TTL              = 9
 };
 
 enum efmrpRingDef {

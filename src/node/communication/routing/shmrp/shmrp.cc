@@ -331,6 +331,7 @@ int shmrp::calculateHop(bool max_hop=false) {
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
+
     if(std::all_of(rinv_table.begin(), rinv_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.used; } )) {
         throw no_available_entry("[error] All RINV table entry used");
     }
@@ -561,16 +562,27 @@ void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
     node_entry ne;
     ne.nw_address.assign(rinv_pkt->getSource());
     for(int i=0 ; i < rinv_pkt->getPathidArraySize() ; ++i) {
-        ne.pathid.push_back({rinv_pkt->getPathid(i).pathid,rinv_pkt->getPathid(i).nmas, false, false, false, rinv_pkt->getPathid(i).emerg, rinv_pkt->getPathid(i).enrgy, rinv_pkt->getPathid(i).pdr  });
+        pathid_entry pe;
+        pe.pathid         = rinv_pkt->getPathid(i).pathid;
+        pe.nmas           = rinv_pkt->getPathid(i).nmas;
+        pe.secl           = false;
+        pe.secl_performed = false;
+        pe.used           = false;
+        pe.enrgy          = rinv_pkt->getPathid(i).enrgy;
+        pe.emerg          = rinv_pkt->getPathid(i).emerg;
+        pe.pdr            = rinv_pkt->getPathid(i).pdr;
+        ne.pathid.push_back(pe);
     }
     trace()<<"[info] Pathid added: "<<pathidToStr(ne.pathid);
     ne.hop = rinv_pkt->getHop();
     ne.interf = rinv_pkt->getInterf();
     ne.nmas = rinv_pkt->getNmas();
+    ne.used = false;
     if(rinv_table.find(ne.nw_address) != rinv_table.end()) {
         trace()<<"[info] Entry already exists, overriding";
     }
-    rinv_table.insert({ne.nw_address, ne});
+    rinv_table[ne.nw_address]= ne;
+    trace()<<"faszom"<<rinv_table.begin()->second.used;
 }
 
 int shmrp::getRinvTableSize() const {
@@ -1617,6 +1629,7 @@ void shmrp::timerFiredCallback(int index) {
         }
         case shmrpTimerDef::T_L: {
             trace()<<"[timer] T_L timer expired";
+
             switch (getState()) {
                 case shmrpStateDef::LOCAL_LEARN: {
                     trace()<<"[info] LOCAL_LEARN finished";

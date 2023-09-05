@@ -597,14 +597,19 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[info] HELLO_PACKET expired, timestamp: "<<hello_pkt->getTimestamp()<<" clock: "<<getClock().dbl();
                 break;
             }
+            if(getState()==efmrpStateDef::INIT) {
+                trace()<<"[info] Node in INIT state, transitioning to LEARN and arming TTL timer";
+                setState(efmrpStateDef::LEARN);
+                setTimer(efmrpTimerDef::TTL, fp.ttl );
+            }
 
             if(hello_pkt->getHop()<getHop()) {
                 setHop(hello_pkt->getHop()+1);
+                updateHelloTable(hello_pkt);
+                sendHello(getHop(), hello_pkt->getTimestamp());
             }
 
-            updateHelloTable(hello_pkt);
-
-
+            break;
         }
 
         case efmrpPacketDef::DATA_PACKET: {
