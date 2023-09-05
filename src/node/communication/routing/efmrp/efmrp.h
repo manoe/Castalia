@@ -163,6 +163,9 @@ class efmrp: public VirtualRouting {
         int g_round;
         feat_par fp;
         efmrpStateDef g_state;
+
+        std::map<std::string,node_entry> hello_table;
+
         std::map<std::string,node_entry> rinv_table;
         std::map<std::string,node_entry> rreq_table;
         std::map<std::string,node_entry> routing_table;
@@ -179,6 +182,7 @@ class efmrp: public VirtualRouting {
 
         void sendHello();
         void sendHello(int, double);
+        void updateHelloTable(efmrpHelloPacket *);
         
         efmrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         efmrpCostFuncDef strToCostFunc(string) const;

@@ -478,24 +478,21 @@ void efmrp::sendHello(int hop, double timestamp) {
     toMacLayer(hello_pkt, BROADCAST_MAC_ADDRESS);
 }
 
+void efmrp::updateHelloTable(efmrpHelloPacket *hello_pkt) {
+    trace()<<"[info] Entering updateHelloTable(..)";
+    node_entry ne;
+    ne.nw_address=hello_pkt->getSource();
+    ne.hop=hello_pkt->getHop();
+    trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" hop: "<<ne.hop<<" to hello_table";
+    hello_table[hello_pkt->getSource()]=ne;
+}
+
 
 void efmrp::timerFiredCallback(int index) {
     switch (index) {
         case efmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
-
-            break;
-        }
-        case efmrpTimerDef::T_L: {
-            trace()<<"[timer] T_L timer expired";
-            if(efmrpStateDef::LEARN != getState()) {
-                trace()<<"[error] State is not LEARN: "<<stateToStr(getState());
-                break;
-            }
-            setState(efmrpStateDef::ESTABLISH);
-
-
-            setTimer(efmrpTimerDef::T_ESTABLISH,getTest());
+            sendHello();
             break;
         }
         case efmrpTimerDef::T_ESTABLISH: {
@@ -585,66 +582,31 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
 }
 
 void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
-    efmrpPacket *net_pkt=dynamic_cast<efmrpPacket *>(pkt);
-    if(!net_pkt) {
+    efmrpPacket *efmrp_pkt=dynamic_cast<efmrpPacket *>(pkt);
+    if(!efmrp_pkt) {
         trace()<<"[error] Dynamic cast of packet failed";
     }
 
-    switch (net_pkt->getEfmrpPacketKind()) {
-        case efmrpPacketDef::RINV_PACKET: {
-            trace()<<"[info] RINV_PACKET received";
-            auto rinv_pkt=dynamic_cast<efmrpRinvPacket *>(pkt);
+    trace()<<"[info] EFMRP packet received from MAC: "<<srcMacAddress<<" NW: "<<efmrp_pkt->getSource();
 
-            if(isSink()) {
-                trace()<<"[info] RINV_PACKET discarded by Sink";
+    switch (efmrp_pkt->getEfmrpPacketKind()) {
+        case efmrpPacketDef::HELLO_PACKET: {
+            trace()<<"[info] HELLO_PACKET received";
+            efmrpHelloPacket *hello_pkt=dynamic_cast<efmrpHelloPacket *>(pkt);
+            if(getClock().dbl() - hello_pkt->getTimestamp() > fp.ttl) {
+                trace()<<"[info] HELLO_PACKET expired, timestamp: "<<hello_pkt->getTimestamp()<<" clock: "<<getClock().dbl();
                 break;
             }
 
-            if(rinv_pkt->getRound() > getRound()) {
-                setRound(rinv_pkt->getRound());
-                switch (getState()) {
-                    case efmrpStateDef::LEARN: {
-                        cancelTimer(efmrpTimerDef::T_L);
-                        break;
-                    }
-                    case efmrpStateDef::MEASURE: {
-                        cancelTimer(efmrpTimerDef::T_MEASURE);
-                        break;
-                    }
-                }
-                if(efmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin || efmrpRinvTblAdminDef::ERASE_ON_ROUND==fp.rinv_tbl_admin) {
-                    clearRinvTable();
-                }
-
-                addToRinvTable(rinv_pkt);
-
-                trace()<<"[info] Start LEARNING process"; 
-                // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
-                setState(efmrpStateDef::LEARN);
-                setTimer(efmrpTimerDef::T_L,getTl());
-
-            } else if(rinv_pkt->getRound() == getRound()) {
-                if(efmrpStateDef::LEARN != getState() && efmrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
-                    trace()<<"[info] RINV packet discarded by node, not in learning state anymore";
-                    break;
-                }
-                addToRinvTable(rinv_pkt);
-            } else {
-                trace()<<"[info] RINV_PACKET with round "<<rinv_pkt->getRound()<<" discarded by node with round "<<getRound();
+            if(hello_pkt->getHop()<getHop()) {
+                setHop(hello_pkt->getHop()+1);
             }
 
-            break;
+            updateHelloTable(hello_pkt);
+
+
         }
-        case efmrpPacketDef::PING_PACKET: {
-            trace()<<"[info] PING_PACKET received";
-            sendPong(dynamic_cast<efmrpPingPacket *>(pkt)->getRound());
-            break;
-        }
-        case efmrpPacketDef::PONG_PACKET: {
-            trace()<<"[info] PONG_PACKET received";
-            storePong(dynamic_cast<efmrpPongPacket *>(pkt));
-            break;
-        }
+
         case efmrpPacketDef::DATA_PACKET: {
             trace()<<"[info] DATA_PACKET received";
             efmrpDataPacket *data_pkt=dynamic_cast<efmrpDataPacket *>(pkt);
@@ -679,7 +641,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             break;
         }
         default: {
-            trace()<<"[error] Unknown packet received with efmrpPacketKind value: "<<net_pkt->getEfmrpPacketKind();
+            trace()<<"[error] Unknown packet received with efmrpPacketKind value: "<<efmrp_pkt->getEfmrpPacketKind();
             break;
         }
     }
