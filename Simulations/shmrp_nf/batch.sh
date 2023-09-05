@@ -23,4 +23,3 @@ do
 	done
 done
 
-tail Castalia-Trace.txt
