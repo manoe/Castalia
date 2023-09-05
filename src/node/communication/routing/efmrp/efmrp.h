@@ -121,39 +121,11 @@ enum efmrpRinvTblAdminDef {
 
 struct node_entry {
     string nw_address;
-    int  pathid;
     int  hop;
-    bool rresp = false;
-    int  interf;
-    int  emerg;
-    bool used = false;
-    int  round = 0;
-    int  pkt_count = 0;
-    int  ack_count = 0;
 };
 
 struct feat_par {
     double ttl;
-    
-    
-    
-    int    ring_radius;
-    double t_l;
-    double t_est;
-    double t_meas;
-    bool   rresp_req;
-    bool   rst_learn;
-    bool   replay_rinv;
-    efmrpCostFuncDef cost_func;
-    double cost_func_alpha;
-    double cost_func_beta;
-    bool   cf_after_rresp;
-    bool   random_t_l;
-    double random_t_l_sigma;
-    efmrpRinvTblAdminDef rinv_tbl_admin;
-    bool   interf_ping;
-    bool   round_keep_pong;
-    bool   rand_ring_hop;
 };
 
 class efmrp: public VirtualRouting {
@@ -166,12 +138,8 @@ class efmrp: public VirtualRouting {
         efmrpStateDef g_state;
 
         std::map<std::string,node_entry> hello_table;
-
-        std::map<std::string,node_entry> rinv_table;
-        std::map<std::string,node_entry> rreq_table;
         std::map<std::string,node_entry> routing_table;
-        std::map<std::string,node_entry> pong_table;
-        std::map<std::string,node_entry> recv_table;
+
         YAML::Emitter y_out;
 
     protected:
@@ -185,96 +153,19 @@ class efmrp: public VirtualRouting {
         void sendHello(int, double);
         void updateHelloTable(efmrpHelloPacket *);
         
-        efmrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
-        efmrpCostFuncDef strToCostFunc(string) const;
-
         bool isSink() const;
         void setSinkAddress(const char *);
         std::string getSinkAddress() const;
-        double getTl();
-        double getTmeas() const;
-        double getTest() const;
-
-
-        void sendPing(int);
-        void sendPong(int);
-        void storePong(efmrpPongPacket *);
-        int getPongTableSize() const;
-        void clearPongTable();
-        void clearPongTable(int);
-
-        void sendRinv(int);
 
         void setHop(int);
         int getHop() const;
-        int calculateHop();
-
-        void setRound(int);
-        int  getRound() const;
 
         void setState(efmrpStateDef);
         std::string stateToStr(efmrpStateDef) const;
 
-        void clearRinvTable();
-        void addToRinvTable(efmrpRinvPacket *);
-        int  getRinvTableSize() const;
-
-        void clearRreqTable();
-        bool isRreqTableEmpty() const;
-        void constructRreqTable();
-        bool rreqEntryExists(const char *, int);
-        void updateRreqTableWithRresp(const char *, int);
-
-        double calculateCostFunction(node_entry);
-
-
-        void clearRoutingTable();
-        void constructRoutingTable(bool);
-        void constructRoutingTable(bool,bool);
-        bool isRoutingTableEmpty() const;
-        int  selectPathid();
-        std::string getNextHop(int);
-        std::string getNextHop(int, bool);
-        void incPktCountInRoutingTable(std::string);
-
-        void incPktCountInRecvTable(std::string);
-
-
-        void sendRreqs();
-
-        void sendRresp(const char *,int, int);
-
-        void sendData(cPacket *, std::string, int); 
-        void forwardData(efmrpDataPacket *, std::string, int);
-        void forwardData(efmrpDataPacket *, std::string);
-        std::string ringToStr(efmrpRingDef pos) const; 
-
-        map<int,string> getPathsAndHops();
-
-        void serializeRoutingTable();
-        void serializeRoutingTable(std::map<std::string,node_entry>);
-
-        void serializeRecvTable();
-        void serializeRecvTable(std::map<std::string,node_entry>);
-        std::string StateToString(efmrpStateDef);
- 
         virtual void handleMacControlMessage(cMessage *);
     public:
-        efmrpRingDef getRingStatus() const;
         efmrpStateDef getState() const;
-
-        std::map<std::string,node_entry> getRoutingTable() {
-            if(routing_table.empty()) {
-                throw routing_table_empty("[error] Routing table empty at node");
-            }
-            return routing_table;
-        };
-        std::map<std::string,node_entry> getRecvTable() {
-            if(recv_table.empty()) {
-                throw recv_table_empty("[error] Recv table empty at node");
-            }
-            return recv_table;
-        };
 };
 
 #endif // _EFMRP_H_
