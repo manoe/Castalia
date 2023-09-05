@@ -34,7 +34,7 @@ void efmrp::startup() {
         setState(efmrpStateDef::INIT);
     }
 
-    fp.ttl              = par("ttl");
+    fp.ttl   =  par("ttl");
 
 }
 
@@ -119,7 +119,7 @@ void efmrp::updateHelloTable(efmrpHelloPacket *hello_pkt) {
     ne.nw_address=hello_pkt->getSource();
     ne.hop=hello_pkt->getHop();
     trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" hop: "<<ne.hop<<" to hello_table";
-    hello_table[hello_pkt->getSource()]=ne;
+    hello_table.insert({hello_pkt->getSource(),ne});
 }
 
 
@@ -148,10 +148,6 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             trace()<<"[error] In LEARNING state, can't route packet";
             return;
         }
-        case efmrpStateDef::MEASURE: {
-            trace()<<"[info] In MEASURE state, routing round-robin";
-        }
-
     }
 
 }
@@ -175,10 +171,12 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             if(getState()==efmrpStateDef::INIT) {
                 trace()<<"[info] Node in INIT state, transitioning to LEARN and arming TTL timer";
                 setState(efmrpStateDef::LEARN);
-                setTimer(efmrpTimerDef::TTL, fp.ttl );
+                // Add some random to TTL to compensate propagation delay
+                setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
             }
 
             if(hello_pkt->getHop()<getHop()) {
+                trace()<<"[info] Updating hop status";
                 setHop(hello_pkt->getHop()+1);
                 updateHelloTable(hello_pkt);
                 sendHello(getHop(), hello_pkt->getTimestamp());

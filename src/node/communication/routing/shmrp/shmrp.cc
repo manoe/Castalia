@@ -580,9 +580,14 @@ void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
     ne.used = false;
     if(rinv_table.find(ne.nw_address) != rinv_table.end()) {
         trace()<<"[info] Entry already exists, overriding";
+
+        bool used = rinv_table.find(ne.nw_address)->second.used;
+        ne.used=used;
+        rinv_table[ne.nw_address]=ne;
+    } else {
+        trace()<<"[info] Adding new entry";
+        rinv_table[ne.nw_address]=ne;
     }
-    rinv_table[ne.nw_address]= ne;
-    trace()<<"faszom"<<rinv_table.begin()->second.used;
 }
 
 int shmrp::getRinvTableSize() const {

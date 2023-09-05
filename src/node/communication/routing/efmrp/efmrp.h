@@ -45,14 +45,7 @@ enum efmrpStateDef {
 
 enum efmrpTimerDef {
     SINK_START       = 1,
-    T_L              = 2,
-    T_ESTABLISH      = 3,
-    T_MEASURE        = 4,
-    NEW_ROUND        = 5,
-    T_RELAY          = 6,
-    ACK_HIST_PURGE   = 7,
-    PACKET_TIMER_1   = 8,
-    TTL              = 9
+    TTL              = 2
 };
 
 enum efmrpRingDef {
