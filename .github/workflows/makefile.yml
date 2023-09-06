@@ -64,3 +64,9 @@ jobs:
         source omnetpp/setenv
         cd castalia/Simulations/shmrp_nf
         ./batch.sh
+
+    - name: Show logs
+      if: always()
+      run: |
+        cd castalia/Simulations/shmrp_nf
+        tail Castalia-Trace.txt
