@@ -64,3 +64,4 @@ jobs:
         source omnetpp/setenv
         cd castalia/Simulations/shmrp_nf
         ./batch.sh
+        tail Castalia-Trace.txt
