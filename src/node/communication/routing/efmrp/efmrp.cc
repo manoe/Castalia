@@ -36,6 +36,7 @@ void efmrp::startup() {
 
     fp.ttl   =  par("ttl");
 
+    ff_app = dynamic_cast<ForestFire *>(appModule);
 }
 
 bool efmrp::isSink() const {
@@ -78,11 +79,8 @@ string efmrp::stateToStr(efmrpStateDef state) const {
         case efmrpStateDef::LEARN: {
             return "LEARN";
         }
-        case efmrpStateDef::ESTABLISH: {
-            return "ESTABLISH";
-        }
-        case efmrpStateDef::MEASURE: {
-            return "MEASURE";
+        case efmrpStateDef::DISSEMINATE: {
+            return "DISSEMINATE";
         }
     }
     return "UNKNOWN";
@@ -113,6 +111,22 @@ void efmrp::sendHello(int hop, double timestamp) {
     toMacLayer(hello_pkt, BROADCAST_MAC_ADDRESS);
 }
 
+void efmrp::sendField(int hop, double nrg, double env) {
+    trace()<<"[info] Entering sendField(hop ="<<hop<<", nrg="<<nrg<<", env="<<env<<")";
+    auto *field_pkt=new efmrpFieldPacket("EFMRP FIELD packet",NETWORK_LAYER_PACKET);
+    field_pkt->setByteLength(netDataFrameOverhead);
+    field_pkt->setEfmrpPacketKind(efmrpPacketDef::FIELD_PACKET);
+    field_pkt->setOrigin(SELF_NETWORK_ADDRESS);
+    field_pkt->setSource(SELF_NETWORK_ADDRESS);
+    field_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+
+    field_pkt->setHop(hop);
+    field_pkt->setNrg(nrg);
+    field_pkt->setEnv(env);
+
+    toMacLayer(field_pkt, BROADCAST_MAC_ADDRESS);
+}
+
 void efmrp::updateHelloTable(efmrpHelloPacket *hello_pkt) {
     trace()<<"[info] Entering updateHelloTable(..)";
     node_entry ne;
@@ -122,6 +136,23 @@ void efmrp::updateHelloTable(efmrpHelloPacket *hello_pkt) {
     hello_table.insert({hello_pkt->getSource(),ne});
 }
 
+void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
+    trace()<<"[info] Entering updateFieldTable(..)";
+    node_entry ne;
+    ne.nw_address = field_pkt->getSource();
+    ne.hop        = field_pkt->getHop();
+    ne.nrg        = field_pkt->getNrg();
+    ne.env        = field_pkt->getEnv();
+
+    if(field_table.find(ne.nw_address) != field_table.end()) {
+        trace()<<"[info] Overriding existing record of node "<<ne.nw_address;
+        field_table[ne.nw_address] = ne;
+    } else {
+        trace()<<"[info] New record of node "<<ne.nw_address;
+        field_table.insert({ne.nw_address,ne});
+    }
+    trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env;
+}
 
 void efmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -129,6 +160,12 @@ void efmrp::timerFiredCallback(int index) {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
             break;
+        }
+        case efmrpTimerDef::TTL: {
+            trace()<<"[timer] TTL timer expired";
+            setState(efmrpStateDef::DISSEMINATE);
+            sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue());
+
         }
         default: {
             trace()<<"[error] Unknown timer expired: "<<index;

@@ -25,6 +25,7 @@
 #include "node/application/ForestFire/forest_fire_packet_m.h"
 #include "node/mobilityManager/VirtualMobilityManager.h"
 #include "node/communication/mac/tMac/TMacPacket_m.h"
+#include "node/application/ForestFire/forest_fire.h"
 
 ////enum hdmrpRoleDef {
 ////    SINK        = 1;
@@ -35,12 +36,11 @@
 //
 
 enum efmrpStateDef {
-    UNDEF     = 0,
-    WORK      = 1,
-    INIT      = 2,
-    LEARN     = 3,
-    ESTABLISH = 4,
-    MEASURE   = 5
+    UNDEF       = 0,
+    WORK        = 1,
+    INIT        = 2,
+    LEARN       = 3,
+    DISSEMINATE = 4
 };
 
 enum efmrpTimerDef {
@@ -114,7 +114,9 @@ enum efmrpRinvTblAdminDef {
 
 struct node_entry {
     string nw_address;
-    int  hop;
+    int    hop;
+    double nrg;
+    double env;
 };
 
 struct feat_par {
@@ -131,7 +133,10 @@ class efmrp: public VirtualRouting {
         efmrpStateDef g_state;
 
         std::map<std::string,node_entry> hello_table;
+        std::map<std::string,node_entry> field_table;
         std::map<std::string,node_entry> routing_table;
+
+        ForestFire* ff_app;
 
         YAML::Emitter y_out;
 
@@ -145,6 +150,9 @@ class efmrp: public VirtualRouting {
         void sendHello();
         void sendHello(int, double);
         void updateHelloTable(efmrpHelloPacket *);
+
+        void sendField(int, double, double);
+        void updateFieldTable(efmrpFieldPacket *); 
         
         bool isSink() const;
         void setSinkAddress(const char *);
