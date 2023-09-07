@@ -81,10 +81,10 @@ void shmrp::startup() {
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
         setState(shmrpStateDef::WORK);
-        setHop(0); // probably wrong
+        setHop(0, true); // probably wrong
     } else {
         if(isSink()) {
-            setHop(0);
+            setHop(0, true);
             initPongTableSize();
             setTimer(shmrpTimerDef::SINK_START,par("t_start"));
             setState(shmrpStateDef::WORK);
@@ -92,7 +92,7 @@ void shmrp::startup() {
                 setTimer(shmrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
             }
         } else {
-            setHop(std::numeric_limits<int>::max());
+            setHop(std::numeric_limits<int>::max(), true);
             setState(shmrpStateDef::INIT);
         }
     }
@@ -297,9 +297,13 @@ shmrpSecLParDef shmrp::strToSecLPar(std::string str) const {
 }
 
 
-void shmrp::setHop(int hop) {
+void shmrp::setHop(int hop, bool init=false) {
     trace()<<"[info] Entering shmrp::setHop(hop="<<hop<<")";  
-    trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
+    if(init) {
+        trace()<<"[info] Init hop to "<<hop;
+    } else {
+        trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
+    }
     g_hop=hop;
 }
 
@@ -331,6 +335,7 @@ int shmrp::calculateHop(bool max_hop=false) {
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
+
     if(std::all_of(rinv_table.begin(), rinv_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.used; } )) {
         throw no_available_entry("[error] All RINV table entry used");
     }
@@ -468,7 +473,8 @@ int shmrp::getPongTableSize() const {
 void shmrp::initPongTableSize() {
     trace()<<"Entering setPongTableSize()";
     node_entry ne;
-    pong_table[std::string(SELF_NETWORK_ADDRESS)]=ne;
+    ne.nw_address=SELF_NETWORK_ADDRESS;
+    pong_table.insert({std::string(SELF_NETWORK_ADDRESS),ne});
 }
 
 
@@ -484,7 +490,10 @@ void shmrp::sendRinv(int round, std::vector<pathid_entry> pathid, bool local=fal
     for(int i=0 ; i < pathid.size() ; ++i) {
         shmrpPathDef p_id;
         p_id.pathid = pathid[i].pathid;
-        p_id.nmas = pathid[i].nmas;
+        p_id.nmas   = pathid[i].nmas;
+        p_id.enrgy  = pathid[i].enrgy;
+        p_id.emerg  = pathid[i].emerg;
+        p_id.pdr    = pathid[i].pdr;
         rinv_pkt->setPathid(i, p_id);
     }
     try {
@@ -505,7 +514,16 @@ void shmrp::sendRinv(int round, std::vector<pathid_entry> pathid, bool local=fal
 void shmrp::sendRinv(int round, bool local=false, int localid=0, int nmas=0) {
     trace()<<"[info] Entering shmrp::sendRinv(round = "<<round<<")";
     std::vector<pathid_entry> pathid;
-    pathid.push_back({0,0});
+    pathid_entry pe;
+    pe.pathid         = 0;
+    pe.nmas           = 0;
+    pe.secl           = 0;
+    pe.secl_performed = 0;
+    pe.used           = 0;
+    pe.enrgy          = ff_app->getEnergyValue(); 
+    pe.emerg          = ff_app->getEmergencyValue();
+    pe.pdr            = 1.0;
+    pathid.push_back(pe);
     sendRinv(round,pathid,local,localid,nmas);
 }
 
@@ -559,18 +577,35 @@ void shmrp::clearRinvTable() {
 void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
     trace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid size: "<<rinv_pkt->getPathidArraySize()<<" hop: "<<rinv_pkt->getHop()<<" interf: "<<rinv_pkt->getInterf();
     node_entry ne;
-    ne.nw_address.assign(rinv_pkt->getSource());
+    ne.nw_address = std::string(rinv_pkt->getSource());
+    ne.pathid.clear(); 
     for(int i=0 ; i < rinv_pkt->getPathidArraySize() ; ++i) {
-        ne.pathid.push_back({rinv_pkt->getPathid(i).pathid,rinv_pkt->getPathid(i).nmas, false, false, false, rinv_pkt->getPathid(i).emerg, rinv_pkt->getPathid(i).enrgy, rinv_pkt->getPathid(i).pdr  });
+        pathid_entry pe;
+        pe.pathid         = rinv_pkt->getPathid(i).pathid;
+        pe.nmas           = rinv_pkt->getPathid(i).nmas;
+        pe.secl           = false;
+        pe.secl_performed = false;
+        pe.used           = false;
+        pe.enrgy          = rinv_pkt->getPathid(i).enrgy;
+        pe.emerg          = rinv_pkt->getPathid(i).emerg;
+        pe.pdr            = rinv_pkt->getPathid(i).pdr;
+        ne.pathid.push_back(pe);
     }
     trace()<<"[info] Pathid added: "<<pathidToStr(ne.pathid);
     ne.hop = rinv_pkt->getHop();
     ne.interf = rinv_pkt->getInterf();
     ne.nmas = rinv_pkt->getNmas();
+    ne.used = false;
     if(rinv_table.find(ne.nw_address) != rinv_table.end()) {
         trace()<<"[info] Entry already exists, overriding";
+
+        bool used = rinv_table.find(ne.nw_address)->second.used;
+        ne.used=used;
+        rinv_table[ne.nw_address]=ne;
+    } else {
+        trace()<<"[info] Adding new entry";
+        rinv_table[ne.nw_address]=ne;
     }
-    rinv_table.insert({ne.nw_address, ne});
 }
 
 int shmrp::getRinvTableSize() const {
@@ -1617,6 +1652,7 @@ void shmrp::timerFiredCallback(int index) {
         }
         case shmrpTimerDef::T_L: {
             trace()<<"[timer] T_L timer expired";
+
             switch (getState()) {
                 case shmrpStateDef::LOCAL_LEARN: {
                     trace()<<"[info] LOCAL_LEARN finished";

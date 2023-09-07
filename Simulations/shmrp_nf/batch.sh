@@ -22,3 +22,4 @@ do
 		./gen.sh omnetpp.ini qos_pdr=$j $SEED shmrp_meas_qos_pdr_`echo $j|sed 's/\./_/g'`.yaml
 	done
 done
+
