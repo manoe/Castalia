@@ -81,10 +81,10 @@ void shmrp::startup() {
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
         setState(shmrpStateDef::WORK);
-        setHop(0, true); // probably wrong
+        setHop(0); // probably wrong
     } else {
         if(isSink()) {
-            setHop(0, true);
+            setHop(0);
             initPongTableSize();
             setTimer(shmrpTimerDef::SINK_START,par("t_start"));
             setState(shmrpStateDef::WORK);
@@ -92,7 +92,7 @@ void shmrp::startup() {
                 setTimer(shmrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
             }
         } else {
-            setHop(std::numeric_limits<int>::max(), true);
+            setHop(std::numeric_limits<int>::max());
             setState(shmrpStateDef::INIT);
         }
     }
@@ -297,13 +297,9 @@ shmrpSecLParDef shmrp::strToSecLPar(std::string str) const {
 }
 
 
-void shmrp::setHop(int hop, bool init=false) {
+void shmrp::setHop(int hop) {
     trace()<<"[info] Entering shmrp::setHop(hop="<<hop<<")";  
-    if(init) {
-        trace()<<"[info] Init hop to "<<hop;
-    } else {
-        trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
-    }
+    trace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
     g_hop=hop;
 }
 
