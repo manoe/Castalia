@@ -230,14 +230,14 @@ class shmrp: public VirtualRouting {
         bool g_is_sink;
         string g_sink_addr;
         int g_hop;
-        int g_round;
+        int g_round = 0;
         pathid_entry g_pathid; // this is dangerous, even more dangerous
         bool g_sec_l = false;
         std::queue<int> g_sec_l_pathid;
         int g_sec_l_timeout = 0;
         bool g_is_master=false;
         feat_par fp;
-        shmrpStateDef g_state;
+        shmrpStateDef g_state = shmrpStateDef::UNDEF;
         std::map<std::string,node_entry> rinv_table;
         std::map<std::string,node_entry> rreq_table;
         std::map<std::string,node_entry> routing_table;
@@ -284,7 +284,7 @@ class shmrp: public VirtualRouting {
         void sendRinv(int,vector<pathid_entry>,bool,int,int);
         void sendRinvBasedOnHop(bool,int,int);
 
-        void setHop(int);
+        void setHop(int, bool);
         int  calculateHop(bool);
         int  calculateHopFromRoutingTable();
 
