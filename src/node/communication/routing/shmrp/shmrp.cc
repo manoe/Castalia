@@ -455,6 +455,9 @@ void shmrp::clearPongTable() {
 
 void shmrp::clearPongTable(int round) {
     trace()<<"[info] Entering shmrp::clearPongTable(round="<<round<<")";
+    if(pong_table.empty()) {
+        return;
+    }
     for(auto it=pong_table.begin() ; it != pong_table.end() ; ++it) {
         if(it->second.round < round ) {
             pong_table.erase(it);

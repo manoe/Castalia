@@ -51,7 +51,7 @@ jobs:
       run: |
         source omnetpp/setenv
         cd castalia
-        make makefiles
+        ./make_wo_efmrp.sh
 
     - name: Compile Castalia
       run: |
