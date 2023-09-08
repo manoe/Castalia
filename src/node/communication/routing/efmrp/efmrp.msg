@@ -20,7 +20,12 @@ enum efmrpPacketDef {
     FIELD_PACKET        = 2;
     DATA_PACKET         = 3;
     QUERY_PACKET        = 4;
-    ALARM_PACKET        = 5;    
+    ALARM_PACKET        = 5; 
+}
+
+enum efmrpAlarmDef {
+    ENVIRONMENT_ALARM   = 0;
+    ENERGY_ALARM        = 1;
 }
 
 
@@ -39,3 +44,9 @@ packet efmrpFieldPacket extends efmrpPacket {
     double  nrg;
     double  env;
 }
+
+packet efmrpAlarmPacket extends efmrpPacket {
+    int efmrpAlarmKind enum (efmrpAlarmDef);
+    double env;
+}
+
