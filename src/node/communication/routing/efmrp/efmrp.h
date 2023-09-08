@@ -45,6 +45,7 @@ struct node_entry {
     int    hop;
     double nrg;
     double env;
+    int    prio;
 };
 
 struct feat_par {

@@ -147,7 +147,6 @@ bool efmrp::checkHelloTable(std::string nw_address) {
     return false;
 }
 
-
 void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
     trace()<<"[info] Entering updateFieldTable(..)";
     node_entry ne;
