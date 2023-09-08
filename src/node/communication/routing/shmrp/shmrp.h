@@ -394,6 +394,9 @@ class shmrp: public VirtualRouting {
         bool getSecL(int pathid);
 
         void incPktCountInTrafficTable(std::string, int, int);
+
+        double getEnergyValue();
+        double getEmergencyValue();
     public:
         shmrp() : g_hop(std::numeric_limits<int>::max()),
                   g_round(0),

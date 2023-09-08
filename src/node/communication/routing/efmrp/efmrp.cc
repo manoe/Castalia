@@ -34,7 +34,7 @@ void efmrp::startup() {
         setState(efmrpStateDef::INIT);
     }
 
-    fp.ttl   =  par("ttl");
+    fp.ttl   =  par("t_ttl");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 }
@@ -81,7 +81,6 @@ string efmrp::stateToStr(efmrpStateDef state) const {
         }
     }
     return "UNKNOWN";
-
 }
 
 efmrpStateDef efmrp::getState() const {
@@ -162,7 +161,6 @@ void efmrp::timerFiredCallback(int index) {
             trace()<<"[timer] TTL timer expired";
             setState(efmrpStateDef::BUILD);
             sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue());
-
         }
         default: {
             trace()<<"[error] Unknown timer expired: "<<index;

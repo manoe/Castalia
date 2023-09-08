@@ -19,7 +19,13 @@ void shmrp::startup() {
         g_is_sink=false;
     }
 
-    ff_app = dynamic_cast<ForestFire *>(appModule);
+    if(0==strcmp(appModule->getClassName(),"ForesFire")) {
+        trace()<<"[info] ForestFire app present";
+        ff_app = check_and_cast<ForestFire *>(appModule);
+    } else {
+        trace()<<"[info] ForestFire app not present";
+        ff_app = NULL;
+    }
 
 
     if(appModule->hasPar("isMaster")) {
@@ -519,8 +525,8 @@ void shmrp::sendRinv(int round, bool local=false, int localid=0, int nmas=0) {
     pe.secl           = 0;
     pe.secl_performed = 0;
     pe.used           = 0;
-    pe.enrgy          = ff_app->getEnergyValue(); 
-    pe.emerg          = ff_app->getEmergencyValue();
+    pe.enrgy          = getEnergyValue(); 
+    pe.emerg          = getEmergencyValue();
     pe.pdr            = 1.0;
     pathid.push_back(pe);
     sendRinv(round,pathid,local,localid,nmas);
@@ -534,7 +540,7 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
         // With this the master/sensor node capabilities inside the ring won't matter
-        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  ff_app->getEnergyValue(), ff_app->getEmergencyValue(),1.0}), local, nmas);
+        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0}), local, nmas);
     } else {
         trace()<<"[info] Node outside mesh ring";
         std::vector<pathid_entry> pathid;
@@ -2730,3 +2736,18 @@ void shmrp::handleLinkFailure(int p) {
         }
     }
 }
+
+double shmrp::getEnergyValue() {
+    if(ff_app==NULL) {
+        return 1.0;
+    }
+    return ff_app->getEnergyValue();
+}
+
+double shmrp::getEmergencyValue() {
+    if(ff_app==NULL) {
+        return 1.0;
+    }
+    return ff_app->getEmergencyValue();
+}
+
