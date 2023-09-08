@@ -1,0 +1,41 @@
+//*******************************************************************************
+//*  Copyright: Balint Aron Uveges, 2023                                        *
+//*  Developed at Pazmany Peter Catholic University,                            *
+//*               Faculty of Information Technology and Bionics                 *
+//*  Author(s): Balint Aron Uveges                                              *
+//*  This file is distributed under the terms in the attached LICENSE file.     *
+//*                                                                             *
+//*******************************************************************************
+
+
+cplusplus {{
+#include "node/communication/routing/RoutingPacket_m.h"
+}}
+
+class RoutingPacket;
+
+enum efmrpPacketDef {
+    UNDEF_PACKET        = 0;
+    HELLO_PACKET        = 1;
+    FIELD_PACKET        = 2;
+    DATA_PACKET         = 3;
+    QUERY_PACKET        = 4;
+    ALARM_PACKET        = 5;    
+}
+
+
+packet efmrpPacket extends RoutingPacket {
+    int efmrpPacketKind enum (efmrpPacketDef);
+    string origin;
+}
+
+packet efmrpHelloPacket extends efmrpPacket {
+    int hop;
+    double timestamp;
+}
+
+packet efmrpFieldPacket extends efmrpPacket {
+    int     hop;
+    double  nrg;
+    double  env;
+}
