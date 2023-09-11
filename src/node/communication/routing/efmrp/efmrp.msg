@@ -45,6 +45,22 @@ packet efmrpFieldPacket extends efmrpPacket {
     double  env;
 }
 
+packet efmrpDataPacket extends efmrpPacket {
+    int     pri;
+    double  data;
+}
+
+packet efmrpQueryPacket extends efmrpPacket {
+    string origin;
+    int    pri;
+}
+
+packet efmrpQueryAckPacket extends efmrpPacket {
+    string origin;
+    int    pri;
+    bool   used;
+}
+
 packet efmrpAlarmPacket extends efmrpPacket {
     int efmrpAlarmKind enum (efmrpAlarmDef);
     double env;

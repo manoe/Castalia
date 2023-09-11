@@ -242,6 +242,8 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
             if(getState()==efmrpStateDef::WORK) {
                 trace()<<"[info] Node in WORK state, discarding HELLO_PACKET";
+                // should be re-learn?
+                break;
             }
 
             if(getState()==efmrpStateDef::INIT) {
@@ -257,7 +259,6 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 sendHello(getHop(), hello_pkt->getTimestamp());
             }
             updateHelloTable(hello_pkt);
-
 
             break;
         }
