@@ -28,13 +28,17 @@ void efmrp::startup() {
     if(isSink()) {
         setHop(0);
         setTimer(efmrpTimerDef::SINK_START,par("t_start"));
-        setState(efmrpStateDef::WORK);
+        setState(efmrpStateDef::INIT);
     } else {
         setHop(std::numeric_limits<int>::max());
         setState(efmrpStateDef::INIT);
     }
 
-    fp.ttl   =  par("ttl");
+    fp.ttl   =  par("t_ttl");
+    fp.field =  par("t_field");
+
+    fp.alpha =  par("p_alpha");
+    fp.beta  =  par("p_beta");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 }
@@ -81,7 +85,6 @@ string efmrp::stateToStr(efmrpStateDef state) const {
         }
     }
     return "UNKNOWN";
-
 }
 
 efmrpStateDef efmrp::getState() const {
@@ -130,7 +133,18 @@ void efmrp::updateHelloTable(efmrpHelloPacket *hello_pkt) {
     ne.nw_address=hello_pkt->getSource();
     ne.hop=hello_pkt->getHop();
     trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" hop: "<<ne.hop<<" to hello_table";
+    if(hello_table.find(ne.nw_address) != hello_table.end()) {
+        trace()<<"[warn] Overriding record's hop: "<<hello_table[ne.nw_address].hop;
+    }
     hello_table.insert({hello_pkt->getSource(),ne});
+}
+
+bool efmrp::checkHelloTable(std::string nw_address) {
+    trace()<<"[info] Entering checkHelloTable(nw_address="<<nw_address<<")";
+    if(hello_table.find(nw_address) != hello_table.end()) {
+        return true;
+    }
+    return false;
 }
 
 void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
@@ -151,18 +165,26 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
     trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env;
 }
 
+
 void efmrp::timerFiredCallback(int index) {
     switch (index) {
         case efmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
+            setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
+            setState(efmrpStateDef::LEARN);
             break;
         }
         case efmrpTimerDef::TTL: {
             trace()<<"[timer] TTL timer expired";
             setState(efmrpStateDef::BUILD);
             sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue());
-
+            setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
+        }
+        case efmrpTimerDef::FIELD: {
+            trace()<<"[timer] BUILD timer expired";
+            setState(efmrpStateDef::WORK);
+            break;
         }
         default: {
             trace()<<"[error] Unknown timer expired: "<<index;
@@ -179,11 +201,16 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
 
     switch (getState()) {
         case efmrpStateDef::LEARN: {
-            trace()<<"[error] In LEARNING state, can't route packet";
+            trace()<<"[error] In LEARN state, can't route packet";
             return;
         }
+        case efmrpStateDef::BUILD: {
+            trace()<<"[info] In BUILD state, best effort routing";
+        }
+        case efmrpStateDef::WORK: {
+            trace()<<"[info] In WORK state, routing";
+        }
     }
-
 }
 
 void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
@@ -202,6 +229,23 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[info] HELLO_PACKET expired, timestamp: "<<hello_pkt->getTimestamp()<<" clock: "<<getClock().dbl();
                 break;
             }
+
+            if(isSink()) {
+                trace()<<"[info] Node is sink, HELLO_PACKET discarded";
+                break;
+            }
+
+            if(getState()==efmrpStateDef::BUILD) {
+                trace()<<"[info] Node in BUILD state, discarding HELLO_PACKET";
+                break;
+            }
+
+            if(getState()==efmrpStateDef::WORK) {
+                trace()<<"[info] Node in WORK state, discarding HELLO_PACKET";
+                // should be re-learn?
+                break;
+            }
+
             if(getState()==efmrpStateDef::INIT) {
                 trace()<<"[info] Node in INIT state, transitioning to LEARN and arming TTL timer";
                 setState(efmrpStateDef::LEARN);
@@ -209,11 +253,37 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
             }
 
-            if(hello_pkt->getHop()<getHop()) {
+            if(hello_pkt->getHop()+1<getHop()) {
                 trace()<<"[info] Updating hop status";
                 setHop(hello_pkt->getHop()+1);
-                updateHelloTable(hello_pkt);
                 sendHello(getHop(), hello_pkt->getTimestamp());
+            }
+            updateHelloTable(hello_pkt);
+
+            break;
+        }
+        case efmrpPacketDef::FIELD_PACKET: {
+            trace()<<"[info] FIELD_PACKET received";
+            efmrpFieldPacket *field_pkt=dynamic_cast<efmrpFieldPacket *>(efmrp_pkt);
+            if(isSink()) {
+                trace()<<"[info] Node is sink, FIELD_PACKET discarded";
+                break;
+            }
+
+            if(getState()==efmrpStateDef::LEARN) {
+                trace()<<"[info] Node in LEARN state";
+                updateFieldTable(field_pkt);
+            }
+            if(getState()==efmrpStateDef::BUILD) {
+                trace()<<"[info] Node in BUILD state";
+                if(checkHelloTable(std::string(field_pkt->getSource()))) {
+                    updateFieldTable(field_pkt);
+                } else {
+                    trace()<<"[info] Entry not found in hello table, discarding";
+                }            
+            }
+            if(getState()==efmrpStateDef::WORK) {
+                trace()<<"[info] Node in WORK state, discarding FIELD_PACKET";
             }
 
             break;

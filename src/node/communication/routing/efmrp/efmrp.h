@@ -36,7 +36,8 @@ enum efmrpStateDef {
 
 enum efmrpTimerDef {
     SINK_START  = 1,
-    TTL         = 2  
+    TTL         = 2,
+    FIELD       = 3 
 };
 
 struct node_entry {
@@ -44,10 +45,17 @@ struct node_entry {
     int    hop;
     double nrg;
     double env;
+    int    prio;
 };
 
 struct feat_par {
+    // TIMER
     double ttl;
+    double field;
+
+    // PARAMETER
+    double alpha;
+    double beta;
 };
 
 
@@ -78,6 +86,8 @@ class efmrp: public VirtualRouting {
         void sendHello();
         void sendHello(int, double);
         void updateHelloTable(efmrpHelloPacket *);
+        bool checkHelloTable(std::string);
+
 
         void sendField(int, double, double);
         void updateFieldTable(efmrpFieldPacket *);
@@ -93,6 +103,7 @@ class efmrp: public VirtualRouting {
         std::string stateToStr(efmrpStateDef) const;
         efmrpStateDef getState() const;
 
+        
     public:
         efmrp() : g_is_sink(false),
                   g_hop(std::numeric_limits<int>::max()),
