@@ -245,7 +245,6 @@ void efmrp::sendData(routing_entry re, cPacket *pkt) {
     data_pkt->setPri(re.prio);
 
     data_pkt->encapsulate(pkt);
- 
 
     toMacLayer(data_pkt, resolveNetworkAddress(re.next_hop.c_str()));
 
@@ -426,6 +425,10 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[info] Node in WORK state, discarding FIELD_PACKET";
             }
 
+            break;
+        }
+        case efmrpPacketDef::QUERY_PACKET: {
+            trace()<<"[info] QUERY_PACKET received";
             break;
         }
 

@@ -41,6 +41,18 @@ enum efmrpTimerDef {
     QUERY       = 4
 };
 
+enum efmrpPathStatus {
+    UNKNOWN     = 0,
+    USED        = 1,
+    DEAD        = 2
+};
+
+struct efmrpPathEntry {
+    std::string     origin;
+    int             prio;
+    efmrpPathStatus status;
+};
+
 struct node_entry {
     std::string nw_address;
     int         hop;
@@ -53,7 +65,6 @@ struct routing_entry {
     std::string next_hop;
     double      target_value;
     int         prio;
-    bool        dead_end;
 };
 
 struct feat_par {

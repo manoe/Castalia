@@ -20,7 +20,8 @@ enum efmrpPacketDef {
     FIELD_PACKET        = 2;
     DATA_PACKET         = 3;
     QUERY_PACKET        = 4;
-    ALARM_PACKET        = 5; 
+    QUERY_ACK_PACKET    = 5;
+    ALARM_PACKET        = 6; 
 }
 
 enum efmrpAlarmDef {
@@ -55,7 +56,6 @@ packet efmrpQueryPacket extends efmrpPacket {
 }
 
 packet efmrpQueryAckPacket extends efmrpPacket {
-    string origin;
     int    pri;
     bool   used;
 }
