@@ -37,27 +37,36 @@ enum efmrpStateDef {
 enum efmrpTimerDef {
     SINK_START  = 1,
     TTL         = 2,
-    FIELD       = 3 
+    FIELD       = 3,
+    QUERY       = 4
 };
 
 struct node_entry {
-    string nw_address;
-    int    hop;
-    double nrg;
-    double env;
-    int    prio;
+    std::string nw_address;
+    int         hop;
+    double      nrg;
+    double      env;
+};
+
+struct routing_entry {
+    std::string nw_address;
+    std::string next_hop;
+    double      target_value;
+    int         prio;
+    bool        dead_end;
 };
 
 struct feat_par {
     // TIMER
     double ttl;
     double field;
+    double query;
 
     // PARAMETER
     double alpha;
     double beta;
+    bool   pnum;
 };
-
 
 class efmrp: public VirtualRouting {
     private:
@@ -69,7 +78,7 @@ class efmrp: public VirtualRouting {
 
         std::map<std::string,node_entry> hello_table;
         std::map<std::string,node_entry> field_table;
-        std::map<std::string,node_entry> routing_table;
+        std::vector<routing_entry>       routing_table;
 
         
         ForestFire* ff_app;
@@ -92,6 +101,18 @@ class efmrp: public VirtualRouting {
         void sendField(int, double, double);
         void updateFieldTable(efmrpFieldPacket *);
 
+        void constructPath(std::string, int prio);
+
+        node_entry getNthTargetValueEntry(int);
+        int numOfAvailPaths(std::string);
+        void addRoutingEntry(std::string nw_address, node_entry ne, int prio);
+        double targetFunction(node_entry);
+        routing_entry getPath(std::string);
+
+        void sendQuery(std::string, int);
+
+        void sendData(routing_entry, cPacket *);
+
         bool isSink() const;
         void setSinkAddress(const char *);
         std::string getSinkAddress() const;
@@ -102,7 +123,6 @@ class efmrp: public VirtualRouting {
         void setState(efmrpStateDef);
         std::string stateToStr(efmrpStateDef) const;
         efmrpStateDef getState() const;
-
         
     public:
         efmrp() : g_is_sink(false),

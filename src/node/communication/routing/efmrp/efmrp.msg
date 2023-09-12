@@ -51,7 +51,6 @@ packet efmrpDataPacket extends efmrpPacket {
 }
 
 packet efmrpQueryPacket extends efmrpPacket {
-    string origin;
     int    pri;
 }
 

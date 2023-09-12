@@ -36,9 +36,11 @@ void efmrp::startup() {
 
     fp.ttl   =  par("t_ttl");
     fp.field =  par("t_field");
+    fp.query =  par("t_query");
 
     fp.alpha =  par("p_alpha");
     fp.beta  =  par("p_beta");
+    fp.pnum  =  par("p_pnum");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 }
@@ -165,6 +167,89 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
     trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env;
 }
 
+void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio) {
+    trace()<<"[info] Entering addRoutingEntry(nw_address="<<nw_address<<", node_entry.nw_address="<<ne.nw_address<<", prio="<<prio;
+    for(auto it=routing_table.begin() ; it != routing_table.end() ; ++it) {
+        if(it->nw_address == nw_address && it->prio == prio) {
+            std::string("[error] record with prio already exists");
+        }
+    }
+    routing_entry re;
+    re.nw_address=nw_address;
+    re.next_hop=ne.nw_address;
+    re.target_value=targetFunction(ne);
+    re.prio=prio;
+    routing_table.push_back(re);
+}
+
+node_entry efmrp::getNthTargetValueEntry(int order) {
+    trace()<<"[info] Entering getNthTargetValueEntry(order="<<order<<")";
+    if(field_table.size() < order) {
+        throw std::string("[error] Less record than order");
+    }
+
+    std::vector<node_entry> fv;
+    for(auto it = field_table.begin() ; it != field_table.end() ; ++it) {
+        fv.push_back(it->second);
+    }
+
+    std::sort(fv.begin(), fv.end(), [this](node_entry a, node_entry b) { return targetFunction(a) < targetFunction(b);  });
+    return fv[order-1];
+}
+
+double efmrp::targetFunction(node_entry a) {
+    trace()<<"[info] Entering targetFunction(a)";
+    double ret_val = (1.0 - fp.alpha - fp.beta) * 1.0/(a.hop + 1) +
+                     fp.alpha * a.env + fp.beta * a.nrg;
+    trace()<<"[info] targetFunction value: "<<ret_val;
+    return ret_val;
+}
+
+
+int efmrp::numOfAvailPaths(std::string ne) {
+    trace()<<"[info] Entering numOfAvailPaths(ne="<<ne<<")";
+    int ret_val=0;
+    for(auto re: routing_table) {
+        if(ne == re.nw_address) {
+            ++ret_val;
+        }
+    }
+    return ret_val;
+}
+
+void efmrp::sendQuery(std::string ne, int prio) {
+    trace()<<"[info] Entering sendQuery(ne="<<ne<<")";
+    efmrpQueryPacket *query_pkt=new efmrpQueryPacket("EFMRP QUERY packet", NETWORK_LAYER_PACKET);
+    query_pkt->setByteLength(netDataFrameOverhead);
+    query_pkt->setEfmrpPacketKind(efmrpPacketDef::QUERY_PACKET);
+    query_pkt->setOrigin(ne.c_str());
+    query_pkt->setSource(SELF_NETWORK_ADDRESS);
+    query_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+
+    query_pkt->setPri(prio);
+
+    toMacLayer(query_pkt, BROADCAST_MAC_ADDRESS);
+
+}
+
+void efmrp::sendData(routing_entry re, cPacket *pkt) {
+    trace()<<"[info] Entering sendData(re.next_hop="<<re.next_hop;
+    efmrpDataPacket *data_pkt=new efmrpDataPacket("EFMRP DATA packet", NETWORK_LAYER_PACKET);
+
+    data_pkt->setByteLength(netDataFrameOverhead);
+    data_pkt->setEfmrpPacketKind(efmrpPacketDef::DATA_PACKET);
+    data_pkt->setOrigin(re.nw_address.c_str());
+    data_pkt->setSource(SELF_NETWORK_ADDRESS);
+    data_pkt->setDestination(re.next_hop.c_str());
+
+    data_pkt->setPri(re.prio);
+
+    data_pkt->encapsulate(pkt);
+ 
+
+    toMacLayer(data_pkt, resolveNetworkAddress(re.next_hop.c_str()));
+
+}
 
 void efmrp::timerFiredCallback(int index) {
     switch (index) {
@@ -182,9 +267,15 @@ void efmrp::timerFiredCallback(int index) {
             setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
         }
         case efmrpTimerDef::FIELD: {
-            trace()<<"[timer] BUILD timer expired";
+            trace()<<"[timer] FIELD timer expired";
             setState(efmrpStateDef::WORK);
+            trace()<<"[info] Construct primary path";
+            routing_table.clear();
+            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1),1);
             break;
+        }
+        case efmrpTimerDef::QUERY: {
+
         }
         default: {
             trace()<<"[error] Unknown timer expired: "<<index;
@@ -202,15 +293,64 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     switch (getState()) {
         case efmrpStateDef::LEARN: {
             trace()<<"[error] In LEARN state, can't route packet";
-            return;
+            break;;
         }
         case efmrpStateDef::BUILD: {
             trace()<<"[info] In BUILD state, best effort routing";
+            break;
         }
         case efmrpStateDef::WORK: {
             trace()<<"[info] In WORK state, routing";
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==0) {
+                trace()<<"[error] No route available";
+                break;
+            }
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)<fp.pnum) {
+                trace()<<"[info] Not all paths are available";
+                setTimer(efmrpTimerDef::QUERY,fp.query);
+                sendQuery(SELF_NETWORK_ADDRESS,numOfAvailPaths(SELF_NETWORK_ADDRESS)+1);
+                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+                break;
+            }
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==fp.pnum) {
+                trace()<<"[info] All paths are available, performing traffic allocation";
+                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+                break;
+            }
         }
     }
+}
+
+routing_entry efmrp::getPath(std::string ne) {
+    trace()<<"[info] Entering getPath(ne="<<ne<<")";
+    std::vector<routing_entry> rv;
+    double tv_sum=0;
+    double tv=0;
+    double rnd=getRNG(0)->doubleRand();
+
+    for(auto re: routing_table) {
+        if(re.nw_address==ne) {
+            rv.push_back(re);
+            tv_sum+=re.target_value;
+            trace()<<"[info] Adding entry ne: "<<re.nw_address<<" next hop: "<<re.next_hop<<" tv: "<<re.target_value;
+        }
+    }
+    if(rv.size()==0) {
+        throw std::string("[error] No routing entry");
+    }
+
+    trace()<<"[info] rand: "<<rnd<<" tv_sum: "<<tv_sum;
+
+    for(auto re: rv) {
+        tv+=re.target_value;
+        if(rnd<tv) {
+            trace()<<"[info] Selected entry: "<<re.next_hop;
+            return re;
+        }
+    }
+
+    trace()<<"[error] No route selected based on probability. Selecting first one next_hop: "<<rv[0].next_hop;
+    return rv[0];
 }
 
 void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
