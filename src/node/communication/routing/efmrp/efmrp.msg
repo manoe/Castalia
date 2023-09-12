@@ -52,11 +52,9 @@ packet efmrpDataPacket extends efmrpPacket {
 }
 
 packet efmrpQueryPacket extends efmrpPacket {
-    int    pri;
 }
 
 packet efmrpQueryAckPacket extends efmrpPacket {
-    int    pri;
     bool   used;
 }
 

@@ -217,7 +217,7 @@ int efmrp::numOfAvailPaths(std::string ne) {
     return ret_val;
 }
 
-void efmrp::sendQuery(std::string ne, int prio) {
+void efmrp::sendQuery(std::string ne) {
     trace()<<"[info] Entering sendQuery(ne="<<ne<<")";
     efmrpQueryPacket *query_pkt=new efmrpQueryPacket("EFMRP QUERY packet", NETWORK_LAYER_PACKET);
     query_pkt->setByteLength(netDataFrameOverhead);
@@ -226,9 +226,22 @@ void efmrp::sendQuery(std::string ne, int prio) {
     query_pkt->setSource(SELF_NETWORK_ADDRESS);
     query_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
 
-    query_pkt->setPri(prio);
-
     toMacLayer(query_pkt, BROADCAST_MAC_ADDRESS);
+
+}
+
+void efmrp::sendQueryAck(std::string origin, std::string dst, bool used) {
+    trace()<<"[info] Entering sendQuery(origin="<<origin<<", dst="<<dst<<", used="<<used<<")";
+    efmrpQueryAckPacket *query_ack_pkt=new efmrpQueryAckPacket("EFMRP QUERY_ACL packet", NETWORK_LAYER_PACKET);
+    query_ack_pkt->setByteLength(netDataFrameOverhead);
+    query_ack_pkt->setEfmrpPacketKind(efmrpPacketDef::QUERY_ACK_PACKET);
+    query_ack_pkt->setOrigin(origin.c_str());
+    query_ack_pkt->setSource(SELF_NETWORK_ADDRESS);
+    query_ack_pkt->setDestination(dst.c_str());
+
+    query_ack_pkt->setUsed(used);
+
+    toMacLayer(query_ack_pkt, resolveNetworkAddress(dst.c_str()));
 
 }
 
@@ -307,7 +320,7 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             if(numOfAvailPaths(SELF_NETWORK_ADDRESS)<fp.pnum) {
                 trace()<<"[info] Not all paths are available";
                 setTimer(efmrpTimerDef::QUERY,fp.query);
-                sendQuery(SELF_NETWORK_ADDRESS,numOfAvailPaths(SELF_NETWORK_ADDRESS)+1);
+                sendQuery(SELF_NETWORK_ADDRESS);
                 sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
                 break;
             }
@@ -318,6 +331,15 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             }
         }
     }
+}
+
+bool efmrp::checkPath(std::string ne) {
+    for(auto entry: routing_table) {
+        if(entry.nw_address == ne) {
+            return true;
+        }
+    }
+    return false;
 }
 
 routing_entry efmrp::getPath(std::string ne) {
@@ -429,6 +451,8 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         }
         case efmrpPacketDef::QUERY_PACKET: {
             trace()<<"[info] QUERY_PACKET received";
+            efmrpQueryPacket *query_pkt=dynamic_cast<efmrpQueryPacket *>(efmrp_pkt);
+            sendQueryAck(query_pkt->getOrigin(),query_pkt->getSource(), checkPath(query_pkt->getOrigin()));
             break;
         }
 

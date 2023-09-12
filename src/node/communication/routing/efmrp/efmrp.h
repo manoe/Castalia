@@ -43,13 +43,13 @@ enum efmrpTimerDef {
 
 enum efmrpPathStatus {
     UNKNOWN     = 0,
-    USED        = 1,
-    DEAD        = 2
+    AVAILABLE   = 1,
+    USED        = 2,
+    DEAD        = 3
 };
 
-struct efmrpPathEntry {
+struct path_entry {
     std::string     origin;
-    int             prio;
     efmrpPathStatus status;
 };
 
@@ -58,10 +58,11 @@ struct node_entry {
     int         hop;
     double      nrg;
     double      env;
+    std::vector<path_entry> pe;
 };
 
 struct routing_entry {
-    std::string nw_address;
+    std::string nw_address; // this should be origin
     std::string next_hop;
     double      target_value;
     int         prio;
@@ -119,8 +120,10 @@ class efmrp: public VirtualRouting {
         void addRoutingEntry(std::string nw_address, node_entry ne, int prio);
         double targetFunction(node_entry);
         routing_entry getPath(std::string);
+        bool checkPath(std::string);
 
-        void sendQuery(std::string, int);
+        void sendQuery(std::string);
+        void sendQueryAck(std::string, std::string, bool);
 
         void sendData(routing_entry, cPacket *);
 
