@@ -65,6 +65,7 @@ struct routing_entry {
     std::string nw_address; // this should be origin
     std::string next_hop;
     double      target_value;
+    efmrpPathStatus status;
     int         prio;
 };
 
@@ -112,12 +113,15 @@ class efmrp: public VirtualRouting {
 
         void sendField(int, double, double);
         void updateFieldTable(efmrpFieldPacket *);
+        void updateFieldTableWithQA(efmrpQueryAckPacket *);
 
         void constructPath(std::string, int prio);
 
         node_entry getNthTargetValueEntry(int);
         int numOfAvailPaths(std::string);
-        void addRoutingEntry(std::string nw_address, node_entry ne, int prio);
+        void addRoutingEntry(std::string, node_entry, int);
+        void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
+
         double targetFunction(node_entry);
         routing_entry getPath(std::string);
         bool checkPath(std::string);

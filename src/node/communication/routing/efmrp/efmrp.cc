@@ -168,6 +168,10 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
 }
 
 void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio) {
+    addRoutingEntry(nw_address, ne, prio, efmrpPathStatus::AVAILABLE);
+}
+
+void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio, efmrpPathStatus status) {
     trace()<<"[info] Entering addRoutingEntry(nw_address="<<nw_address<<", node_entry.nw_address="<<ne.nw_address<<", prio="<<prio;
     for(auto it=routing_table.begin() ; it != routing_table.end() ; ++it) {
         if(it->nw_address == nw_address && it->prio == prio) {
@@ -178,6 +182,7 @@ void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio) {
     re.nw_address=nw_address;
     re.next_hop=ne.nw_address;
     re.target_value=targetFunction(ne);
+    re.status=status;
     re.prio=prio;
     routing_table.push_back(re);
 }
@@ -210,7 +215,7 @@ int efmrp::numOfAvailPaths(std::string ne) {
     trace()<<"[info] Entering numOfAvailPaths(ne="<<ne<<")";
     int ret_val=0;
     for(auto re: routing_table) {
-        if(ne == re.nw_address) {
+        if(ne == re.nw_address && re.status==efmrpPathStatus::AVAILABLE) {
             ++ret_val;
         }
     }
@@ -263,82 +268,17 @@ void efmrp::sendData(routing_entry re, cPacket *pkt) {
 
 }
 
-void efmrp::timerFiredCallback(int index) {
-    switch (index) {
-        case efmrpTimerDef::SINK_START: {
-            trace()<<"[timer] SINK_START timer expired";
-            sendHello();
-            setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
-            setState(efmrpStateDef::LEARN);
-            break;
-        }
-        case efmrpTimerDef::TTL: {
-            trace()<<"[timer] TTL timer expired";
-            setState(efmrpStateDef::BUILD);
-            sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue());
-            setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
-        }
-        case efmrpTimerDef::FIELD: {
-            trace()<<"[timer] FIELD timer expired";
-            setState(efmrpStateDef::WORK);
-            trace()<<"[info] Construct primary path";
-            routing_table.clear();
-            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1),1);
-            break;
-        }
-        case efmrpTimerDef::QUERY: {
 
-        }
-        default: {
-            trace()<<"[error] Unknown timer expired: "<<index;
-            break;
-        }
-    }
-}
-
-void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
-    if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
-        trace()<<"[error] Packet's destination not sink: "<<destination;
-        return;
-    }
-
-    switch (getState()) {
-        case efmrpStateDef::LEARN: {
-            trace()<<"[error] In LEARN state, can't route packet";
-            break;;
-        }
-        case efmrpStateDef::BUILD: {
-            trace()<<"[info] In BUILD state, best effort routing";
-            break;
-        }
-        case efmrpStateDef::WORK: {
-            trace()<<"[info] In WORK state, routing";
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==0) {
-                trace()<<"[error] No route available";
-                break;
-            }
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)<fp.pnum) {
-                trace()<<"[info] Not all paths are available";
-                setTimer(efmrpTimerDef::QUERY,fp.query);
-                sendQuery(SELF_NETWORK_ADDRESS);
-                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
-                break;
-            }
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==fp.pnum) {
-                trace()<<"[info] All paths are available, performing traffic allocation";
-                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
-                break;
-            }
-        }
-    }
-}
 
 bool efmrp::checkPath(std::string ne) {
+    trace()<<"[info] Entering checkPath(ne="<<ne<<")";
     for(auto entry: routing_table) {
         if(entry.nw_address == ne) {
+            trace()<<"[info] Entry found";
             return true;
         }
     }
+    trace()<<"[info] Entry not found.";
     return false;
 }
 
@@ -373,6 +313,78 @@ routing_entry efmrp::getPath(std::string ne) {
     trace()<<"[error] No route selected based on probability. Selecting first one next_hop: "<<rv[0].next_hop;
     return rv[0];
 }
+
+void efmrp::updateFieldTableWithQA(efmrpQueryAckPacket *query_ack_pkt) {
+    trace()<<"[info] Entering updateFieldTableWithQA()";
+}
+
+void efmrp::timerFiredCallback(int index) {
+    switch (index) {
+        case efmrpTimerDef::SINK_START: {
+            trace()<<"[timer] SINK_START timer expired";
+            sendHello();
+            setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
+            setState(efmrpStateDef::LEARN);
+            break;
+        }
+        case efmrpTimerDef::TTL: {
+            trace()<<"[timer] TTL timer expired";
+            setState(efmrpStateDef::BUILD);
+            sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue());
+            setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
+        }
+        case efmrpTimerDef::FIELD: {
+            trace()<<"[timer] FIELD timer expired";
+            setState(efmrpStateDef::WORK);
+            trace()<<"[info] Construct primary path";
+            routing_table.clear();
+            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1),1);
+            break;
+        }
+        default: {
+            trace()<<"[error] Unknown timer expired: "<<index;
+            break;
+        }
+    }
+}
+
+void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
+    if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
+        trace()<<"[error] Packet's destination not sink: "<<destination;
+        return;
+    }
+
+    switch (getState()) {
+        case efmrpStateDef::LEARN: {
+            trace()<<"[error] In LEARN state, can't route packet";
+            break;;
+        }
+        case efmrpStateDef::BUILD: {
+            trace()<<"[info] In BUILD state, best effort routing";
+            break;
+        }
+        case efmrpStateDef::WORK: {
+            trace()<<"[info] In WORK state, routing";
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==0) {
+                trace()<<"[error] No route available";
+                break;
+            }
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)<fp.pnum) {
+                trace()<<"[info] Not all paths are available";
+                sendQuery(SELF_NETWORK_ADDRESS);
+
+                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+                break;
+            }
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==fp.pnum) {
+                trace()<<"[info] All paths are available, performing traffic allocation";
+                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+                break;
+            }
+        }
+    }
+}
+
 
 void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
     efmrpPacket *efmrp_pkt=dynamic_cast<efmrpPacket *>(pkt);
@@ -453,6 +465,12 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             trace()<<"[info] QUERY_PACKET received";
             efmrpQueryPacket *query_pkt=dynamic_cast<efmrpQueryPacket *>(efmrp_pkt);
             sendQueryAck(query_pkt->getOrigin(),query_pkt->getSource(), checkPath(query_pkt->getOrigin()));
+            break;
+        }
+        case efmrpPacketDef::QUERY_ACK_PACKET: {
+            trace()<<"[info] QUERY_ACK_PACKET received";
+            efmrpQueryAckPacket *query_ack_pkt=dynamic_cast<efmrpQueryAckPacket *>(efmrp_pkt);
+            updateFieldTableWithQA(query_ack_pkt);
             break;
         }
 
