@@ -168,11 +168,11 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
 }
 
 void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio) {
-    addRoutingEntry(nw_address, ne, prio, efmrpPathStatus::AVAILABLE);
+    addRoutingEntry(nw_address, ne, prio, efmrpPathStatus::AVAILABLE, 0.0);
 }
 
-void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio, efmrpPathStatus status) {
-    trace()<<"[info] Entering addRoutingEntry(nw_address="<<nw_address<<", node_entry.nw_address="<<ne.nw_address<<", prio="<<prio;
+void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio, efmrpPathStatus status, double timestamp) {
+    trace()<<"[info] Entering addRoutingEntry(nw_address="<<nw_address<<", node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<status<<", timestamp="<<timestamp;
     for(auto it=routing_table.begin() ; it != routing_table.end() ; ++it) {
         if(it->nw_address == nw_address && it->prio == prio) {
             std::string("[error] record with prio already exists");
@@ -184,6 +184,7 @@ void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio, efm
     re.target_value=targetFunction(ne);
     re.status=status;
     re.prio=prio;
+    re.query_timestamp=timestamp;
     routing_table.push_back(re);
 }
 
@@ -249,6 +250,29 @@ void efmrp::sendQueryAck(std::string origin, std::string dst, bool used) {
     toMacLayer(query_ack_pkt, resolveNetworkAddress(dst.c_str()));
 
 }
+
+bool efmrp::queryStarted(std::string ne) {
+    trace()<<"[info] Entering queryStarted(ne="<<ne<<")";
+    for(auto re: routing_table) {
+        if(re.nw_address==ne && re.status==efmrpPathStatus::UNDER_QUERY && re.prio>1 && re.query_timestamp+fp.query > getClock().dbl()) {
+            trace()<<"[info] Query ongoing";
+            return true;
+        }
+    }
+    return false;
+}
+
+bool efmrp::queryCompleted(std::string ne) {
+    trace()<<"[info] Entering queryStarted(ne="<<ne<<")";
+    for(auto re: routing_table) {
+        if(re.nw_address==ne && re.status==efmrpPathStatus::UNDER_QUERY && re.prio>1 && re.query_timestamp+fp.query < getClock().dbl()) {
+            trace()<<"[info] Query completed";
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void efmrp::sendData(routing_entry re, cPacket *pkt) {
     trace()<<"[info] Entering sendData(re.next_hop="<<re.next_hop;
@@ -371,8 +395,15 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             }
             if(numOfAvailPaths(SELF_NETWORK_ADDRESS)<fp.pnum) {
                 trace()<<"[info] Not all paths are available";
-                sendQuery(SELF_NETWORK_ADDRESS);
+                if(!queryStarted(SELF_NETWORK_ADDRESS)) {
+                    node_entry ne;
+                    addRoutingEntry(SELF_NETWORK_ADDRESS, ne, numOfAvailPaths(SELF_NETWORK_ADDRESS)+1, efmrpPathStatus::UNDER_QUERY,getClock().dbl());
+                    sendQuery(SELF_NETWORK_ADDRESS);
+                } else {
+                    if(queryCompleted(SELF_NETWORK_ADDRESS)) {
 
+                    }
+                }
                 sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
                 break;
             }
