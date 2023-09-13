@@ -37,27 +37,49 @@ enum efmrpStateDef {
 enum efmrpTimerDef {
     SINK_START  = 1,
     TTL         = 2,
-    FIELD       = 3 
+    FIELD       = 3,
+    QUERY       = 4
+};
+
+enum efmrpPathStatus {
+    UNKNOWN     = 0,
+    AVAILABLE   = 1,
+    USED        = 2,
+    DEAD        = 3
+};
+
+struct path_entry {
+    std::string     origin;
+    efmrpPathStatus status;
 };
 
 struct node_entry {
-    string nw_address;
-    int    hop;
-    double nrg;
-    double env;
-    int    prio;
+    std::string nw_address;
+    int         hop;
+    double      nrg;
+    double      env;
+    std::vector<path_entry> pe;
+};
+
+struct routing_entry {
+    std::string nw_address; // this should be origin
+    std::string next_hop;
+    double      target_value;
+    efmrpPathStatus status;
+    int         prio;
 };
 
 struct feat_par {
     // TIMER
     double ttl;
     double field;
+    double query;
 
     // PARAMETER
     double alpha;
     double beta;
+    bool   pnum;
 };
-
 
 class efmrp: public VirtualRouting {
     private:
@@ -69,7 +91,7 @@ class efmrp: public VirtualRouting {
 
         std::map<std::string,node_entry> hello_table;
         std::map<std::string,node_entry> field_table;
-        std::map<std::string,node_entry> routing_table;
+        std::vector<routing_entry>       routing_table;
 
         
         ForestFire* ff_app;
@@ -91,6 +113,23 @@ class efmrp: public VirtualRouting {
 
         void sendField(int, double, double);
         void updateFieldTable(efmrpFieldPacket *);
+        void updateFieldTableWithQA(efmrpQueryAckPacket *);
+
+        void constructPath(std::string, int prio);
+
+        node_entry getNthTargetValueEntry(int);
+        int numOfAvailPaths(std::string);
+        void addRoutingEntry(std::string, node_entry, int);
+        void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
+
+        double targetFunction(node_entry);
+        routing_entry getPath(std::string);
+        bool checkPath(std::string);
+
+        void sendQuery(std::string);
+        void sendQueryAck(std::string, std::string, bool);
+
+        void sendData(routing_entry, cPacket *);
 
         bool isSink() const;
         void setSinkAddress(const char *);
@@ -102,7 +141,6 @@ class efmrp: public VirtualRouting {
         void setState(efmrpStateDef);
         std::string stateToStr(efmrpStateDef) const;
         efmrpStateDef getState() const;
-
         
     public:
         efmrp() : g_is_sink(false),
