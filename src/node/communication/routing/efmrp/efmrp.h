@@ -123,6 +123,7 @@ class efmrp: public VirtualRouting {
         int numOfAvailPaths(std::string);
         void addRoutingEntry(std::string, node_entry, int);
         void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus, double timestamp);
+        void updateRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
         bool checkRoutingEntry(std::string, int);
 
         double targetFunction(node_entry);

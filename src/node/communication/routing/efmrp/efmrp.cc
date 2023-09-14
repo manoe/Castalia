@@ -188,10 +188,16 @@ void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio, efm
     routing_table.push_back(re);
 }
 
+void efmrp::updateRoutingEntry(std::string nw_address, node_entry ne, int prio, efmrpPathStatus status) {
+    trace()<<"[info] Entering updateRoutingEntry(nw_address="<<nw_address<<", node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<status;
+
+}
+
+
 bool efmrp::checkRoutingEntry(std::string ne, int prio) {
     trace()<<"[info] Entering checkRoutingEntry(ne="<<ne<<", prio="<<prio<<")";
     for(auto re: routing_table) {
-        if(re.nw_address == ne && re.prio==prio) {
+        if(re.nw_address == ne && re.prio==prio && re.status==efmrpPathStatus::AVAILABLE) {
             trace()<<"[info] Entry exists";
             return true;
         }
@@ -549,7 +555,19 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             
             if(pri==2) {
                 trace()<<"[info] Secondary path";
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)<fp.pnum) {
+                if(checkRoutingEntry(data_pkt->getOrigin(), pri)) {
+                    trace()<<"[info] Secondary path exists";
+                    forwardData(data_pkt->dup());
+                } else {
+                    trace()<<"[info] Secondary path not available, check status";
+                    if(queryCompleted(data_pkt->getOrigin())) {
+                        trace()<<"[info] Query completed";
+                        
+                    }
+                }
+           
+           
+            {
                 trace()<<"[info] Not all paths are available";
                 if(!queryStarted(SELF_NETWORK_ADDRESS)) {
                     node_entry ne;
