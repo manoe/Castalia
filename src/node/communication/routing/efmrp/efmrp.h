@@ -45,7 +45,8 @@ enum efmrpPathStatus {
     UNKNOWN     = 0,
     AVAILABLE   = 1,
     USED        = 2,
-    DEAD        = 3
+    DEAD        = 3,
+    UNDER_QUERY = 4
 };
 
 struct path_entry {
@@ -66,6 +67,7 @@ struct routing_entry {
     std::string next_hop;
     double      target_value;
     efmrpPathStatus status;
+    double      query_timestamp;
     int         prio;
 };
 
@@ -120,7 +122,7 @@ class efmrp: public VirtualRouting {
         node_entry getNthTargetValueEntry(int);
         int numOfAvailPaths(std::string);
         void addRoutingEntry(std::string, node_entry, int);
-        void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
+        void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus, double timestamp);
 
         double targetFunction(node_entry);
         routing_entry getPath(std::string);
@@ -128,6 +130,8 @@ class efmrp: public VirtualRouting {
 
         void sendQuery(std::string);
         void sendQueryAck(std::string, std::string, bool);
+        bool queryStarted(std::string);
+        bool queryCompleted(std::string);
 
         void sendData(routing_entry, cPacket *);
 
