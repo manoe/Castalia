@@ -396,7 +396,7 @@ routing_entry efmrp::getPath(std::string ne) {
     double rnd=getRNG(0)->doubleRand();
 
     for(auto re: routing_table) {
-        if(re.nw_address==ne) {
+        if(re.nw_address==ne && re.status==efmrpPathStatus::AVAILABLE) {
             rv.push_back(re);
             tv_sum+=re.target_value;
             trace()<<"[info] Adding entry ne: "<<re.nw_address<<" next hop: "<<re.next_hop<<" tv: "<<re.target_value;
@@ -689,6 +689,8 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             if(re.next_hop == retreat_pkt->getSource()) {
                 if(retreat_pkt->getOrigin()==SELF_NETWORK_ADDRESS) {
                     trace()<<"[info] Node is the origin";
+                    node_entry ne;
+                    updateRoutingEntry(SELF_NETWORK_ADDRESS, ne, retreat_pkt->getPri(), efmrpPathStatus::DEAD);
                 } else {
                     trace()<<"[info] Node is interim";
                     node_entry ne;
