@@ -190,7 +190,17 @@ void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio, efm
 
 void efmrp::updateRoutingEntry(std::string nw_address, node_entry ne, int prio, efmrpPathStatus status) {
     trace()<<"[info] Entering updateRoutingEntry(nw_address="<<nw_address<<", node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<status;
-
+    for(auto &&re: routing_table) {
+        if(re.nw_address == nw_address && re.prio==prio) {
+            trace()<<"[info] record found";
+            re.next_hop=ne.nw_address;
+            re.status=efmrpPathStatus::AVAILABLE;
+            re.target_value=targetFunction(ne);
+            re.prio=prio;
+            return;
+        }
+    }
+    throw std::string("[error] No record found.");
 }
 
 
