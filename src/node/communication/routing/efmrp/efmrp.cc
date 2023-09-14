@@ -410,10 +410,37 @@ routing_entry efmrp::getPath(std::string ne) {
 
 node_entry efmrp::findSecondaryPath(std::string ne) {
     trace()<<"[info] Entering findSecondaryPath(ne="<<ne<<")";
+    std::vector<node_entry> nv;
+    for(auto entry: field_table) {
+        for(auto pe: entry.second.pe) {
+            if(pe.origin == ne && pe.status == efmrpPathStatus::AVAILABLE) {
+                trace()<<"[info] Entry matches: "<<entry.second.nw_address;
+                nv.push_back(entry.second);
+            }
+        }
+    }
+    if(0==nv.size()) {
+        trace()<<"[error] No path candidate, giving up.";
+        throw std::string("[error] No path candidate");
+    }
+
 }
 
 void efmrp::updateFieldTableWithQA(efmrpQueryAckPacket *query_ack_pkt) {
-    trace()<<"[info] Entering updateFieldTableWithQA()";
+    trace()<<"[info] Entering updateFieldTableWithQA(source="<<query_ack_pkt->getSource()<<", used: "<<query_ack_pkt->getUsed()<<")";
+    efmrpPathStatus status = query_ack_pkt->getUsed() ? efmrpPathStatus::USED : efmrpPathStatus::AVAILABLE;
+    if(field_table.find(query_ack_pkt->getSource()) != field_table.end()) {
+        trace()<<"[info] Record exists";
+        for(auto &&pe: field_table[query_ack_pkt->getSource()].pe) {
+            if(pe.origin==std::string(query_ack_pkt->getOrigin())) {
+                trace()<<"[info] QUERY_ACK record exists: "<<pe.origin<<" status: "<<pe.status;
+                pe.status=status;
+                return;
+            }
+        }
+        field_table[query_ack_pkt->getSource()].pe.push_back({query_ack_pkt->getOrigin(),status });
+    }
+    throw std::string("Query responder does not exists in field_table");
 }
 
 void efmrp::timerFiredCallback(int index) {
