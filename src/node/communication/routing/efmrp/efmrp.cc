@@ -424,6 +424,10 @@ node_entry efmrp::findSecondaryPath(std::string ne) {
         throw std::string("[error] No path candidate");
     }
 
+    std::sort(nv.begin(), nv.end(), [this](node_entry a, node_entry b) { return targetFunction(a) < targetFunction(b);  });
+    
+    return nv[0];
+
 }
 
 void efmrp::updateFieldTableWithQA(efmrpQueryAckPacket *query_ack_pkt) {
