@@ -120,6 +120,8 @@ class efmrp: public VirtualRouting {
         void constructPath(std::string, int prio);
 
         node_entry getNthTargetValueEntry(int);
+        node_entry findSecondaryPath(std::string);
+
         int numOfAvailPaths(std::string);
         void addRoutingEntry(std::string, node_entry, int);
         void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus, double timestamp);
@@ -138,6 +140,8 @@ class efmrp: public VirtualRouting {
 
         void sendData(routing_entry, cPacket *);
         void forwardData(efmrpDataPacket *);
+
+        void sendRetreat(efmrpDataPacket *);
 
         bool isSink() const;
         void setSinkAddress(const char *);

@@ -338,10 +338,26 @@ void efmrp::forwardData(efmrpDataPacket *data_pkt) {
 
 }
 
+void efmrp::sendRetreat(efmrpDataPacket *data_pkt) {
+    trace()<<"[info] Entering sendRetreat()";
+    efmrpRetreatPacket *retreat_pkt=new efmrpRetreatPacket("EFMRP RETREAT packet",NETWORK_LAYER_PACKET);
+
+    retreat_pkt->setByteLength(netDataFrameOverhead);
+    retreat_pkt->setEfmrpPacketKind(efmrpPacketDef::RETREAT_PACKET);
+    retreat_pkt->setOrigin(data_pkt->getOrigin());
+    retreat_pkt->setSource(SELF_NETWORK_ADDRESS);
+    retreat_pkt->setDestination(data_pkt->getSource());
+
+    retreat_pkt->setPri(data_pkt->getPri());
+
+    toMacLayer(retreat_pkt, resolveNetworkAddress(data_pkt->getSource()));
+
+}
+
 bool efmrp::checkPath(std::string ne) {
     trace()<<"[info] Entering checkPath(ne="<<ne<<")";
     for(auto entry: routing_table) {
-        if(entry.nw_address == ne) {
+        if(entry.nw_address == ne && entry.prio==1) {
             trace()<<"[info] Entry found";
             return true;
         }
@@ -390,6 +406,10 @@ routing_entry efmrp::getPath(std::string ne) {
 
     trace()<<"[error] No route selected based on probability. Selecting first one next_hop: "<<rv[0].next_hop;
     return rv[0];
+}
+
+node_entry efmrp::findSecondaryPath(std::string ne) {
+    trace()<<"[info] Entering findSecondaryPath(ne="<<ne<<")";
 }
 
 void efmrp::updateFieldTableWithQA(efmrpQueryAckPacket *query_ack_pkt) {
@@ -572,40 +592,31 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"[info] Secondary path not available, check status";
                     if(queryCompleted(data_pkt->getOrigin())) {
                         trace()<<"[info] Query completed";
-                        
+                        node_entry ne;
+                        try {
+                            ne=findSecondaryPath(data_pkt->getOrigin());
+                        } catch (std::string &e) {
+                            trace()<<"[error] "<<e;
+                            sendRetreat(data_pkt);
+                            break;
+                        }
+                        updateRoutingEntry(data_pkt->getOrigin(),ne,pri,efmrpPathStatus::AVAILABLE);
+                    } else if(queryStarted(data_pkt->getOrigin())) {
+                        trace()<<"[info] Query ongoing, dropping packet.";
+                        break;
+                    } else {
+                        trace()<<"[info] No secondary path available.";
+                        node_entry ne;
+                        addRoutingEntry(data_pkt->getOrigin(), ne, pri, efmrpPathStatus::UNDER_QUERY,getClock().dbl());
+                        sendQuery(data_pkt->getOrigin());
+                        break;
                     }
                 }
-           
-           
-            {
-                trace()<<"[info] Not all paths are available";
-                if(!queryStarted(SELF_NETWORK_ADDRESS)) {
-                    node_entry ne;
-                    addRoutingEntry(SELF_NETWORK_ADDRESS, ne, numOfAvailPaths(SELF_NETWORK_ADDRESS)+1, efmrpPathStatus::UNDER_QUERY,getClock().dbl());
-                    sendQuery(SELF_NETWORK_ADDRESS);
-                } else {
-                    if(queryCompleted(SELF_NETWORK_ADDRESS)) {
-                        //updateRoutingEntry(SELF_NETWORK_ADDRESS,getNthTargetValueEntry(numOfAvailPaths(SELF_NETWORK_ADDRESS)+1, numOfAvailPaths(SELF_NETWORK_ADDRESS)+1);
-                    }
-                }
-                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
-                break;
-            }
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==fp.pnum) {
-                trace()<<"[info] All paths are available, performing traffic allocation";
-                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
-                break;
-            }
-
-                break;
             }
             if(pri>2) {
                 trace()<<"[info] Not implemented";
                 break;
             }
-
-
-
             break;
         }
         case efmrpPacketDef::UNDEF_PACKET: {
