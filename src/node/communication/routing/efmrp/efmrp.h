@@ -123,9 +123,11 @@ class efmrp: public VirtualRouting {
         int numOfAvailPaths(std::string);
         void addRoutingEntry(std::string, node_entry, int);
         void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus, double timestamp);
+        bool checkRoutingEntry(std::string, int);
 
         double targetFunction(node_entry);
         routing_entry getPath(std::string);
+        routing_entry getPath(std::string, int);
         bool checkPath(std::string);
 
         void sendQuery(std::string);
@@ -134,6 +136,7 @@ class efmrp: public VirtualRouting {
         bool queryCompleted(std::string);
 
         void sendData(routing_entry, cPacket *);
+        void forwardData(efmrpDataPacket *);
 
         bool isSink() const;
         void setSinkAddress(const char *);

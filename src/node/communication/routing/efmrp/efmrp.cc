@@ -188,6 +188,18 @@ void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio, efm
     routing_table.push_back(re);
 }
 
+bool efmrp::checkRoutingEntry(std::string ne, int prio) {
+    trace()<<"[info] Entering checkRoutingEntry(ne="<<ne<<", prio="<<prio<<")";
+    for(auto re: routing_table) {
+        if(re.nw_address == ne && re.prio==prio) {
+            trace()<<"[info] Entry exists";
+            return true;
+        }
+    }
+    return false;
+}
+
+
 node_entry efmrp::getNthTargetValueEntry(int order) {
     trace()<<"[info] Entering getNthTargetValueEntry(order="<<order<<")";
     if(field_table.size() < order) {
@@ -200,6 +212,7 @@ node_entry efmrp::getNthTargetValueEntry(int order) {
     }
 
     std::sort(fv.begin(), fv.end(), [this](node_entry a, node_entry b) { return targetFunction(a) < targetFunction(b);  });
+    
     return fv[order-1];
 }
 
@@ -254,7 +267,7 @@ void efmrp::sendQueryAck(std::string origin, std::string dst, bool used) {
 bool efmrp::queryStarted(std::string ne) {
     trace()<<"[info] Entering queryStarted(ne="<<ne<<")";
     for(auto re: routing_table) {
-        if(re.nw_address==ne && re.status==efmrpPathStatus::UNDER_QUERY && re.prio>1 && re.query_timestamp+fp.query > getClock().dbl()) {
+        if(re.nw_address==ne && re.status==efmrpPathStatus::UNDER_QUERY && re.prio>1) {
             trace()<<"[info] Query ongoing";
             return true;
         }
@@ -292,7 +305,22 @@ void efmrp::sendData(routing_entry re, cPacket *pkt) {
 
 }
 
+void efmrp::forwardData(efmrpDataPacket *data_pkt) {
+    trace()<<"[info] Entering forwardData()";
+    routing_entry re;
+    try {
+        re=getPath(data_pkt->getOrigin(),data_pkt->getPri());
+    } catch(std::string &e) {
+        trace()<<"[error] "<<e;
+        return;
+    }
+    trace()<<"[info] Next hop: "<<re.next_hop;
+    data_pkt->setDestination(re.next_hop.c_str());
+    data_pkt->setSource(SELF_NETWORK_ADDRESS);
 
+    toMacLayer(data_pkt, resolveNetworkAddress(re.next_hop.c_str()));
+
+}
 
 bool efmrp::checkPath(std::string ne) {
     trace()<<"[info] Entering checkPath(ne="<<ne<<")";
@@ -304,6 +332,16 @@ bool efmrp::checkPath(std::string ne) {
     }
     trace()<<"[info] Entry not found.";
     return false;
+}
+
+routing_entry efmrp::getPath(std::string ne, int prio) {
+    trace()<<"[info] Entering getPath(ne="<<ne<<", prio="<<prio<<")";
+    for(auto entry: routing_table) {
+        if(entry.nw_address==ne && entry.prio==prio && entry.status==efmrpPathStatus::AVAILABLE) {
+            return entry;
+        }
+    }
+    throw std::string("[error] No path found");
 }
 
 routing_entry efmrp::getPath(std::string ne) {
@@ -363,6 +401,11 @@ void efmrp::timerFiredCallback(int index) {
             trace()<<"[info] Construct primary path";
             routing_table.clear();
             addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1),1);
+            try {
+                addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2),2);
+            } catch (std::string &s) {
+                trace()<<"[error] "<<s;
+            }
             break;
         }
         default: {
@@ -393,25 +436,8 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 trace()<<"[error] No route available";
                 break;
             }
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)<fp.pnum) {
-                trace()<<"[info] Not all paths are available";
-                if(!queryStarted(SELF_NETWORK_ADDRESS)) {
-                    node_entry ne;
-                    addRoutingEntry(SELF_NETWORK_ADDRESS, ne, numOfAvailPaths(SELF_NETWORK_ADDRESS)+1, efmrpPathStatus::UNDER_QUERY,getClock().dbl());
-                    sendQuery(SELF_NETWORK_ADDRESS);
-                } else {
-                    if(queryCompleted(SELF_NETWORK_ADDRESS)) {
-
-                    }
-                }
-                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
-                break;
-            }
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==fp.pnum) {
-                trace()<<"[info] All paths are available, performing traffic allocation";
-                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
-                break;
-            }
+            sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+            break;
         }
     }
 }
@@ -507,6 +533,51 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
         case efmrpPacketDef::DATA_PACKET: {
             trace()<<"[info] DATA_PACKET received";
+            efmrpDataPacket *data_pkt=dynamic_cast<efmrpDataPacket *>(efmrp_pkt);
+            trace()<<"[info] origin: "<<data_pkt->getOrigin()<<" pri: "<<data_pkt->getPri(); 
+            auto pri=data_pkt->getPri();
+
+            if(pri==1) {
+                if(checkRoutingEntry(data_pkt->getOrigin(), pri)) {
+                    forwardData(data_pkt->dup());
+                } else {
+                    addRoutingEntry(std::string(data_pkt->getOrigin()),getNthTargetValueEntry(1),1);
+                    forwardData(data_pkt->dup());
+                }
+                break;
+            }
+            
+            if(pri==2) {
+                trace()<<"[info] Secondary path";
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)<fp.pnum) {
+                trace()<<"[info] Not all paths are available";
+                if(!queryStarted(SELF_NETWORK_ADDRESS)) {
+                    node_entry ne;
+                    addRoutingEntry(SELF_NETWORK_ADDRESS, ne, numOfAvailPaths(SELF_NETWORK_ADDRESS)+1, efmrpPathStatus::UNDER_QUERY,getClock().dbl());
+                    sendQuery(SELF_NETWORK_ADDRESS);
+                } else {
+                    if(queryCompleted(SELF_NETWORK_ADDRESS)) {
+                        //updateRoutingEntry(SELF_NETWORK_ADDRESS,getNthTargetValueEntry(numOfAvailPaths(SELF_NETWORK_ADDRESS)+1, numOfAvailPaths(SELF_NETWORK_ADDRESS)+1);
+                    }
+                }
+                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+                break;
+            }
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==fp.pnum) {
+                trace()<<"[info] All paths are available, performing traffic allocation";
+                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+                break;
+            }
+
+                break;
+            }
+            if(pri>2) {
+                trace()<<"[info] Not implemented";
+                break;
+            }
+
+
+
             break;
         }
         case efmrpPacketDef::UNDEF_PACKET: {
