@@ -45,6 +45,7 @@ packet efmrpFieldPacket extends efmrpPacket {
     int     hop;
     double  nrg;
     double  env;
+    double  field_value;
 }
 
 packet efmrpDataPacket extends efmrpPacket {
