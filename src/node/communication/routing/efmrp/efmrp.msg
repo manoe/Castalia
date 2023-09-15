@@ -37,15 +37,17 @@ packet efmrpPacket extends RoutingPacket {
 }
 
 packet efmrpHelloPacket extends efmrpPacket {
-    int hop;
-    double timestamp;
+    int     hop;
+    double  env;
+    double  nrg;
+    double  timestamp;
 }
 
 packet efmrpFieldPacket extends efmrpPacket {
     int     hop;
-    double  nrg;
     double  env;
-    double  field_value;
+    double  nrg;
+    double  trg;
 }
 
 packet efmrpDataPacket extends efmrpPacket {
@@ -67,5 +69,6 @@ packet efmrpRetreatPacket extends efmrpPacket {
 packet efmrpAlarmPacket extends efmrpPacket {
     int efmrpAlarmKind enum (efmrpAlarmDef);
     double env;
+    double trg;
 }
 

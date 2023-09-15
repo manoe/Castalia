@@ -59,6 +59,7 @@ struct node_entry {
     int         hop;
     double      nrg;
     double      env;
+    double      trg;
     std::vector<path_entry> pe;
 };
 
@@ -108,15 +109,16 @@ class efmrp: public VirtualRouting {
 //        void finishSpecific();
 
         void sendHello();
-        void sendHello(int, double);
+        void sendHello(int, double, double, double);
         void updateHelloTable(efmrpHelloPacket *);
         bool checkHelloTable(std::string);
 
 
-        void sendField(int, double, double);
+        void sendField(int, double, double, double);
         void updateFieldTable(efmrpFieldPacket *);
         void updateFieldTableWithQA(efmrpQueryAckPacket *);
         void updateFieldTableWithPE(std::string, std::string, efmrpPathStatus);
+        double calculateTargetValue();
 
         void constructPath(std::string, int prio);
 
