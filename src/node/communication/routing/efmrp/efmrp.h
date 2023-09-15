@@ -116,16 +116,22 @@ class efmrp: public VirtualRouting {
         void sendField(int, double, double);
         void updateFieldTable(efmrpFieldPacket *);
         void updateFieldTableWithQA(efmrpQueryAckPacket *);
+        void updateFieldTableWithPE(std::string, std::string, efmrpPathStatus);
 
         void constructPath(std::string, int prio);
 
         node_entry getNthTargetValueEntry(int);
+        node_entry findSecondaryPath(std::string);
+
         int numOfAvailPaths(std::string);
         void addRoutingEntry(std::string, node_entry, int);
         void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus, double timestamp);
-
+        void updateRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
+        bool checkRoutingEntry(std::string, int);
+        routing_entry getRoutingEntry(std::string, int);
         double targetFunction(node_entry);
         routing_entry getPath(std::string);
+        routing_entry getPath(std::string, int);
         bool checkPath(std::string);
 
         void sendQuery(std::string);
@@ -134,6 +140,9 @@ class efmrp: public VirtualRouting {
         bool queryCompleted(std::string);
 
         void sendData(routing_entry, cPacket *);
+        void forwardData(efmrpDataPacket *);
+
+        void sendRetreat(efmrpDataPacket *);
 
         bool isSink() const;
         void setSinkAddress(const char *);
