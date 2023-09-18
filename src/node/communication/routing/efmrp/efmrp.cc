@@ -95,11 +95,11 @@ efmrpStateDef efmrp::getState() const {
 
 void efmrp::sendHello() {
     trace()<<"[info] Entering sendHello()";
-    sendHello(0, getClock().dbl());
+    sendHello(0,1,1,getClock().dbl());
 }
 
-void efmrp::sendHello(int hop, double timestamp) {
-    trace()<<"[info] Entering sendHello(hop="<<hop<<", timestamp="<<timestamp<<")";
+void efmrp::sendHello(int hop, double env, double nrg, double timestamp) {
+    trace()<<"[info] Entering sendHello(hop="<<hop<<", env="<<env<<"timestamp="<<timestamp<<")";
     auto *hello_pkt=new efmrpHelloPacket("EFMRP HELLO packet", NETWORK_LAYER_PACKET);
     hello_pkt->setByteLength(netDataFrameOverhead);
     hello_pkt->setEfmrpPacketKind(efmrpPacketDef::HELLO_PACKET);
@@ -108,13 +108,15 @@ void efmrp::sendHello(int hop, double timestamp) {
     hello_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
 
     hello_pkt->setHop(hop);
+    hello_pkt->setEnv(env);
+    hello_pkt->setNrg(nrg);
     hello_pkt->setTimestamp(timestamp);
 
     toMacLayer(hello_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void efmrp::sendField(int hop, double nrg, double env) {
-    trace()<<"[info] Entering sendField(hop ="<<hop<<", nrg="<<nrg<<", env="<<env<<")";
+void efmrp::sendField(int hop, double nrg, double env, double trg) {
+    trace()<<"[info] Entering sendField(hop ="<<hop<<", nrg="<<nrg<<", env="<<env<<", trg="<<trg<<")";
     auto *field_pkt=new efmrpFieldPacket("EFMRP FIELD packet",NETWORK_LAYER_PACKET);
     field_pkt->setByteLength(netDataFrameOverhead);
     field_pkt->setEfmrpPacketKind(efmrpPacketDef::FIELD_PACKET);
@@ -134,7 +136,9 @@ void efmrp::updateHelloTable(efmrpHelloPacket *hello_pkt) {
     node_entry ne;
     ne.nw_address=hello_pkt->getSource();
     ne.hop=hello_pkt->getHop();
-    trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" hop: "<<ne.hop<<" to hello_table";
+    ne.env=hello_pkt->getEnv();
+    ne.nrg=hello_pkt->getNrg();
+    trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" hop: "<<ne.hop<<" env: "<<ne.env<<" nrg: "<<ne.nrg<<" to hello_table";
     if(hello_table.find(ne.nw_address) != hello_table.end()) {
         trace()<<"[warn] Overriding record's hop: "<<hello_table[ne.nw_address].hop;
     }
@@ -156,6 +160,7 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
     ne.hop        = field_pkt->getHop();
     ne.nrg        = field_pkt->getNrg();
     ne.env        = field_pkt->getEnv();
+    ne.trg        = field_pkt->getTrg();
 
     if(field_table.find(ne.nw_address) != field_table.end()) {
         trace()<<"[info] Overriding existing record of node "<<ne.nw_address;
@@ -227,6 +232,17 @@ routing_entry efmrp::getRoutingEntry(std::string ne, int prio) {
     throw std::string("[error] Entry not found.");
 }
 
+double efmrp::calculateTargetValue() {
+    trace()<<"[info] Entering calculateTargetValue()";
+    node_entry min_ne;
+    min_ne=field_table.begin()->second;
+    for(auto ne: field_table) {
+        if(ne.second.env < min_ne.env) {
+            min_ne=ne.second;
+        }
+    }
+    return (min_ne.env+ff_app->getEmergencyValue())/2;
+}
 
 node_entry efmrp::getNthTargetValueEntry(int order) {
     trace()<<"[info] Entering getNthTargetValueEntry(order="<<order<<")";
@@ -247,7 +263,7 @@ node_entry efmrp::getNthTargetValueEntry(int order) {
 double efmrp::targetFunction(node_entry a) {
     trace()<<"[info] Entering targetFunction(a)";
     double ret_val = (1.0 - fp.alpha - fp.beta) * 1.0/(a.hop + 1) +
-                     fp.alpha * a.env + fp.beta * a.nrg;
+                     fp.alpha * a.trg + fp.beta * a.nrg;
     trace()<<"[info] targetFunction value: "<<ret_val;
     return ret_val;
 }
@@ -486,7 +502,7 @@ void efmrp::timerFiredCallback(int index) {
         case efmrpTimerDef::TTL: {
             trace()<<"[timer] TTL timer expired";
             setState(efmrpStateDef::BUILD);
-            sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue());
+            sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue() );
             setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
         }
         case efmrpTimerDef::FIELD: {
@@ -580,7 +596,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             if(hello_pkt->getHop()+1<getHop()) {
                 trace()<<"[info] Updating hop status";
                 setHop(hello_pkt->getHop()+1);
-                sendHello(getHop(), hello_pkt->getTimestamp());
+                sendHello(getHop(),ff_app->getEmergencyValue(), ff_app->getEnergyValue(), hello_pkt->getTimestamp());
             }
             updateHelloTable(hello_pkt);
 
@@ -690,6 +706,8 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 if(retreat_pkt->getOrigin()==SELF_NETWORK_ADDRESS) {
                     trace()<<"[info] Node is the origin";
                     node_entry ne;
+                    // TRY TO FIND NEW PATH
+                    // FIXME
                     updateRoutingEntry(SELF_NETWORK_ADDRESS, ne, retreat_pkt->getPri(), efmrpPathStatus::DEAD);
                 } else {
                     trace()<<"[info] Node is interim";
