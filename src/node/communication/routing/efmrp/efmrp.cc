@@ -37,12 +37,16 @@ void efmrp::startup() {
     fp.ttl   =  par("t_ttl");
     fp.field =  par("t_field");
     fp.query =  par("t_query");
+    fp.env_c =  par("t_env_c");
 
     fp.alpha =  par("p_alpha");
     fp.beta  =  par("p_beta");
     fp.pnum  =  par("p_pnum");
+    fp.gamma =  par("p_gamma");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
+
+    env_val=0.0;
 }
 
 bool efmrp::isSink() const {
@@ -382,6 +386,26 @@ void efmrp::sendRetreat(efmrpDataPacket *data_pkt) {
 
 }
 
+void efmrp::sendAlarm(efmrpAlarmDef alarm_kind, double env_val, double trg_val) {
+    trace()<<"[info] Entering sendAlarm(alarm_kind="<<alarm_kind<<", env_val="<<env_val<<")";
+    efmrpAlarmPacket *alarm_pkt=new efmrpAlarmPacket("EFMRP ALARM packet",NETWORK_LAYER_PACKET);
+
+    alarm_pkt->setByteLength(netDataFrameOverhead);
+    alarm_pkt->setEfmrpPacketKind(efmrpPacketDef::ALARM_PACKET);
+    alarm_pkt->setOrigin(SELF_NETWORK_ADDRESS);
+    alarm_pkt->setSource(SELF_NETWORK_ADDRESS);
+    alarm_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+
+    alarm_pkt->setEfmrpAlarmKind(alarm_kind);
+
+    if(alarm_kind==efmrpAlarmDef::ENVIRONMENT_ALARM) {
+        alarm_pkt->setEnv(env_val);
+        alarm_pkt->setTrg(trg_val);
+    } 
+
+    toMacLayer(alarm_pkt, BROADCAST_MAC_ADDRESS);
+}  
+
 bool efmrp::checkPath(std::string ne) {
     trace()<<"[info] Entering checkPath(ne="<<ne<<")";
     for(auto entry: routing_table) {
@@ -515,6 +539,17 @@ void efmrp::timerFiredCallback(int index) {
                 addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2),2);
             } catch (std::string &s) {
                 trace()<<"[error] "<<s;
+            }
+            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
+            break;
+        }
+        case efmrpTimerDef::ENV_CHK: {
+            trace()<<"[timer] ENV_CHK timer expired";
+            double new_env_val=ff_app->getEmergencyValue();
+            if(abs(new_env_val-env_val)>fp.gamma) {
+                trace()<<"Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
+                sendAlarm(efmrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,calculateTargetValue());
+                env_val=new_env_val;
             }
             break;
         }
@@ -720,6 +755,11 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             } else {
                 trace()<<"[error] Retreat sender not next hop";
             }
+            break;
+        }
+        case efmrpPacketDef::ALARM_PACKET: {
+            trace()<<"[info] ALARM_PACKET received";
+
             break;
         }
 

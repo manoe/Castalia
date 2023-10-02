@@ -38,7 +38,8 @@ enum efmrpTimerDef {
     SINK_START  = 1,
     TTL         = 2,
     FIELD       = 3,
-    QUERY       = 4
+    QUERY       = 4,
+    ENV_CHK     = 5
 };
 
 enum efmrpPathStatus {
@@ -77,11 +78,13 @@ struct feat_par {
     double ttl;
     double field;
     double query;
+    double env_c;
 
     // PARAMETER
     double alpha;
     double beta;
     bool   pnum;
+    double gamma;
 };
 
 class efmrp: public VirtualRouting {
@@ -91,6 +94,7 @@ class efmrp: public VirtualRouting {
         int             g_hop;
         feat_par        fp;
         efmrpStateDef   g_state;
+        double          env_val;
 
         std::map<std::string,node_entry> hello_table;
         std::map<std::string,node_entry> field_table;
@@ -145,6 +149,8 @@ class efmrp: public VirtualRouting {
         void forwardData(efmrpDataPacket *);
 
         void sendRetreat(efmrpDataPacket *);
+
+        void sendAlarm(efmrpAlarmDef, double, double);
 
         bool isSink() const;
         void setSinkAddress(const char *);
