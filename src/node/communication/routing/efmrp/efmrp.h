@@ -152,7 +152,7 @@ class efmrp: public VirtualRouting {
 
         void sendAlarm(efmrpAlarmDef, double, double);
         void removeEntries(std::string);
-        void updateEntries(std::string);
+        void updateEntries(std::string, double, double);
 
         bool isSink() const;
         void setSinkAddress(const char *);

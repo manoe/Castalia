@@ -428,7 +428,20 @@ routing_entry efmrp::getPath(std::string ne, int prio) {
     throw std::string("[error] No path found");
 }
 
-void efmrp::updateEntries(std::string ne) {
+void efmrp::updateEntries(std::string ne, double env, double trg) {
+    trace()<<"[info] Entering updateEntries(ne="<<ne<<")";
+    auto it=field_table.find(ne);
+    if(it!=field_table.end()) {
+        trace()<<"[info] Record present in field table, updating.";
+        it->second.env=env;
+        it->second.trg=trg;
+    }
+    for(auto &&e: routing_table) {
+        if(e.next_hop==ne) {
+            trace()<<"[info] Record present in routing table, updating.";
+            e.target_value=targetFunction(it->second);
+        }
+    }
 }
 
 void efmrp::removeEntries(std::string ne) {
