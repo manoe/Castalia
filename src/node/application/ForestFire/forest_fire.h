@@ -57,6 +57,7 @@ class ForestFire : public VirtualApplication {
     bool   pot_field;
     double d_max;
     double d_high;
+    double d_gamma;
 
 	int currentVersion;
 	int currentVersionPacket;
