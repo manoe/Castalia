@@ -428,6 +428,25 @@ routing_entry efmrp::getPath(std::string ne, int prio) {
     throw std::string("[error] No path found");
 }
 
+void efmrp::updateEntries(std::string ne) {
+}
+
+void efmrp::removeEntries(std::string ne) {
+    trace()<<"[info] Entering removeEntries(ne="<<ne<<")";
+    if(field_table.find(ne) != field_table.end()) {
+        trace()<<"[info] Record present in field table, erasing.";
+        field_table.erase(ne);
+    }
+    for(auto it=routing_table.begin() ; it != routing_table.end();) {
+        if(it->next_hop==ne) {
+            trace()<<"[info] Record present in routing table, erasing.";
+            it=routing_table.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 routing_entry efmrp::getPath(std::string ne) {
     trace()<<"[info] Entering getPath(ne="<<ne<<")";
     std::vector<routing_entry> rv;
@@ -759,7 +778,13 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         }
         case efmrpPacketDef::ALARM_PACKET: {
             trace()<<"[info] ALARM_PACKET received";
-
+            efmrpAlarmPacket *alarm_pkt=dynamic_cast<efmrpAlarmPacket*>(efmrp_pkt);
+            if(alarm_pkt->getEfmrpAlarmKind() == efmrpAlarmDef::ENERGY_ALARM) {
+                trace()<<"[info] ENERGY_ALARM received, removing node";
+                removeEntries(alarm_pkt->getSource());
+            } else {
+                trace()<<"[info] ENVIRONMENT_ALARM received, updating tables";
+            }
             break;
         }
 

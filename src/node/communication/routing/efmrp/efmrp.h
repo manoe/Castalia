@@ -151,6 +151,8 @@ class efmrp: public VirtualRouting {
         void sendRetreat(efmrpDataPacket *);
 
         void sendAlarm(efmrpAlarmDef, double, double);
+        void removeEntries(std::string);
+        void updateEntries(std::string);
 
         bool isSink() const;
         void setSinkAddress(const char *);
