@@ -85,6 +85,7 @@ struct feat_par {
     double beta;
     bool   pnum;
     double gamma;
+    double n_lim;
 };
 
 class efmrp: public VirtualRouting {
@@ -150,9 +151,9 @@ class efmrp: public VirtualRouting {
 
         void sendRetreat(efmrpDataPacket *);
 
-        void sendAlarm(efmrpAlarmDef, double, double);
+        void sendAlarm(efmrpAlarmDef, double, double, double);
         void removeEntries(std::string);
-        void updateEntries(std::string, double, double);
+        void updateEntries(std::string, double, double, double);
 
         bool isSink() const;
         void setSinkAddress(const char *);

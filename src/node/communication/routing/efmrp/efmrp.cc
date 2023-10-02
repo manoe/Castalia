@@ -43,10 +43,11 @@ void efmrp::startup() {
     fp.beta  =  par("p_beta");
     fp.pnum  =  par("p_pnum");
     fp.gamma =  par("p_gamma");
+    fp.n_lim =  par("p_n_lim");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 
-    env_val=0.0;
+    env_val=1.0;
 }
 
 bool efmrp::isSink() const {
@@ -386,7 +387,7 @@ void efmrp::sendRetreat(efmrpDataPacket *data_pkt) {
 
 }
 
-void efmrp::sendAlarm(efmrpAlarmDef alarm_kind, double env_val, double trg_val) {
+void efmrp::sendAlarm(efmrpAlarmDef alarm_kind, double env_val, double nrg_val, double trg_val) {
     trace()<<"[info] Entering sendAlarm(alarm_kind="<<alarm_kind<<", env_val="<<env_val<<")";
     efmrpAlarmPacket *alarm_pkt=new efmrpAlarmPacket("EFMRP ALARM packet",NETWORK_LAYER_PACKET);
 
@@ -400,6 +401,7 @@ void efmrp::sendAlarm(efmrpAlarmDef alarm_kind, double env_val, double trg_val) 
 
     if(alarm_kind==efmrpAlarmDef::ENVIRONMENT_ALARM) {
         alarm_pkt->setEnv(env_val);
+        alarm_pkt->setNrg(nrg_val);
         alarm_pkt->setTrg(trg_val);
     } 
 
@@ -428,7 +430,7 @@ routing_entry efmrp::getPath(std::string ne, int prio) {
     throw std::string("[error] No path found");
 }
 
-void efmrp::updateEntries(std::string ne, double env, double trg) {
+void efmrp::updateEntries(std::string ne, double env, double nrg, double trg) {
     trace()<<"[info] Entering updateEntries(ne="<<ne<<")";
     auto it=field_table.find(ne);
     if(it!=field_table.end()) {
@@ -577,10 +579,16 @@ void efmrp::timerFiredCallback(int index) {
         }
         case efmrpTimerDef::ENV_CHK: {
             trace()<<"[timer] ENV_CHK timer expired";
+            double nrg_val=ff_app->getEnergyValue();
             double new_env_val=ff_app->getEmergencyValue();
+            if(nrg_val<fp.n_lim) {
+                trace()<<"[info] Energy below limit.";
+                sendAlarm(efmrpAlarmDef::ENERGY_ALARM,0.0,0.0,0.0);
+                break;
+            }
             if(abs(new_env_val-env_val)>fp.gamma) {
-                trace()<<"Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
-                sendAlarm(efmrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,calculateTargetValue());
+                trace()<<"[info] Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
+                sendAlarm(efmrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,nrg_val, calculateTargetValue());
                 env_val=new_env_val;
             }
             break;
