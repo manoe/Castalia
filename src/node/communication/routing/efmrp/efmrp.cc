@@ -37,12 +37,17 @@ void efmrp::startup() {
     fp.ttl   =  par("t_ttl");
     fp.field =  par("t_field");
     fp.query =  par("t_query");
+    fp.env_c =  par("t_env_c");
 
     fp.alpha =  par("p_alpha");
     fp.beta  =  par("p_beta");
     fp.pnum  =  par("p_pnum");
+    fp.gamma =  par("p_gamma");
+    fp.n_lim =  par("p_n_lim");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
+
+    env_val=1.0;
 }
 
 bool efmrp::isSink() const {
@@ -382,6 +387,27 @@ void efmrp::sendRetreat(efmrpDataPacket *data_pkt) {
 
 }
 
+void efmrp::sendAlarm(efmrpAlarmDef alarm_kind, double env_val, double nrg_val, double trg_val) {
+    trace()<<"[info] Entering sendAlarm(alarm_kind="<<alarm_kind<<", env_val="<<env_val<<")";
+    efmrpAlarmPacket *alarm_pkt=new efmrpAlarmPacket("EFMRP ALARM packet",NETWORK_LAYER_PACKET);
+
+    alarm_pkt->setByteLength(netDataFrameOverhead);
+    alarm_pkt->setEfmrpPacketKind(efmrpPacketDef::ALARM_PACKET);
+    alarm_pkt->setOrigin(SELF_NETWORK_ADDRESS);
+    alarm_pkt->setSource(SELF_NETWORK_ADDRESS);
+    alarm_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+
+    alarm_pkt->setEfmrpAlarmKind(alarm_kind);
+
+    if(alarm_kind==efmrpAlarmDef::ENVIRONMENT_ALARM) {
+        alarm_pkt->setEnv(env_val);
+        alarm_pkt->setNrg(nrg_val);
+        alarm_pkt->setTrg(trg_val);
+    } 
+
+    toMacLayer(alarm_pkt, BROADCAST_MAC_ADDRESS);
+}  
+
 bool efmrp::checkPath(std::string ne) {
     trace()<<"[info] Entering checkPath(ne="<<ne<<")";
     for(auto entry: routing_table) {
@@ -402,6 +428,38 @@ routing_entry efmrp::getPath(std::string ne, int prio) {
         }
     }
     throw std::string("[error] No path found");
+}
+
+void efmrp::updateEntries(std::string ne, double env, double nrg, double trg) {
+    trace()<<"[info] Entering updateEntries(ne="<<ne<<")";
+    auto it=field_table.find(ne);
+    if(it!=field_table.end()) {
+        trace()<<"[info] Record present in field table, updating.";
+        it->second.env=env;
+        it->second.trg=trg;
+    }
+    for(auto &&e: routing_table) {
+        if(e.next_hop==ne) {
+            trace()<<"[info] Record present in routing table, updating.";
+            e.target_value=targetFunction(it->second);
+        }
+    }
+}
+
+void efmrp::removeEntries(std::string ne) {
+    trace()<<"[info] Entering removeEntries(ne="<<ne<<")";
+    if(field_table.find(ne) != field_table.end()) {
+        trace()<<"[info] Record present in field table, erasing.";
+        field_table.erase(ne);
+    }
+    for(auto it=routing_table.begin() ; it != routing_table.end();) {
+        if(it->next_hop==ne) {
+            trace()<<"[info] Record present in routing table, erasing.";
+            it=routing_table.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 routing_entry efmrp::getPath(std::string ne) {
@@ -515,6 +573,23 @@ void efmrp::timerFiredCallback(int index) {
                 addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2),2);
             } catch (std::string &s) {
                 trace()<<"[error] "<<s;
+            }
+            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
+            break;
+        }
+        case efmrpTimerDef::ENV_CHK: {
+            trace()<<"[timer] ENV_CHK timer expired";
+            double nrg_val=ff_app->getEnergyValue();
+            double new_env_val=ff_app->getEmergencyValue();
+            if(nrg_val<fp.n_lim) {
+                trace()<<"[info] Energy below limit.";
+                sendAlarm(efmrpAlarmDef::ENERGY_ALARM,0.0,0.0,0.0);
+                break;
+            }
+            if(abs(new_env_val-env_val)>fp.gamma) {
+                trace()<<"[info] Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
+                sendAlarm(efmrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,nrg_val, calculateTargetValue());
+                env_val=new_env_val;
             }
             break;
         }
@@ -719,6 +794,17 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
             } else {
                 trace()<<"[error] Retreat sender not next hop";
+            }
+            break;
+        }
+        case efmrpPacketDef::ALARM_PACKET: {
+            trace()<<"[info] ALARM_PACKET received";
+            efmrpAlarmPacket *alarm_pkt=dynamic_cast<efmrpAlarmPacket*>(efmrp_pkt);
+            if(alarm_pkt->getEfmrpAlarmKind() == efmrpAlarmDef::ENERGY_ALARM) {
+                trace()<<"[info] ENERGY_ALARM received, removing node";
+                removeEntries(alarm_pkt->getSource());
+            } else {
+                trace()<<"[info] ENVIRONMENT_ALARM received, updating tables";
             }
             break;
         }

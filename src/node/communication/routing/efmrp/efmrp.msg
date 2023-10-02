@@ -69,6 +69,7 @@ packet efmrpRetreatPacket extends efmrpPacket {
 packet efmrpAlarmPacket extends efmrpPacket {
     int efmrpAlarmKind enum (efmrpAlarmDef);
     double env;
+    double nrg;
     double trg;
 }
 
