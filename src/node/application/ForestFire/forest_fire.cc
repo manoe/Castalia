@@ -57,6 +57,10 @@ void ForestFire::startup()
     report_sent=0;
     reportRecv.clear();
     eventRecv.clear();
+    pot_field   = par("pot_field"); 
+    d_max       = par("d_max");
+    d_high      = par("d_high");
+
 }
 
 int ForestFire::getEventSent() {
@@ -221,16 +225,20 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 	sensedValue = sensorMsg->getSensedValue();
 
     trace()<<"Sensed value: "<<sensedValue;
-    if(sensedValue >= emergency_threshold && !emergency) {
-        trace()<<"Node enters emergency state based on sensor reading.";
-        emergency=true;
-        sendEvent();
-        cancelTimer(EVENT_PERIOD);
-        setTimer(EVENT_PERIOD, event_period);
-        sendEmergencyBroadcast();
-        cancelTimer(EMERGENCY_BROADCAST);
-        setTimer(EMERGENCY_BROADCAST,emergency_broadcast);
-        alertRouting();
+    if(pot_field) {
+
+    } else {
+        if(sensedValue >= emergency_threshold && !emergency) {
+            trace()<<"Node enters emergency state based on sensor reading.";
+            emergency=true;
+            sendEvent();
+            cancelTimer(EVENT_PERIOD);
+            setTimer(EVENT_PERIOD, event_period);
+             sendEmergencyBroadcast();
+             cancelTimer(EMERGENCY_BROADCAST);
+             setTimer(EMERGENCY_BROADCAST,emergency_broadcast);
+             alertRouting();
+        }
     }
 	//if (isSink) {
 	//	trace() << "Sink recieved SENSOR_READING (while it shouldnt) "

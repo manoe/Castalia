@@ -54,6 +54,10 @@ class ForestFire : public VirtualApplication {
     bool emergency;
     ResourceManager *rm;
 
+    bool   pot_field;
+    double d_max;
+    double d_high;
+
 	int currentVersion;
 	int currentVersionPacket;
 	int currSampleSN;

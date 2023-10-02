@@ -43,6 +43,10 @@ simple ForestFire like node.application.iApplication {
 	int sampleSize = default (12);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes
 
+    bool    pot_field = default(false); // potential field mode, i.e. 1 means ok, 0 means event
+    double  d_max  = default(8.0);      // d_max is the maximum value of sensor read
+    double  d_high = default(4.0);      // d_high is the threshold, after sensor reading linearly decreases
+
  gates:
  	output toCommunicationModule;
 	output toSensorDeviceManager;
