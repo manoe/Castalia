@@ -479,7 +479,7 @@ void shmrp::initPongTableSize() {
     trace()<<"Entering setPongTableSize()";
     node_entry ne;
     ne.nw_address=SELF_NETWORK_ADDRESS;
-    pong_table.insert({std::string(SELF_NETWORK_ADDRESS),ne});
+//    pong_table.insert({std::string(SELF_NETWORK_ADDRESS),ne});
 }
 
 

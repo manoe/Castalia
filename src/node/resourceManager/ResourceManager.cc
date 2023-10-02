@@ -174,6 +174,11 @@ double ResourceManager::getRemainingEnergy(void)
     return remainingEnergy;
 }
 
+double ResourceManager::getInitialEnergy(void) {
+    Enter_Method("getInitialEnergy()");
+    return initialEnergy;
+}
+
 double ResourceManager::getCPUClockDrift(void)
 {
 	Enter_Method("getCPUClockDrift(void)");

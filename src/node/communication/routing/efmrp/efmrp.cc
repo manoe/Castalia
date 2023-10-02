@@ -502,7 +502,7 @@ void efmrp::timerFiredCallback(int index) {
         case efmrpTimerDef::TTL: {
             trace()<<"[timer] TTL timer expired";
             setState(efmrpStateDef::BUILD);
-            sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue() );
+            sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue());
             setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
         }
         case efmrpTimerDef::FIELD: {
@@ -674,6 +674,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             break;
                         }
                         updateRoutingEntry(data_pkt->getOrigin(),ne,pri,efmrpPathStatus::AVAILABLE);
+                        forwardData(data_pkt->dup());
                     } else if(queryStarted(data_pkt->getOrigin())) {
                         trace()<<"[info] Query ongoing, dropping packet.";
                         break;
