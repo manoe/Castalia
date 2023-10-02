@@ -37,7 +37,7 @@ void ForestFire::startup()
     emergency_threshold=par("emergencyThreshold");
     emergency_broadcast=par("emergencyBroadcastPeriod");
 
-
+    rm=dynamic_cast<ResourceManager *>(getParentModule()->getSubmodule("ResourceManager"));
 
     report_timer_offset=par("report_timer_offset");
 	if (!isSink) {
@@ -318,7 +318,7 @@ void ForestFire::finishSpecific()
 }
 
 double ForestFire::getEnergyValue() {
-    return 0.0;
+    return rm->getRemainingEnergy()/rm->getInitialEnergy();
 }
 
 double ForestFire::getEmergencyValue() {

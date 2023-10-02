@@ -13,6 +13,7 @@
 #include "node/application/VirtualApplication.h"
 #include "node/application/ForestFire/forest_fire_packet_m.h"
 #include "node/application/ForestFire/forest_fire_message_m.h"
+#include "node/resourceManager/ResourceManager.h"
 #include <yaml-cpp/yaml.h>
 
 #define REPORT_PACKET_NAME "Wildfire report"
@@ -51,6 +52,7 @@ class ForestFire : public VirtualApplication {
     double report_period;
     double emergency_threshold;
     bool emergency;
+    ResourceManager *rm;
 
 	int currentVersion;
 	int currentVersionPacket;

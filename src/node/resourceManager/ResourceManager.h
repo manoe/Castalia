@@ -59,6 +59,7 @@ class ResourceManager: public CastaliaModule {
 	void consumeEnergy(double amount);
 	double getSpentEnergy(void);
     double getRemainingEnergy(void);
+    double getInitialEnergy(void);
 	double estimateLifetime();
 	void destroyNode(void);
     bool isDead();
