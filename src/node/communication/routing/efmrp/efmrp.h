@@ -39,7 +39,8 @@ enum efmrpTimerDef {
     TTL         = 2,
     FIELD       = 3,
     QUERY       = 4,
-    ENV_CHK     = 5
+    ENV_CHK     = 5,
+    BUILD_START = 6
 };
 
 enum efmrpPathStatus {
@@ -83,7 +84,7 @@ struct feat_par {
     // PARAMETER
     double alpha;
     double beta;
-    bool   pnum;
+    int    pnum;
     double gamma;
     double n_lim;
 };

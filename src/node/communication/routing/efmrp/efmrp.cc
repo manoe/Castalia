@@ -12,6 +12,7 @@
 Define_Module(efmrp);
 
 void efmrp::startup() {
+    trace()<<"[info] Startup initialized.";
     cModule *appModule = getParentModule()->getParentModule()->getSubmodule("Application");
     if(appModule->hasPar("isSink")) {
         g_is_sink=appModule->par("isSink");
@@ -90,6 +91,9 @@ string efmrp::stateToStr(efmrpStateDef state) const {
         case efmrpStateDef::LEARN: {
             return "LEARN";
         }
+        case efmrpStateDef::INIT: {
+            return "LEARN";
+        }
     }
     return "UNKNOWN";
 }
@@ -145,7 +149,7 @@ void efmrp::updateHelloTable(efmrpHelloPacket *hello_pkt) {
     ne.nrg=hello_pkt->getNrg();
     trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" hop: "<<ne.hop<<" env: "<<ne.env<<" nrg: "<<ne.nrg<<" to hello_table";
     if(hello_table.find(ne.nw_address) != hello_table.end()) {
-        trace()<<"[warn] Overriding record's hop: "<<hello_table[ne.nw_address].hop;
+        trace()<<"[warn] Overriding record's hop: "<<hello_table[ne.nw_address].hop<<" to hop "<<ne.hop;
     }
     hello_table.insert({hello_pkt->getSource(),ne});
 }
@@ -240,8 +244,8 @@ routing_entry efmrp::getRoutingEntry(std::string ne, int prio) {
 double efmrp::calculateTargetValue() {
     trace()<<"[info] Entering calculateTargetValue()";
     node_entry min_ne;
-    min_ne=field_table.begin()->second;
-    for(auto ne: field_table) {
+    min_ne=hello_table.begin()->second;
+    for(auto ne: hello_table) {
         if(ne.second.env < min_ne.env) {
             min_ne=ne.second;
         }
@@ -549,12 +553,19 @@ void efmrp::updateFieldTableWithPE(std::string ne, std::string pe, efmrpPathStat
 
 
 void efmrp::timerFiredCallback(int index) {
+    trace()<<"[info] Entering timerFiredCallback(index="<<index<<")";
     switch (index) {
         case efmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
-            setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
+            setTimer(efmrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
             setState(efmrpStateDef::LEARN);
+            break;
+        }
+        case efmrpTimerDef::BUILD_START: {
+            trace()<<"[timer] BUILD_START expired"; 
+            sendField(getHop(), 1.0, 1.0, 1.0);
+            setState(efmrpStateDef::WORK);
             break;
         }
         case efmrpTimerDef::TTL: {
@@ -562,6 +573,7 @@ void efmrp::timerFiredCallback(int index) {
             setState(efmrpStateDef::BUILD);
             sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue());
             setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
+            break;
         }
         case efmrpTimerDef::FIELD: {
             trace()<<"[timer] FIELD timer expired";
@@ -601,6 +613,7 @@ void efmrp::timerFiredCallback(int index) {
 }
 
 void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
+    trace()<<"[info] Entering fromApplicationLayer(..)";
     if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
         trace()<<"[error] Packet's destination not sink: "<<destination;
         return;
@@ -609,7 +622,7 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     switch (getState()) {
         case efmrpStateDef::LEARN: {
             trace()<<"[error] In LEARN state, can't route packet";
-            break;;
+            break;
         }
         case efmrpStateDef::BUILD: {
             trace()<<"[info] In BUILD state, best effort routing";
@@ -629,6 +642,7 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
 
 
 void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
+    trace()<<"[info] Entering fromMacLayer(..srcMacAddress="<<srcMacAddress<<")";
     efmrpPacket *efmrp_pkt=dynamic_cast<efmrpPacket *>(pkt);
     if(!efmrp_pkt) {
         trace()<<"[error] Dynamic cast of packet failed";
@@ -684,13 +698,16 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[info] Node is sink, FIELD_PACKET discarded";
                 break;
             }
+            if(getState()==efmrpStateDef::INIT) {
+                trace()<<"[info] Node in INIT state, doing nothing.";
+            }
 
             if(getState()==efmrpStateDef::LEARN) {
-                trace()<<"[info] Node in LEARN state";
+                trace()<<"[info] Node in LEARN state, still updating Field table";
                 updateFieldTable(field_pkt);
             }
             if(getState()==efmrpStateDef::BUILD) {
-                trace()<<"[info] Node in BUILD state";
+                trace()<<"[info] Node in BUILD state, updating Field table, if possible";
                 if(checkHelloTable(std::string(field_pkt->getSource()))) {
                     updateFieldTable(field_pkt);
                 } else {
