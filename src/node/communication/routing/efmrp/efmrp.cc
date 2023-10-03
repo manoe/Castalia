@@ -12,6 +12,7 @@
 Define_Module(efmrp);
 
 void efmrp::startup() {
+    trace()<<"[info] Startup initialized.";
     cModule *appModule = getParentModule()->getParentModule()->getSubmodule("Application");
     if(appModule->hasPar("isSink")) {
         g_is_sink=appModule->par("isSink");
@@ -549,6 +550,7 @@ void efmrp::updateFieldTableWithPE(std::string ne, std::string pe, efmrpPathStat
 
 
 void efmrp::timerFiredCallback(int index) {
+    trace()<<"[info] Entering timerFiredCallback(index ="<<index<<")";
     switch (index) {
         case efmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
@@ -601,6 +603,7 @@ void efmrp::timerFiredCallback(int index) {
 }
 
 void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
+    trace()<<"[info] Entering fromApplicationLayer(..)";
     if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
         trace()<<"[error] Packet's destination not sink: "<<destination;
         return;
@@ -629,6 +632,7 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
 
 
 void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
+    trace()<<"[info] Entering fromMacLayer(..srcMacAddress="<<srcMacAddress<<")";
     efmrpPacket *efmrp_pkt=dynamic_cast<efmrpPacket *>(pkt);
     if(!efmrp_pkt) {
         trace()<<"[error] Dynamic cast of packet failed";
