@@ -91,6 +91,9 @@ string efmrp::stateToStr(efmrpStateDef state) const {
         case efmrpStateDef::LEARN: {
             return "LEARN";
         }
+        case efmrpStateDef::INIT: {
+            return "LEARN";
+        }
     }
     return "UNKNOWN";
 }
@@ -700,13 +703,16 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[info] Node is sink, FIELD_PACKET discarded";
                 break;
             }
+            if(getState()==efmrpStateDef::INIT) {
+                trace()<<"[info] Node in INIT state, doing nothing.";
+            }
 
             if(getState()==efmrpStateDef::LEARN) {
-                trace()<<"[info] Node in LEARN state";
+                trace()<<"[info] Node in LEARN state, still updating Field table";
                 updateFieldTable(field_pkt);
             }
             if(getState()==efmrpStateDef::BUILD) {
-                trace()<<"[info] Node in BUILD state";
+                trace()<<"[info] Node in BUILD state, updating Field table, if possible";
                 if(checkHelloTable(std::string(field_pkt->getSource()))) {
                     updateFieldTable(field_pkt);
                 } else {
