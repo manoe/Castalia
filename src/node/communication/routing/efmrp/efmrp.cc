@@ -568,8 +568,14 @@ void efmrp::timerFiredCallback(int index) {
         case efmrpTimerDef::TTL: {
             trace()<<"[timer] TTL timer expired";
             setState(efmrpStateDef::BUILD);
+            if(field_table.empty()) {
+                trace()<<"[warn] Field table empty, returning to INIT state";
+                setState(efmrpStateDef::INIT);
+                break;
+            }
             sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue());
             setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
+            break;
         }
         case efmrpTimerDef::FIELD: {
             trace()<<"[timer] FIELD timer expired";
