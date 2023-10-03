@@ -550,13 +550,19 @@ void efmrp::updateFieldTableWithPE(std::string ne, std::string pe, efmrpPathStat
 
 
 void efmrp::timerFiredCallback(int index) {
-    trace()<<"[info] Entering timerFiredCallback(index ="<<index<<")";
+    trace()<<"[info] Entering timerFiredCallback(index="<<index<<")";
     switch (index) {
         case efmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
             setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
             setState(efmrpStateDef::LEARN);
+            break;
+        }
+        case efmrpTimerDef::BUILD_START: {
+            trace()<<"[timer] BUILD_START expired"; 
+            sendField(getHop(), 1.0, 1.0, 1.0);
+            setState(efmrpStateDef::WORK);
             break;
         }
         case efmrpTimerDef::TTL: {
@@ -612,7 +618,7 @@ void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     switch (getState()) {
         case efmrpStateDef::LEARN: {
             trace()<<"[error] In LEARN state, can't route packet";
-            break;;
+            break;
         }
         case efmrpStateDef::BUILD: {
             trace()<<"[info] In BUILD state, best effort routing";
