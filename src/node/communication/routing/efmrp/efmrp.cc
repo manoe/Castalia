@@ -146,7 +146,7 @@ void efmrp::updateHelloTable(efmrpHelloPacket *hello_pkt) {
     ne.nrg=hello_pkt->getNrg();
     trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" hop: "<<ne.hop<<" env: "<<ne.env<<" nrg: "<<ne.nrg<<" to hello_table";
     if(hello_table.find(ne.nw_address) != hello_table.end()) {
-        trace()<<"[warn] Overriding record's hop: "<<hello_table[ne.nw_address].hop;
+        trace()<<"[warn] Overriding record's hop: "<<hello_table[ne.nw_address].hop<<" to hop "<<ne.hop;
     }
     hello_table.insert({hello_pkt->getSource(),ne});
 }
