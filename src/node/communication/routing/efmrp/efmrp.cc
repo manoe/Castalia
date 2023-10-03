@@ -244,8 +244,8 @@ routing_entry efmrp::getRoutingEntry(std::string ne, int prio) {
 double efmrp::calculateTargetValue() {
     trace()<<"[info] Entering calculateTargetValue()";
     node_entry min_ne;
-    min_ne=field_table.begin()->second;
-    for(auto ne: field_table) {
+    min_ne=hello_table.begin()->second;
+    for(auto ne: hello_table) {
         if(ne.second.env < min_ne.env) {
             min_ne=ne.second;
         }
@@ -571,11 +571,6 @@ void efmrp::timerFiredCallback(int index) {
         case efmrpTimerDef::TTL: {
             trace()<<"[timer] TTL timer expired";
             setState(efmrpStateDef::BUILD);
-            if(field_table.empty()) {
-                trace()<<"[warn] Field table empty, returning to INIT state";
-                setState(efmrpStateDef::INIT);
-                break;
-            }
             sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue());
             setTimer(efmrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
             break;
