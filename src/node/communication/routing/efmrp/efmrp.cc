@@ -555,7 +555,7 @@ void efmrp::timerFiredCallback(int index) {
         case efmrpTimerDef::SINK_START: {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
-            setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
+            setTimer(efmrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
             setState(efmrpStateDef::LEARN);
             break;
         }
