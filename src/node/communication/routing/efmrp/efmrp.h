@@ -83,7 +83,7 @@ struct feat_par {
     // PARAMETER
     double alpha;
     double beta;
-    bool   pnum;
+    int    pnum;
     double gamma;
     double n_lim;
 };
