@@ -314,8 +314,8 @@ void efmrp::sendQuery(std::string ne) {
 }
 
 void efmrp::sendQueryAck(std::string origin, std::string dst, bool used) {
-    trace()<<"[info] Entering sendQuery(origin="<<origin<<", dst="<<dst<<", used="<<used<<")";
-    efmrpQueryAckPacket *query_ack_pkt=new efmrpQueryAckPacket("EFMRP QUERY_ACL packet", NETWORK_LAYER_PACKET);
+    trace()<<"[info] Entering sendQueryAck(origin="<<origin<<", dst="<<dst<<", used="<<used<<")";
+    efmrpQueryAckPacket *query_ack_pkt=new efmrpQueryAckPacket("EFMRP QUERY_ACK packet", NETWORK_LAYER_PACKET);
     query_ack_pkt->setByteLength(netDataFrameOverhead);
     query_ack_pkt->setEfmrpPacketKind(efmrpPacketDef::QUERY_ACK_PACKET);
     query_ack_pkt->setOrigin(origin.c_str());
