@@ -258,6 +258,7 @@ node_entry efmrp::getNthTargetValueEntry(int order) {
     if(field_table.size() < order) {
         throw std::string("[error] Less record than order");
     }
+    trace()<<"[info] Field table size: "<<field_table.size();
 
     std::vector<node_entry> fv;
     for(auto it = field_table.begin() ; it != field_table.end() ; ++it) {
@@ -273,7 +274,7 @@ double efmrp::targetFunction(node_entry a) {
     trace()<<"[info] Entering targetFunction(a)";
     double ret_val = (1.0 - fp.alpha - fp.beta) * 1.0/(a.hop + 1) +
                      fp.alpha * a.trg + fp.beta * a.nrg;
-    trace()<<"[info] targetFunction value: "<<ret_val;
+    trace()<<"[info] targetFunction value for node "<<a.nw_address <<": "<<ret_val;
     return ret_val;
 }
 
