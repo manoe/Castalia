@@ -341,7 +341,7 @@ bool efmrp::queryStarted(std::string ne) {
 }
 
 bool efmrp::queryCompleted(std::string ne) {
-    trace()<<"[info] Entering queryStarted(ne="<<ne<<")";
+    trace()<<"[info] Entering queryCompleted(ne="<<ne<<")";
     for(auto re: routing_table) {
         if(re.nw_address==ne && re.status==efmrpPathStatus::UNDER_QUERY && re.prio>1 && re.query_timestamp+fp.query < getClock().dbl()) {
             trace()<<"[info] Query completed";
