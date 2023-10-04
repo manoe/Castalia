@@ -498,7 +498,7 @@ routing_entry efmrp::getPath(std::string ne) {
     trace()<<"[info] rand: "<<rnd<<" tv_sum: "<<tv_sum;
 
     for(auto re: rv) {
-        tv+=re.target_value;
+        tv+=re.target_value/tv_sum;
         if(rnd<tv) {
             trace()<<"[info] Selected entry: "<<re.next_hop;
             return re;
