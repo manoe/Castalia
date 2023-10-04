@@ -429,7 +429,7 @@ void efmrp::sendAlarm(efmrpAlarmDef alarm_kind, double env_val, double nrg_val, 
 bool efmrp::checkPath(std::string ne) {
     trace()<<"[info] Entering checkPath(ne="<<ne<<")";
     for(auto entry: routing_table) {
-        if(entry.nw_address == ne && entry.prio==1) {
+        if(entry.nw_address == ne) {
             trace()<<"[info] Entry found";
             return true;
         }
