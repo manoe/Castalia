@@ -141,6 +141,7 @@ class efmrp: public VirtualRouting {
         routing_entry getPath(std::string);
         routing_entry getPath(std::string, int);
         bool checkPath(std::string);
+        bool isSinkNextHop();
 
         void sendQuery(std::string);
         void sendQueryAck(std::string, std::string, bool);
