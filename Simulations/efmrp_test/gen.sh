@@ -11,6 +11,6 @@ OUT=$4
 
 ../../bin/Castalia3 -i $CFG -c seed=$SEED,$ARG 
 
-yq -i e '. += { "loc_pdr": load("loc_pdr.yaml") }' pdr.yaml
+#yq -i e '. += { "loc_pdr": load("loc_pdr.yaml") }' pdr.yaml
 yq -i '.runs += [ load("pdr.yaml")]' $OUT
 
