@@ -3,55 +3,55 @@ runs:
     pdr:
       - node: 0
       - node: 1
-        report_pdr: 0
+        report_pdr: 0.800000012
       - node: 2
-        report_pdr: 0
+        report_pdr: 1
       - node: 3
-        report_pdr: 0
+        report_pdr: 0.600000024
       - node: 4
-        report_pdr: 0
+        report_pdr: 0.200000003
       - node: 5
         report_pdr: 0
       - node: 6
         report_pdr: 0
       - node: 7
-        report_pdr: 0
+        report_pdr: 0.400000006
       - node: 8
-        report_pdr: 0
+        report_pdr: 0.600000024
       - node: 9
-        report_pdr: 0
+        report_pdr: 0.600000024
       - node: 10
-        report_pdr: 0
+        report_pdr: 0.400000006
       - node: 11
-        report_pdr: 0
+        report_pdr: 0.800000012
       - node: 12
-        report_pdr: 0
+        report_pdr: 0.400000006
       - node: 13
         report_pdr: 0
       - node: 14
-        report_pdr: 0
+        report_pdr: 0.400000006
       - node: 15
-        report_pdr: 0
+        report_pdr: 0.200000003
       - node: 16
-        report_pdr: 0
+        report_pdr: 0.200000003
       - node: 17
-        report_pdr: 0
+        report_pdr: 0.600000024
       - node: 18
-        report_pdr: 0
+        report_pdr: 0.600000024
       - node: 19
-        report_pdr: 0
+        report_pdr: 0.200000003
       - node: 20
-        report_pdr: 0
+        report_pdr: 0.25
       - node: 21
-        report_pdr: 0
+        report_pdr: 0.75
       - node: 22
         report_pdr: 0
       - node: 23
         report_pdr: 0
       - node: 24
-        report_pdr: 0
+        report_pdr: 0.5
       - node: 25
-        report_pdr: 0
+        report_pdr: 0.25
       - node: 26
         report_pdr: 0
       - node: 27
@@ -63,17 +63,17 @@ runs:
       - node: 30
         report_pdr: 0
       - node: 31
-        report_pdr: 0
+        report_pdr: 0.5
       - node: 32
-        report_pdr: 0
+        report_pdr: 0.25
       - node: 33
         report_pdr: 0
       - node: 34
-        report_pdr: 0
+        report_pdr: 0.5
       - node: 35
         report_pdr: 0
       - node: 36
-        report_pdr: 0
+        report_pdr: 0.5
       - node: 37
         report_pdr: 0
       - node: 38
@@ -99,7 +99,7 @@ runs:
       - node: 48
         report_pdr: 0
       - node: 49
-        report_pdr: 0
+        report_pdr: 0.25
       - node: 50
         report_pdr: 0
       - node: 51
@@ -119,7 +119,7 @@ runs:
       - node: 58
         report_pdr: 0
       - node: 59
-        report_pdr: 0
+        report_pdr: 0.25
       - node: 60
         report_pdr: 0
       - node: 61
