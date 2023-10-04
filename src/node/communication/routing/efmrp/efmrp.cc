@@ -333,10 +333,11 @@ bool efmrp::queryStarted(std::string ne) {
     trace()<<"[info] Entering queryStarted(ne="<<ne<<")";
     for(auto re: routing_table) {
         if(re.nw_address==ne && re.status==efmrpPathStatus::UNDER_QUERY && re.prio>1) {
-            trace()<<"[info] Query ongoing";
+            trace()<<"[info] Query started";
             return true;
         }
     }
+    trace()<<"[info] Query not started";
     return false;
 }
 
@@ -348,12 +349,13 @@ bool efmrp::queryCompleted(std::string ne) {
             return true;
         }
     }
+    trace()<<"[info] Query not completed";
     return false;
 }
 
 
 void efmrp::sendData(routing_entry re, cPacket *pkt) {
-    trace()<<"[info] Entering sendData(re.next_hop="<<re.next_hop;
+    trace()<<"[info] Entering sendData(re.next_hop="<<re.next_hop<<")";
     efmrpDataPacket *data_pkt=new efmrpDataPacket("EFMRP DATA packet", NETWORK_LAYER_PACKET);
 
     data_pkt->setByteLength(netDataFrameOverhead);
@@ -541,7 +543,7 @@ node_entry efmrp::findSecondaryPath(std::string ne, std::vector<std::string> ne_
 }
 
 void efmrp::updateFieldTableWithQA(efmrpQueryAckPacket *query_ack_pkt) {
-    trace()<<"[info] Entering updateFieldTableWithQA(source="<<query_ack_pkt->getSource()<<", used: "<<query_ack_pkt->getUsed()<<")";
+    trace()<<"[info] Entering updateFieldTableWithQA(source="<<query_ack_pkt->getSource()<<", origin: "<<query_ack_pkt->getOrigin() <<"used: "<<query_ack_pkt->getUsed()<<")";
     efmrpPathStatus status = query_ack_pkt->getUsed() ? efmrpPathStatus::USED : efmrpPathStatus::AVAILABLE;
     if(field_table.find(query_ack_pkt->getSource()) != field_table.end()) {
         trace()<<"[info] Record exists";
