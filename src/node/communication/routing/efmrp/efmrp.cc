@@ -275,7 +275,7 @@ node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_
         }
     }
 
-    std::sort(fv.begin(), fv.end(), [this](node_entry a, node_entry b) { return targetFunction(a) < targetFunction(b);  });
+    std::sort(fv.begin(), fv.end(), [this](node_entry a, node_entry b) { return targetFunction(a) > targetFunction(b);  });
     
     return fv[order-1];
 }
@@ -762,6 +762,14 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 trace()<<"[error] Loop detected, origin equals destination";
                 break;
             }
+
+            if(isSink() && SELF_NETWORK_ADDRESS == std::string(data_pkt->getDestination())) {
+                trace()<<"[info] Data packet arrived at sink";
+                data_pkt->setSource(data_pkt->getOrigin());
+                toApplicationLayer(decapsulatePacket(data_pkt));
+                break;
+            }
+
             auto pri=data_pkt->getPri();
 
             if(pri==1) {
