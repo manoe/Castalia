@@ -208,7 +208,7 @@ void efmrp::updateRoutingEntry(std::string nw_address, node_entry ne, int prio, 
         if(re.nw_address == nw_address && re.prio==prio) {
             trace()<<"[info] record found";
             re.next_hop=ne.nw_address;
-            re.status=efmrpPathStatus::AVAILABLE;
+            re.status=status;
             re.target_value=targetFunction(ne);
             re.prio=prio;
             return;
@@ -543,7 +543,7 @@ node_entry efmrp::findSecondaryPath(std::string ne, std::vector<std::string> ne_
 }
 
 void efmrp::updateFieldTableWithQA(efmrpQueryAckPacket *query_ack_pkt) {
-    trace()<<"[info] Entering updateFieldTableWithQA(source="<<query_ack_pkt->getSource()<<", origin: "<<query_ack_pkt->getOrigin() <<"used: "<<query_ack_pkt->getUsed()<<")";
+    trace()<<"[info] Entering updateFieldTableWithQA(source="<<query_ack_pkt->getSource()<<", origin: "<<query_ack_pkt->getOrigin() <<", used: "<<query_ack_pkt->getUsed()<<")";
     efmrpPathStatus status = query_ack_pkt->getUsed() ? efmrpPathStatus::USED : efmrpPathStatus::AVAILABLE;
     if(field_table.find(query_ack_pkt->getSource()) != field_table.end()) {
         trace()<<"[info] Record exists";
