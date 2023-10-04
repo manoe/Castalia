@@ -297,6 +297,7 @@ int efmrp::numOfAvailPaths(std::string ne) {
             ++ret_val;
         }
     }
+    trace()<<"[info] Number of available paths: "<<ret_val;
     return ret_val;
 }
 
@@ -552,8 +553,9 @@ void efmrp::updateFieldTableWithQA(efmrpQueryAckPacket *query_ack_pkt) {
             }
         }
         field_table[query_ack_pkt->getSource()].pe.push_back({query_ack_pkt->getOrigin(),status });
+    } else {
+        trace()<<"[warn] Query responder does not exists in field_table";
     }
-    throw std::string("Query responder does not exists in field_table");
 }
 
 void efmrp::updateFieldTableWithPE(std::string ne, std::string pe, efmrpPathStatus status) {
