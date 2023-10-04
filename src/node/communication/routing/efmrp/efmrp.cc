@@ -438,6 +438,18 @@ bool efmrp::checkPath(std::string ne) {
     return false;
 }
 
+bool efmrp::isSinkNextHop() {
+    trace()<<"[info] Entering isSinkNextHop()";
+    for(auto ne: routing_table) {
+        if(ne.next_hop==getSinkAddress()) {
+            trace()<<"[info] Sink is next hop.";
+            return true;
+        }
+    }
+    trace()<<"[info] Sink in routing table not present.";
+    return false;
+}
+
 routing_entry efmrp::getPath(std::string ne, int prio) {
     trace()<<"[info] Entering getPath(ne="<<ne<<", prio="<<prio<<")";
     for(auto entry: routing_table) {
@@ -605,12 +617,16 @@ void efmrp::timerFiredCallback(int index) {
             trace()<<"[info] Construct primary path";
             routing_table.clear();
             addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
+            if(isSinkNextHop()) {
+                trace()<<"[info] No secondary path needed, as sink is the neighbor";
+                break;
+            }
             try {
                 addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
             } catch (std::string &s) {
                 trace()<<"[error] "<<s;
             }
-            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
             break;
         }
         case efmrpTimerDef::ENV_CHK: {
