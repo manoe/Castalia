@@ -1030,12 +1030,17 @@ void efmrp::generateYaml() {
         y_out<<YAML::BeginMap;
         auto pos=dynamic_cast<VirtualMobilityManager *>(topo->getNode(i)->getModule()->getSubmodule("MobilityManager"))->getLocation();
         y_out<<YAML::Key<<"node";
-        y_out<<i;
+        y_out<<YAML::Value<<i;
         y_out<<YAML::Key<<"x";
-        y_out<<pos.x;
+        y_out<<YAML::Value<<pos.x;
         y_out<<YAML::Key<<"y";
-        y_out<<pos.y;
+        y_out<<YAML::Value<<pos.y;
+        auto *efmrp_instance = dynamic_cast<efmrp*>
+                (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+
+        serializeRoutingTable(efmrp_instance->getRoutingTable());
         y_out<<YAML::EndMap;
+
     }
     y_out<<YAML::EndSeq;
     
@@ -1044,4 +1049,26 @@ void efmrp::generateYaml() {
     loc_pdr_file.close();
 
     delete(topo);
+}
+
+void efmrp::serializeRoutingTable(std::vector<routing_entry> rt) {
+    y_out<<YAML::Key<<"routing_table";
+    y_out<<YAML::Value;
+    y_out<<YAML::BeginSeq;
+    for(auto re: rt) {
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"origin";
+        y_out<<YAML::Value<<re.nw_address;
+        y_out<<YAML::Key<<"next_hop";
+        y_out<<YAML::Value<<re.next_hop;
+        y_out<<YAML::Key<<"target_value";
+        y_out<<YAML::Value<<re.target_value;
+        y_out<<YAML::Key<<"status";
+        y_out<<YAML::Value<<pathStatusToStr(re.status);
+        y_out<<YAML::Key<<"prio";
+        y_out<<YAML::Value<<re.prio;
+        y_out<<YAML::EndMap;
+    }
+
+    y_out<<YAML::EndSeq;
 }

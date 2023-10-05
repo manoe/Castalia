@@ -134,192 +134,3256 @@ runs:
       - node: 0
         x: 0
         y: 0
+        routing_table: []
       - node: 1
         x: 22.857142857142858
         y: 0
+        routing_table:
+          - origin: 1
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 2
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 11
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 21
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 3
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 23
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 14
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 6
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 13
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 7
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 5
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 47
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 29
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 59
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 34
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 30
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 53
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
       - node: 2
         x: 45.714285714285715
         y: 0
+        routing_table:
+          - origin: 2
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 1
+          - origin: 2
+            next_hop: 3
+            target_value: 0.39999713927693437
+            status: AVAILABLE
+            prio: 2
+          - origin: 3
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 23
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 29
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 59
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 30
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
       - node: 3
         x: 68.571428571428569
         y: 0
+        routing_table:
+          - origin: 3
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 3
+            next_hop: 2
+            target_value: 0.39999704293475835
+            status: AVAILABLE
+            prio: 2
+          - origin: 2
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 29
+            next_hop: 2
+            target_value: 0.39999704293475835
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 2
+            target_value: 0.39999704293475835
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 2
+            target_value: 0.39999704293475835
+            status: AVAILABLE
+            prio: 2
+          - origin: 59
+            next_hop: 2
+            target_value: 0.39999704293475835
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 2
+            target_value: 0.39999704293475835
+            status: AVAILABLE
+            prio: 2
+          - origin: 30
+            next_hop: 2
+            target_value: 0.39999704293475835
+            status: AVAILABLE
+            prio: 2
       - node: 4
         x: 91.428571428571431
         y: 0
+        routing_table:
+          - origin: 4
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 4
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 5
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 6
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 23
+            next_hop: 2
+            target_value: 0.39999704293475835
+            status: AVAILABLE
+            prio: 2
       - node: 5
         x: 114.28571428571429
         y: 0
+        routing_table:
+          - origin: 5
+            next_hop: 4
+            target_value: 0.34999709224426812
+            status: AVAILABLE
+            prio: 1
+          - origin: 5
+            next_hop: 20
+            target_value: 0.34999695837008621
+            status: AVAILABLE
+            prio: 2
+          - origin: 7
+            next_hop: 20
+            target_value: 0.34999695837008621
+            status: AVAILABLE
+            prio: 2
+          - origin: 15
+            next_hop: 20
+            target_value: 0.34999695837008621
+            status: AVAILABLE
+            prio: 2
+          - origin: 6
+            next_hop: 4
+            target_value: 0.34999709224426812
+            status: AVAILABLE
+            prio: 1
+          - origin: 23
+            next_hop: 4
+            target_value: 0.34999709224426812
+            status: AVAILABLE
+            prio: 2
       - node: 6
         x: 137.14285714285714
         y: 0
+        routing_table:
+          - origin: 6
+            next_hop: 5
+            target_value: 0.31999708742912736
+            status: AVAILABLE
+            prio: 1
+          - origin: 6
+            next_hop: 7
+            target_value: 0.31999696999823213
+            status: AVAILABLE
+            prio: 2
+          - origin: 7
+            next_hop: 5
+            target_value: 0.31999708742912736
+            status: AVAILABLE
+            prio: 2
+          - origin: 23
+            next_hop: 5
+            target_value: 0.31999708742912736
+            status: AVAILABLE
+            prio: 2
+          - origin: 15
+            next_hop: 5
+            target_value: 0.31999708742912736
+            status: AVAILABLE
+            prio: 2
       - node: 7
         x: 160
         y: 0
+        routing_table:
+          - origin: 7
+            next_hop: 14
+            target_value: 0.34999697830288112
+            status: AVAILABLE
+            prio: 1
+          - origin: 7
+            next_hop: 6
+            target_value: 0.31999720605852261
+            status: AVAILABLE
+            prio: 2
+          - origin: 6
+            next_hop: 15
+            target_value: 0.31999690737992892
+            status: AVAILABLE
+            prio: 2
+          - origin: 15
+            next_hop: 6
+            target_value: 0.31999720605852261
+            status: AVAILABLE
+            prio: 2
       - node: 8
         x: 0
         y: 22.857142857142858
+        routing_table:
+          - origin: 8
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 16
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 10
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 24
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 32
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 25
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 41
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 53
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 36
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 33
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 17
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 18
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 56
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 48
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 40
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 56
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 36
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 28
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 26
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 50
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 37
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 46
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 38
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 19
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 60
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 26
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 31
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 50
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 54
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
+          - origin: 57
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
+          - origin: 21
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
       - node: 9
         x: 22.857142857142858
         y: 22.857142857142858
+        routing_table:
+          - origin: 9
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 3
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 4
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 17
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 4
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 19
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 18
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 16
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 37
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 2
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 5
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 27
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 29
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 49
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 20
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 10
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 31
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 34
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 57
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 48
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 28
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 59
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 33
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 25
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 6
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 6
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 26
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 41
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 24
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 11
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 40
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 3
+            target_value: 0.39999713927693437
+            status: AVAILABLE
+            prio: 2
+          - origin: 62
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 63
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 23
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 47
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 32
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 55
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 15
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 52
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
       - node: 10
         x: 45.714285714285715
         y: 22.857142857142858
+        routing_table:
+          - origin: 10
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 10
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 19
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 23
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 55
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 34
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 49
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
+          - origin: 63
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 52
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
       - node: 11
         x: 68.571428571428569
         y: 22.857142857142858
+        routing_table:
+          - origin: 11
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 1
+          - origin: 11
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 1
+          - origin: 20
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 14
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 23
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 1
+          - origin: 29
+            next_hop: 3
+            target_value: 0.39999713927693437
+            status: AVAILABLE
+            prio: 2
+          - origin: 7
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 3
+            target_value: 0.39999713927693437
+            status: AVAILABLE
+            prio: 2
+          - origin: 55
+            next_hop: 19
+            target_value: 0.34999698564911691
+            status: AVAILABLE
+            prio: 2
+          - origin: 15
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 47
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 3
+            target_value: 0.39999713927693437
+            status: AVAILABLE
+            prio: 2
+          - origin: 59
+            next_hop: 3
+            target_value: 0.39999713927693437
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 34
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
       - node: 12
         x: 91.428571428571431
         y: 22.857142857142858
+        routing_table:
+          - origin: 12
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 7
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 14
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 15
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 20
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 13
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 5
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 6
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 13
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
+          - origin: 30
+            next_hop: 3
+            target_value: 0.39999713927693437
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 0
+            target_value: 0.80000000000000004
+            status: AVAILABLE
+            prio: 1
+          - origin: 45
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 20
+            target_value: 0.34999695837008621
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 19
+            target_value: 0.34999698564911691
+            status: AVAILABLE
+            prio: 2
+          - origin: 53
+            next_hop: 1
+            target_value: 0.49999738630340695
+            status: AVAILABLE
+            prio: 2
       - node: 13
         x: 114.28571428571429
         y: 22.857142857142858
+        routing_table:
+          - origin: 13
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 1
+          - origin: 13
+            next_hop: 20
+            target_value: 0.34999695837008621
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
       - node: 14
         x: 137.14285714285714
         y: 22.857142857142858
+        routing_table:
+          - origin: 14
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 1
+          - origin: 14
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 7
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 1
+          - origin: 15
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 1
+          - origin: 6
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 2
+          - origin: 30
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 2
       - node: 15
         x: 160
         y: 22.857142857142858
+        routing_table:
+          - origin: 15
+            next_hop: 14
+            target_value: 0.34999697830288112
+            status: AVAILABLE
+            prio: 1
+          - origin: 15
+            next_hop: 7
+            target_value: 0.31999696999823213
+            status: AVAILABLE
+            prio: 2
+          - origin: 6
+            next_hop: 14
+            target_value: 0.34999697830288112
+            status: AVAILABLE
+            prio: 2
       - node: 16
         x: 0
         y: 45.714285714285715
+        routing_table:
+          - origin: 16
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 16
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 10
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 18
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 24
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 32
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 17
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 25
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 36
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 40
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 41
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 53
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 36
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 41
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 33
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 43
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 56
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 28
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 56
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 48
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 26
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 37
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 60
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 50
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 34
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 38
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 46
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 19
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 50
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 52
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 57
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 2
       - node: 17
         x: 22.857142857142858
         y: 45.714285714285715
+        routing_table:
+          - origin: 17
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 17
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 4
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 27
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 34
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 36
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 24
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 19
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 40
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 32
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 18
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
+          - origin: 52
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
       - node: 18
         x: 45.714285714285715
         y: 45.714285714285715
+        routing_table:
+          - origin: 18
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 18
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 59
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 34
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 52
+            next_hop: 19
+            target_value: 0.34999698564911691
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
       - node: 19
         x: 68.571428571428569
         y: 45.714285714285715
+        routing_table:
+          - origin: 19
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 19
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 28
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 37
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 7
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 55
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
+          - origin: 18
+            next_hop: 35
+            target_value: 0.34999694808697501
+            status: AVAILABLE
+            prio: 2
       - node: 20
         x: 91.428571428571431
         y: 45.714285714285715
+        routing_table:
+          - origin: 20
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 1
+          - origin: 20
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 13
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 2
+          - origin: 5
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 2
+          - origin: 7
+            next_hop: 19
+            target_value: 0.34999698564911691
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 1
+          - origin: 15
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 2
+          - origin: 53
+            next_hop: 12
+            target_value: 0.39999701038762536
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 13
+            target_value: 0.34999693613663418
+            status: AVAILABLE
+            prio: 2
       - node: 21
         x: 114.28571428571429
         y: 45.714285714285715
+        routing_table:
+          - origin: 21
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 1
+          - origin: 21
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
+          - origin: 22
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 29
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 23
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 1
+          - origin: 55
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 47
+            next_hop: 11
+            target_value: 0.39999700956532996
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 20
+            target_value: 0.34999695837008621
+            status: AVAILABLE
+            prio: 2
+          - origin: 53
+            next_hop: 20
+            target_value: 0.34999695837008621
+            status: AVAILABLE
+            prio: 2
       - node: 22
         x: 137.14285714285714
         y: 45.714285714285715
+        routing_table:
+          - origin: 22
+            next_hop: 20
+            target_value: 0.34999695837008621
+            status: AVAILABLE
+            prio: 1
+          - origin: 22
+            next_hop: 21
+            target_value: 0.34999691561007806
+            status: AVAILABLE
+            prio: 2
       - node: 23
         x: 160
         y: 45.714285714285715
+        routing_table:
+          - origin: 23
+            next_hop: 21
+            target_value: 0.34999691561007806
+            status: AVAILABLE
+            prio: 1
+          - origin: 23
+            next_hop: 6
+            target_value: 0.31999720605852261
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 21
+            target_value: 0.34999691561007806
+            status: AVAILABLE
+            prio: 2
+          - origin: 47
+            next_hop: 21
+            target_value: 0.34999691561007806
+            status: AVAILABLE
+            prio: 2
       - node: 24
         x: 0
         y: 68.571428571428569
+        routing_table:
+          - origin: 24
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 24
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 32
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 19
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
       - node: 25
         x: 22.857142857142858
         y: 68.571428571428569
+        routing_table:
+          - origin: 25
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 25
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 29
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 31
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 49
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 33
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 34
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 57
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 48
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 59
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 51
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 32
+            next_hop: 24
+            target_value: 0.34999720138160584
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 56
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 40
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 47
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 62
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 63
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 60
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 19
+            next_hop: 24
+            target_value: 0.34999720138160584
+            status: AVAILABLE
+            prio: 2
+          - origin: 34
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 18
+            next_hop: 33
+            target_value: 0.34999710840441756
+            status: AVAILABLE
+            prio: 2
+          - origin: 52
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 38
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 46
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
       - node: 26
         x: 45.714285714285715
         y: 68.571428571428569
+        routing_table:
+          - origin: 26
+            next_hop: 8
+            target_value: 0.49999735948465285
+            status: AVAILABLE
+            prio: 1
+          - origin: 26
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 2
       - node: 27
         x: 68.571428571428569
         y: 68.571428571428569
+        routing_table:
+          - origin: 27
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 27
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 35
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 34
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 36
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 55
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 44
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 59
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 21
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
+          - origin: 28
+            next_hop: 9
+            target_value: 0.49999728165194568
+            status: AVAILABLE
+            prio: 1
+          - origin: 41
+            next_hop: 19
+            target_value: 0.34999698564911691
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 36
+            target_value: 0.34999693763799078
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 17
+            target_value: 0.3999971958133911
+            status: AVAILABLE
+            prio: 2
+          - origin: 18
+            next_hop: 19
+            target_value: 0.34999698564911691
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 18
+            target_value: 0.39999703593975305
+            status: AVAILABLE
+            prio: 2
       - node: 28
         x: 91.428571428571431
         y: 68.571428571428569
+        routing_table:
+          - origin: 28
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 1
+          - origin: 28
+            next_hop: 19
+            target_value: 0.34999698564911691
+            status: AVAILABLE
+            prio: 2
       - node: 29
         x: 114.28571428571429
         y: 68.571428571428569
+        routing_table:
+          - origin: 29
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 1
+          - origin: 29
+            next_hop: 21
+            target_value: 0.34999691561007806
+            status: AVAILABLE
+            prio: 2
+          - origin: 31
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 1
+          - origin: 47
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 1
+          - origin: 55
+            next_hop: 21
+            target_value: 0.34999691561007806
+            status: AVAILABLE
+            prio: 2
+          - origin: 60
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 2
+          - origin: 53
+            next_hop: 21
+            target_value: 0.34999691561007806
+            status: AVAILABLE
+            prio: 2
+          - origin: 62
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 1
+          - origin: 63
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 1
+          - origin: 46
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 1
       - node: 30
         x: 137.14285714285714
         y: 68.571428571428569
+        routing_table:
+          - origin: 30
+            next_hop: 45
+            target_value: 0.34999701791863191
+            status: AVAILABLE
+            prio: 1
+          - origin: 30
+            next_hop: 14
+            target_value: 0.34999697830288112
+            status: AVAILABLE
+            prio: 2
       - node: 31
         x: 160
         y: 68.571428571428569
+        routing_table:
+          - origin: 31
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 1
+          - origin: 31
+            next_hop: 23
+            target_value: 0.3199971091573266
+            status: AVAILABLE
+            prio: 2
+          - origin: 47
+            next_hop: 23
+            target_value: 0.3199971091573266
+            status: AVAILABLE
+            prio: 2
+          - origin: 62
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
       - node: 32
         x: 0
         y: 91.428571428571431
+        routing_table:
+          - origin: 32
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 32
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 36
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 40
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 48
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 37
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 57
+            next_hop: 33
+            target_value: 0.34999710840441756
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 50
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 52
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
       - node: 33
         x: 22.857142857142858
         y: 91.428571428571431
+        routing_table:
+          - origin: 33
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 33
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 57
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 18
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 2
+          - origin: 35
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
       - node: 34
         x: 45.714285714285715
         y: 91.428571428571431
+        routing_table:
+          - origin: 34
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 34
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
+          - origin: 29
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 31
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 42
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 37
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 47
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 61
+            next_hop: 42
+            target_value: 0.3499970445354959
+            status: AVAILABLE
+            prio: 2
+          - origin: 60
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 62
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 63
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 46
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 37
+            target_value: 0.31999695396375716
+            status: AVAILABLE
+            prio: 2
+          - origin: 18
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
       - node: 35
         x: 68.571428571428569
         y: 91.428571428571431
+        routing_table:
+          - origin: 35
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 1
+          - origin: 35
+            next_hop: 42
+            target_value: 0.3499970445354959
+            status: AVAILABLE
+            prio: 2
+          - origin: 55
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 1
+          - origin: 52
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
       - node: 36
         x: 91.428571428571431
         y: 91.428571428571431
+        routing_table:
+          - origin: 36
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 1
+          - origin: 36
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
       - node: 37
         x: 114.28571428571429
         y: 91.428571428571431
+        routing_table:
+          - origin: 37
+            next_hop: 19
+            target_value: 0.34999698564911691
+            status: AVAILABLE
+            prio: 1
+          - origin: 37
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 21
+            target_value: 0.34999691561007806
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 35
+            target_value: 0.34999694808697501
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 35
+            target_value: 0.34999694808697501
+            status: AVAILABLE
+            prio: 2
       - node: 38
         x: 137.14285714285714
         y: 91.428571428571431
+        routing_table:
+          - origin: 38
+            next_hop: 45
+            target_value: 0.34999701791863191
+            status: AVAILABLE
+            prio: 1
+          - origin: 38
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 45
+            target_value: 0.34999701791863191
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 37
+            target_value: 0.31999695396375716
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 37
+            target_value: 0.31999695396375716
+            status: AVAILABLE
+            prio: 2
       - node: 39
         x: 160
         y: 91.428571428571431
+        routing_table:
+          - origin: 39
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 38
+            target_value: 0.31999697788937687
+            status: AVAILABLE
+            prio: 2
+          - origin: 53
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 38
+            target_value: 0.31999697788937687
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 38
+            target_value: 0.31999697788937687
+            status: AVAILABLE
+            prio: 2
       - node: 40
         x: 0
         y: 114.28571428571429
+        routing_table:
+          - origin: 40
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 40
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 41
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 42
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 56
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 58
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 53
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 1
+          - origin: 48
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 37
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 50
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 38
+            next_hop: 48
+            target_value: 0.31999722276936421
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 16
+            target_value: 0.3999972823421748
+            status: AVAILABLE
+            prio: 2
+          - origin: 52
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
       - node: 41
         x: 22.857142857142858
         y: 114.28571428571429
+        routing_table:
+          - origin: 41
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 1
+          - origin: 41
+            next_hop: 33
+            target_value: 0.34999710840441756
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 1
+          - origin: 44
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 42
+            next_hop: 33
+            target_value: 0.34999710840441756
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 33
+            target_value: 0.34999710840441756
+            status: AVAILABLE
+            prio: 2
+          - origin: 37
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 1
+          - origin: 51
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 50
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 38
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 35
+            next_hop: 33
+            target_value: 0.34999710840441756
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 52
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 33
+            target_value: 0.34999710840441756
+            status: AVAILABLE
+            prio: 2
       - node: 42
         x: 45.714285714285715
         y: 114.28571428571429
+        routing_table:
+          - origin: 42
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 1
+          - origin: 42
+            next_hop: 34
+            target_value: 0.34999695098108119
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 51
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 50
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 35
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 61
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
       - node: 43
         x: 68.571428571428569
         y: 114.28571428571429
+        routing_table:
+          - origin: 43
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 1
+          - origin: 43
+            next_hop: 42
+            target_value: 0.3499970445354959
+            status: AVAILABLE
+            prio: 2
       - node: 44
         x: 91.428571428571431
         y: 114.28571428571429
+        routing_table:
+          - origin: 44
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 1
+          - origin: 44
+            next_hop: 42
+            target_value: 0.3499970445354959
+            status: AVAILABLE
+            prio: 2
       - node: 45
         x: 114.28571428571429
         y: 114.28571428571429
+        routing_table:
+          - origin: 45
+            next_hop: 62
+            target_value: 0.31999692023944681
+            status: AVAILABLE
+            prio: 1
+          - origin: 45
+            next_hop: 54
+            target_value: 0.31999690728697461
+            status: AVAILABLE
+            prio: 2
+          - origin: 30
+            next_hop: 62
+            target_value: 0.31999692023944681
+            status: AVAILABLE
+            prio: 1
+          - origin: 46
+            next_hop: 62
+            target_value: 0.31999692023944681
+            status: AVAILABLE
+            prio: 1
+          - origin: 38
+            next_hop: 62
+            target_value: 0.31999692023944681
+            status: AVAILABLE
+            prio: 1
+          - origin: 53
+            next_hop: 62
+            target_value: 0.31999692023944681
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 62
+            target_value: 0.31999692023944681
+            status: AVAILABLE
+            prio: 1
+          - origin: 62
+            next_hop: 54
+            target_value: 0.31999690728697461
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 62
+            target_value: 0.31999692023944681
+            status: AVAILABLE
+            prio: 2
       - node: 46
         x: 137.14285714285714
         y: 114.28571428571429
+        routing_table:
+          - origin: 46
+            next_hop: 45
+            target_value: 0.34999701791863191
+            status: AVAILABLE
+            prio: 1
+          - origin: 46
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 2
+          - origin: 53
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 2
       - node: 47
         x: 160
         y: 114.28571428571429
+        routing_table:
+          - origin: 47
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 1
+          - origin: 47
+            next_hop: 31
+            target_value: 0.31999688674026988
+            status: AVAILABLE
+            prio: 2
+          - origin: 55
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 2
+          - origin: 53
+            next_hop: 39
+            target_value: 0.31999688450317226
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 39
+            target_value: 0.31999688450317226
+            status: AVAILABLE
+            prio: 2
+          - origin: 46
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 2
+          - origin: 62
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 1
+          - origin: 63
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 1
+          - origin: 54
+            next_hop: 39
+            target_value: 0.31999688450317226
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 1
+          - origin: 62
+            next_hop: 31
+            target_value: 0.31999688674026988
+            status: AVAILABLE
+            prio: 2
       - node: 48
         x: 0
         y: 137.14285714285714
+        routing_table:
+          - origin: 48
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 48
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
+          - origin: 38
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 2
       - node: 49
         x: 22.857142857142858
         y: 137.14285714285714
+        routing_table:
+          - origin: 49
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 49
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 48
+            target_value: 0.31999722276936421
+            status: AVAILABLE
+            prio: 2
       - node: 50
         x: 45.714285714285715
         y: 137.14285714285714
+        routing_table:
+          - origin: 50
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 1
+          - origin: 50
+            next_hop: 42
+            target_value: 0.3499970445354959
+            status: AVAILABLE
+            prio: 2
       - node: 51
         x: 68.571428571428569
         y: 137.14285714285714
+        routing_table:
+          - origin: 51
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 1
+          - origin: 51
+            next_hop: 42
+            target_value: 0.3499970445354959
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 42
+            target_value: 0.3499970445354959
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 2
       - node: 52
         x: 91.428571428571431
         y: 137.14285714285714
+        routing_table:
+          - origin: 52
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 1
+          - origin: 52
+            next_hop: 35
+            target_value: 0.34999694808697501
+            status: AVAILABLE
+            prio: 2
+          - origin: 60
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 1
       - node: 53
         x: 114.28571428571429
         y: 137.14285714285714
+        routing_table:
+          - origin: 53
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 1
+          - origin: 53
+            next_hop: 45
+            target_value: 0.34999701791863191
+            status: AVAILABLE
+            prio: 2
       - node: 54
         x: 137.14285714285714
         y: 137.14285714285714
+        routing_table:
+          - origin: 54
+            next_hop: 45
+            target_value: 0.34999701791863191
+            status: AVAILABLE
+            prio: 1
+          - origin: 54
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 61
+            target_value: 0.31999689798730402
+            status: AVAILABLE
+            prio: 2
+          - origin: 62
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 61
+            target_value: 0.31999689798730402
+            status: AVAILABLE
+            prio: 2
       - node: 55
         x: 160
         y: 137.14285714285714
+        routing_table:
+          - origin: 55
+            next_hop: 35
+            target_value: 0.34999694808697501
+            status: AVAILABLE
+            prio: 1
+          - origin: 55
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 2
       - node: 56
         x: 0
         y: 160
+        routing_table:
+          - origin: 56
+            next_hop: 40
+            target_value: 0.34999718145990649
+            status: AVAILABLE
+            prio: 1
+          - origin: 56
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 2
+          - origin: 49
+            next_hop: 48
+            target_value: 0.31999722276936421
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: ""
+            target_value: -3.777387268823766e-10
+            status: UNDER_QUERY
+            prio: 2
       - node: 57
         x: 22.857142857142858
         y: 160
+        routing_table:
+          - origin: 57
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 57
+            next_hop: 32
+            target_value: 0.34999717976960965
+            status: AVAILABLE
+            prio: 2
+          - origin: 56
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 2
+          - origin: 59
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 51
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 49
+            next_hop: 56
+            target_value: 0.31999710772698337
+            status: AVAILABLE
+            prio: 2
+          - origin: 52
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 56
+            target_value: 0.31999710772698337
+            status: AVAILABLE
+            prio: 2
+          - origin: 43
+            next_hop: 49
+            target_value: 0.31999708936406723
+            status: AVAILABLE
+            prio: 2
+          - origin: 44
+            next_hop: 56
+            target_value: 0.31999710772698337
+            status: AVAILABLE
+            prio: 2
+          - origin: 60
+            next_hop: 25
+            target_value: 0.39999714255204344
+            status: AVAILABLE
+            prio: 1
       - node: 58
         x: 45.714285714285715
         y: 160
+        routing_table:
+          - origin: 58
+            next_hop: 41
+            target_value: 0.34999696883407821
+            status: AVAILABLE
+            prio: 1
+          - origin: 58
+            next_hop: 60
+            target_value: 0.34999695070846781
+            status: AVAILABLE
+            prio: 2
       - node: 59
         x: 68.571428571428569
         y: 160
+        routing_table:
+          - origin: 59
+            next_hop: 57
+            target_value: 0.34999714557438222
+            status: AVAILABLE
+            prio: 1
+          - origin: 59
+            next_hop: 27
+            target_value: 0.34999708654773587
+            status: AVAILABLE
+            prio: 2
       - node: 60
         x: 91.428571428571431
         y: 160
+        routing_table:
+          - origin: 60
+            next_hop: 52
+            target_value: 0.31999699791274094
+            status: AVAILABLE
+            prio: 1
+          - origin: 60
+            next_hop: 61
+            target_value: 0.31999689798730402
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 61
+            target_value: 0.31999689798730402
+            status: AVAILABLE
+            prio: 2
       - node: 61
         x: 114.28571428571429
         y: 160
+        routing_table:
+          - origin: 61
+            next_hop: 10
+            target_value: 0.39999708894219471
+            status: AVAILABLE
+            prio: 1
+          - origin: 61
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 2
+          - origin: 45
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 2
+          - origin: 60
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 2
+          - origin: 58
+            next_hop: 29
+            target_value: 0.34999691807117728
+            status: AVAILABLE
+            prio: 2
+          - origin: 39
+            next_hop: 51
+            target_value: 0.31999682681826691
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 51
+            target_value: 0.31999682681826691
+            status: AVAILABLE
+            prio: 2
       - node: 62
         x: 137.14285714285714
         y: 160
+        routing_table:
+          - origin: 62
+            next_hop: 45
+            target_value: 0.34999701791863191
+            status: AVAILABLE
+            prio: 1
+          - origin: 62
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 2
+          - origin: 30
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 1
+          - origin: 45
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 1
+          - origin: 38
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 1
+          - origin: 53
+            next_hop: 46
+            target_value: 0.31999692744782648
+            status: AVAILABLE
+            prio: 2
+          - origin: 63
+            next_hop: 61
+            target_value: 0.31999689798730402
+            status: AVAILABLE
+            prio: 2
+          - origin: 54
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 1
+          - origin: 46
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 1
+          - origin: 39
+            next_hop: 54
+            target_value: 0.31999690728697461
+            status: AVAILABLE
+            prio: 2
       - node: 63
         x: 160
         y: 160
+        routing_table:
+          - origin: 63
+            next_hop: 47
+            target_value: 0.31999694723410305
+            status: AVAILABLE
+            prio: 1
+          - origin: 63
+            next_hop: 62
+            target_value: 0.31999692023944681
+            status: AVAILABLE
+            prio: 2

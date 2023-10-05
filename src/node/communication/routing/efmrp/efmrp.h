@@ -177,10 +177,13 @@ class efmrp: public VirtualRouting {
         std::string pathStatusToStr(efmrpPathStatus) const;
 
         void generateYaml();
+        void serializeRoutingTable(std::vector<routing_entry> rt);
     public:
         efmrp() : g_is_sink(false),
                   g_hop(std::numeric_limits<int>::max()),
                   g_state(efmrpStateDef::UNDEF) {};
+        
+        std::vector<routing_entry> getRoutingTable() { return routing_table; };
 };
 
 #endif /* _EFMRP_H_ */
