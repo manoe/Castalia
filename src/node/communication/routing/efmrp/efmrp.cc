@@ -98,6 +98,27 @@ string efmrp::stateToStr(efmrpStateDef state) const {
     return "UNKNOWN";
 }
 
+string efmrp::pathStatusToStr(efmrpPathStatus pstatus) const {
+    switch (pstatus) {
+       case efmrpPathStatus::UNKNOWN: {
+           return "UNKNOWN";
+       }
+       case efmrpPathStatus::AVAILABLE: {
+           return "AVAILABLE";
+       }
+       case efmrpPathStatus::USED: {
+           return "USED";
+       }
+       case efmrpPathStatus::DEAD: {
+           return "DEAD";
+       }
+       case efmrpPathStatus::UNDER_QUERY: {
+           return "UNDER_QUERY";
+       }
+    }
+    return "NONDEF";
+} 
+
 efmrpStateDef efmrp::getState() const {
     return g_state;
 }
@@ -886,6 +907,13 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             trace()<<"[error] Unknown packet received with efmrpPacketKind value: "<<efmrp_pkt->getEfmrpPacketKind();
             break;
         }
+    }
+}
+
+void efmrp::finishSpecific() {
+    trace()<<"[info] Entering finishSpecific()";
+    for(auto re: routing_table) {
+        trace()<<"[info] Origin="<<re.nw_address<<", next hop="<<re.next_hop<<", status="<<pathStatusToStr(re.status)<<", prio="<<re.prio;
     }
 }
 

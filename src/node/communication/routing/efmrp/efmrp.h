@@ -112,7 +112,7 @@ class efmrp: public VirtualRouting {
         void fromApplicationLayer(cPacket *, const char *);
         void fromMacLayer(cPacket *, int, double, double);
         void timerFiredCallback(int);
-//        void finishSpecific();
+        void finishSpecific();
 
         void sendHello();
         void sendHello(int, double, double, double);
@@ -167,6 +167,9 @@ class efmrp: public VirtualRouting {
         void setState(efmrpStateDef);
         std::string stateToStr(efmrpStateDef) const;
         efmrpStateDef getState() const;
+
+        std::string pathStatusToStr(efmrpPathStatus) const;
+
         
     public:
         efmrp() : g_is_sink(false),
