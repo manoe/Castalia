@@ -98,6 +98,27 @@ string efmrp::stateToStr(efmrpStateDef state) const {
     return "UNKNOWN";
 }
 
+string efmrp::pathStatusToStr(efmrpPathStatus pstatus) const {
+    switch (pstatus) {
+       case efmrpPathStatus::UNKNOWN: {
+           return "UNKNOWN";
+       }
+       case efmrpPathStatus::AVAILABLE: {
+           return "AVAILABLE";
+       }
+       case efmrpPathStatus::USED: {
+           return "USED";
+       }
+       case efmrpPathStatus::DEAD: {
+           return "DEAD";
+       }
+       case efmrpPathStatus::UNDER_QUERY: {
+           return "UNDER_QUERY";
+       }
+    }
+    return "NONDEF";
+} 
+
 efmrpStateDef efmrp::getState() const {
     return g_state;
 }
@@ -241,6 +262,20 @@ routing_entry efmrp::getRoutingEntry(std::string ne, int prio) {
     throw std::string("[error] Entry not found.");
 }
 
+void efmrp::removeRoutingEntry(std::string ne, int prio) {
+    trace()<<"[info] Entering removeRoutingEntry(ne="<<ne<<", prio="<<prio<<")";
+    for(auto it=routing_table.begin() ; it != routing_table.end();) {
+        if(it->nw_address==ne && it->prio==prio) {
+            trace()<<"[info] Record present in routing table, erasing.";
+            it=routing_table.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+}
+
+
 double efmrp::calculateTargetValue() {
     trace()<<"[info] Entering calculateTargetValue()";
     node_entry min_ne;
@@ -255,6 +290,11 @@ double efmrp::calculateTargetValue() {
 
 node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_lst) {
     trace()<<"[info] Entering getNthTargetValueEntry(order="<<order<<")";
+    return getNthTargetValueEntry(order,ne_lst,false);
+}
+
+node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_lst, bool use_pe) {
+    trace()<<"[info] Entering getNthTargetValueEntry(order="<<order<<", use_pe="<<use_pe<<")";
     if(field_table.size() < order) {
         throw std::string("[error] Less record than order");
     }
@@ -265,14 +305,25 @@ node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_
         bool found=false;
         for(auto ne: ne_lst) {
             if(ne==it->second.nw_address) {
-                trace()<<"[info] Record "<<it->second.nw_address<<" filtered out.";
+                trace()<<"[info] Record "<<it->second.nw_address<<" filtered out due to ne_lst.";
                 found=true;
+            }
+        }
+        if(use_pe) {
+            for(auto pe: it->second.pe) {
+                if(pe.status==efmrpPathStatus::DEAD && pe.origin==SELF_NETWORK_ADDRESS) {
+                    trace()<<"[info] Record "<<it->second.nw_address<<" filtered out due to DEAD.";
+                    found=true;
+                }
             }
         }
         if(!found) {
             trace()<<"[info] Adding record "<<it->second.nw_address;
             fv.push_back(it->second);
         }
+    }
+    if(fv.size()<order) {
+        throw std::string("[error] No record left");
     }
 
     std::sort(fv.begin(), fv.end(), [this](node_entry a, node_entry b) { return targetFunction(a) > targetFunction(b);  });
@@ -814,6 +865,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             ne=findSecondaryPath(data_pkt->getOrigin(),{data_pkt->getSource() } );
                         } catch (std::string &e) {
                             trace()<<"[error] "<<e;
+                            removeRoutingEntry(data_pkt->getOrigin(), data_pkt->getPri());
                             sendRetreat(data_pkt);
                             break;
                         }
@@ -851,9 +903,13 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 if(retreat_pkt->getOrigin()==SELF_NETWORK_ADDRESS) {
                     trace()<<"[info] Node is the origin";
                     node_entry ne;
-                    // TRY TO FIND NEW PATH
-                    // FIXME
-                    updateRoutingEntry(SELF_NETWORK_ADDRESS, ne, retreat_pkt->getPri(), efmrpPathStatus::DEAD);
+                    updateFieldTableWithPE(retreat_pkt->getSource(), retreat_pkt->getOrigin(), efmrpPathStatus::DEAD);
+                    removeRoutingEntry(SELF_NETWORK_ADDRESS, retreat_pkt->getPri());
+                    try {
+                        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}, true),2);
+                    } catch (std::string &e) {
+                        trace()<<"[error] Giving up secondary path: "<<e;
+                    }
                 } else {
                     trace()<<"[info] Node is interim";
                     node_entry ne;
@@ -886,6 +942,21 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             trace()<<"[error] Unknown packet received with efmrpPacketKind value: "<<efmrp_pkt->getEfmrpPacketKind();
             break;
         }
+    }
+}
+
+void efmrp::finishSpecific() {
+    trace()<<"[info] Entering finishSpecific()";
+    trace()<<"[info] Routing table";
+    for(auto re: routing_table) {
+        trace()<<"[info] Origin="<<re.nw_address<<", next hop="<<re.next_hop<<", status="<<pathStatusToStr(re.status)<<", prio="<<re.prio;
+    }
+    trace()<<"[info] Field table";
+    for(auto ne: field_table) {
+        trace()<<"[info] Addr="<<ne.second.nw_address;
+       for(auto pe: ne.second.pe) {
+           trace()<<"[info] Path entry - origin: "<<pe.origin<<" status: "<<pathStatusToStr(pe.status);
+       }
     }
 }
 
