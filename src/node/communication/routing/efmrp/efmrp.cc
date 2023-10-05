@@ -1029,6 +1029,8 @@ void efmrp::generateYaml() {
     for(int i=0 ; i < topo->getNumNodes() ; ++i) {
         y_out<<YAML::BeginMap;
         auto pos=dynamic_cast<VirtualMobilityManager *>(topo->getNode(i)->getModule()->getSubmodule("MobilityManager"))->getLocation();
+        y_out<<YAML::Key<<"node";
+        y_out<<i;
         y_out<<YAML::Key<<"x";
         y_out<<pos.x;
         y_out<<YAML::Key<<"y";
