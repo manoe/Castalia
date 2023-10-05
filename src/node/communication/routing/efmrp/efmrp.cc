@@ -202,6 +202,22 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
     trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env;
 }
 
+void efmrp::updateFieldTableEntry(std::string ne, double env, double nrg, double trg) {
+    trace()<<"[info] Entering updateFieldTableEntry(ne="<<ne<<", env="<<env<<", nrg="<<nrg<<", trg="<<trg<<")";
+    if(field_table.find(ne) == field_table.end()) {
+        throw std::string("[error] Entry not present");
+    }
+    field_table[ne].env=env;
+    field_table[ne].nrg=nrg;
+    field_table[ne].trg=trg;
+}
+
+bool efmrp::checkFieldEntry(std::string ne) {
+    trace()<<"[info] checkFieldEntry(ne="<<ne<<")";
+    return field_table.find(ne) == field_table.end() ? false : true;
+}
+
+
 void efmrp::initRouting() {
     trace()<<"[info] Entering initRouting()";
     trace()<<"[info] Construct primary path";
@@ -965,7 +981,10 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 }
                 case efmrpAlarmDef::ENVIRONMENT_ALARM: {
                     trace()<<"[info] ENVIRONMENT_ALARM received, updating tables";
-                    // FIXME
+                    if(checkFieldEntry(alarm_pkt->getSource())) {
+                        trace()<<"[info] Sender present in field table";
+                        updateFieldTableEntry(alarm_pkt->getSource(),alarm_pkt->getEnv(), alarm_pkt->getNrg(), alarm_pkt->getTrg());
+                    }
                     break;
                 }
             }
