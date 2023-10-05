@@ -176,7 +176,7 @@ class efmrp: public VirtualRouting {
 
         std::string pathStatusToStr(efmrpPathStatus) const;
 
-        
+        void generateYaml();
     public:
         efmrp() : g_is_sink(false),
                   g_hop(std::numeric_limits<int>::max()),

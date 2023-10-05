@@ -1007,6 +1007,7 @@ void efmrp::finishSpecific() {
     trace()<<"[info] Routing table";
     for(auto re: routing_table) {
         trace()<<"[info] Origin="<<re.nw_address<<", next hop="<<re.next_hop<<", status="<<pathStatusToStr(re.status)<<", prio="<<re.prio;
+
     }
     trace()<<"[info] Field table";
     for(auto ne: field_table) {
@@ -1015,5 +1016,30 @@ void efmrp::finishSpecific() {
            trace()<<"[info] Path entry - origin: "<<pe.origin<<" status: "<<pathStatusToStr(pe.status);
        }
     }
+    if(isSink()) {
+        generateYaml();
+    }
 }
 
+void efmrp::generateYaml() {
+    cTopology *topo;        // temp variable to access energy spent by other nodes
+    topo = new cTopology("topo");
+    topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+    y_out<<YAML::BeginSeq;
+    for(int i=0 ; i < topo->getNumNodes() ; ++i) {
+        y_out<<YAML::BeginMap;
+        auto pos=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"))->getLocation();
+        y_out<<YAML::Key<<"x";
+        y_out<<pos.x;
+        y_out<<YAML::Key<<"y";
+        y_out<<pos.y;
+        y_out<<YAML::EndMap;
+    }
+    y_out<<YAML::EndSeq;
+    
+    ofstream loc_pdr_file("loc_pdr.yaml");
+    loc_pdr_file<<y_out.c_str();
+    loc_pdr_file.close();
+
+    delete(topo);
+}
