@@ -290,6 +290,11 @@ double efmrp::calculateTargetValue() {
 
 node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_lst) {
     trace()<<"[info] Entering getNthTargetValueEntry(order="<<order<<")";
+    return getNthTargetValueEntry(order,ne_lst,false);
+}
+
+node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_lst, bool use_pe) {
+    trace()<<"[info] Entering getNthTargetValueEntry(order="<<order<<", use_pe="<<use_pe<<")";
     if(field_table.size() < order) {
         throw std::string("[error] Less record than order");
     }
@@ -300,14 +305,25 @@ node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_
         bool found=false;
         for(auto ne: ne_lst) {
             if(ne==it->second.nw_address) {
-                trace()<<"[info] Record "<<it->second.nw_address<<" filtered out.";
+                trace()<<"[info] Record "<<it->second.nw_address<<" filtered out due to ne_lst.";
                 found=true;
+            }
+        }
+        if(use_pe) {
+            for(auto pe: it->second.pe) {
+                if(pe.status==efmrpPathStatus::DEAD && pe.origin==SELF_NETWORK_ADDRESS) {
+                    trace()<<"[info] Record "<<it->second.nw_address<<" filtered out due to DEAD.";
+                    found=true;
+                }
             }
         }
         if(!found) {
             trace()<<"[info] Adding record "<<it->second.nw_address;
             fv.push_back(it->second);
         }
+    }
+    if(fv.size()<order) {
+        throw std::string("[error] No record left");
     }
 
     std::sort(fv.begin(), fv.end(), [this](node_entry a, node_entry b) { return targetFunction(a) > targetFunction(b);  });
@@ -887,9 +903,9 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 if(retreat_pkt->getOrigin()==SELF_NETWORK_ADDRESS) {
                     trace()<<"[info] Node is the origin";
                     node_entry ne;
-                    // TRY TO FIND NEW PATH
-                    // FIXME
-                    updateRoutingEntry(SELF_NETWORK_ADDRESS, ne, retreat_pkt->getPri(), efmrpPathStatus::DEAD);
+                    updateFieldTableWithPE(retreat_pkt->getSource(), retreat_pkt->getOrigin(), efmrpPathStatus::DEAD);
+                    removeRoutingEntry(SELF_NETWORK_ADDRESS, retreat_pkt->getPri());
+                    addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}, true),2);
                 } else {
                     trace()<<"[info] Node is interim";
                     node_entry ne;

@@ -129,6 +129,7 @@ class efmrp: public VirtualRouting {
         void constructPath(std::string, int prio);
 
         node_entry getNthTargetValueEntry(int, std::vector<std::string>);
+        node_entry getNthTargetValueEntry(int, std::vector<std::string>, bool);
         node_entry findSecondaryPath(std::string, std::vector<std::string>);
 
         int numOfAvailPaths(std::string);
