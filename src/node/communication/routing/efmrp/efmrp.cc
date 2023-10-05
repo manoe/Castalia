@@ -262,6 +262,20 @@ routing_entry efmrp::getRoutingEntry(std::string ne, int prio) {
     throw std::string("[error] Entry not found.");
 }
 
+void efmrp::removeRoutingEntry(std::string ne, int prio) {
+    trace()<<"[info] Entering removeRoutingEntry(ne="<<ne<<", prio="<<prio<<")";
+    for(auto it=routing_table.begin() ; it != routing_table.end();) {
+        if(it->nw_address==ne && it->prio==prio) {
+            trace()<<"[info] Record present in routing table, erasing.";
+            it=routing_table.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+}
+
+
 double efmrp::calculateTargetValue() {
     trace()<<"[info] Entering calculateTargetValue()";
     node_entry min_ne;
@@ -835,6 +849,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             ne=findSecondaryPath(data_pkt->getOrigin(),{data_pkt->getSource() } );
                         } catch (std::string &e) {
                             trace()<<"[error] "<<e;
+                            removeRoutingEntry(data_pkt->getOrigin(), data_pkt->getPri());
                             sendRetreat(data_pkt);
                             break;
                         }

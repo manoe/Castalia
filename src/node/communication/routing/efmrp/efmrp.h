@@ -137,6 +137,7 @@ class efmrp: public VirtualRouting {
         void updateRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
         bool checkRoutingEntry(std::string, int);
         routing_entry getRoutingEntry(std::string, int);
+        void removeRoutingEntry(std::string, int);
         double targetFunction(node_entry);
         routing_entry getPath(std::string);
         routing_entry getPath(std::string, int);

@@ -1,1 +1,132 @@
-runs: []
+runs:
+  - seed: 1678184087
+    pdr:
+      - node: 0
+      - node: 1
+        report_pdr: 0.948571444
+      - node: 2
+        report_pdr: 0.862857163
+      - node: 3
+        report_pdr: 0.877142847
+      - node: 4
+        report_pdr: 0.379999995
+      - node: 5
+        report_pdr: 0.162857145
+      - node: 6
+        report_pdr: 0.305714279
+      - node: 7
+        report_pdr: 0.254285723
+      - node: 8
+        report_pdr: 0.922857165
+      - node: 9
+        report_pdr: 0.865714312
+      - node: 10
+        report_pdr: 0.685714304
+      - node: 11
+        report_pdr: 0.595988512
+      - node: 12
+        report_pdr: 0.361031532
+      - node: 13
+        report_pdr: 0.469914049
+      - node: 14
+        report_pdr: 0.429799438
+      - node: 15
+        report_pdr: 0.269340962
+      - node: 16
+        report_pdr: 0.868194818
+      - node: 17
+        report_pdr: 0.799426913
+      - node: 18
+        report_pdr: 0.446991414
+      - node: 19
+        report_pdr: 0.37249285
+      - node: 20
+        report_pdr: 0.378223509
+      - node: 21
+        report_pdr: 0.399425298
+      - node: 22
+        report_pdr: 0.0545977019
+      - node: 23
+        report_pdr: 0.474137932
+      - node: 24
+        report_pdr: 0.525862098
+      - node: 25
+        report_pdr: 0.543103456
+      - node: 26
+        report_pdr: 0.321839094
+      - node: 27
+        report_pdr: 0.244252875
+      - node: 28
+        report_pdr: 0.132183909
+      - node: 29
+        report_pdr: 0.158045977
+      - node: 30
+        report_pdr: 0.0201729108
+      - node: 31
+        report_pdr: 0.236311242
+      - node: 32
+        report_pdr: 0.409221888
+      - node: 33
+        report_pdr: 0.351585001
+      - node: 34
+        report_pdr: 0.164265126
+      - node: 35
+        report_pdr: 0
+      - node: 36
+        report_pdr: 0.234285712
+        event_pdr: 0
+      - node: 37
+        report_pdr: 0.251012146
+        event_pdr: 0
+      - node: 38
+        report_pdr: 0
+      - node: 39
+        report_pdr: 0.115273774
+      - node: 40
+        report_pdr: 0.342939496
+      - node: 41
+        report_pdr: 0.0953757241
+      - node: 42
+        report_pdr: 0.135838151
+      - node: 43
+        report_pdr: 0
+      - node: 44
+        report_pdr: 0.0606936403
+      - node: 45
+        report_pdr: 0
+      - node: 46
+        report_pdr: 0.0202312134
+      - node: 47
+        report_pdr: 0.263005793
+      - node: 48
+        report_pdr: 0.309248567
+      - node: 49
+        report_pdr: 0.0924855471
+      - node: 50
+        report_pdr: 0.0317919068
+      - node: 51
+        report_pdr: 0.13333334
+      - node: 52
+        report_pdr: 0.0202898551
+      - node: 53
+        report_pdr: 0.0173913036
+      - node: 54
+        report_pdr: 0
+      - node: 55
+        report_pdr: 0.0666666701
+      - node: 56
+        report_pdr: 0.408695638
+      - node: 57
+        report_pdr: 0.202898547
+      - node: 58
+        report_pdr: 0.0753623173
+      - node: 59
+        report_pdr: 0.127536237
+      - node: 60
+        report_pdr: 0.0959302336
+      - node: 61
+        report_pdr: 0.0552325584
+      - node: 62
+        report_pdr: 0.00290697673
+      - node: 63
+        report_pdr: 0.00872093067
