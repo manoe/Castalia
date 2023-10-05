@@ -927,8 +927,16 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
 void efmrp::finishSpecific() {
     trace()<<"[info] Entering finishSpecific()";
+    trace()<<"[info] Routing table";
     for(auto re: routing_table) {
         trace()<<"[info] Origin="<<re.nw_address<<", next hop="<<re.next_hop<<", status="<<pathStatusToStr(re.status)<<", prio="<<re.prio;
+    }
+    trace()<<"[info] Field table";
+    for(auto ne: field_table) {
+        trace()<<"[info] Addr="<<ne.second.nw_address;
+       for(auto pe: ne.second.pe) {
+           trace()<<"[info] Path entry - origin: "<<pe.origin<<" status: "<<pathStatusToStr(pe.status);
+       }
     }
 }
 
