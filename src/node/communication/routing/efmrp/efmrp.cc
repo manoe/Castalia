@@ -202,6 +202,24 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
     trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env;
 }
 
+void efmrp::initRouting() {
+    trace()<<"[info] Entering initRouting()";
+    trace()<<"[info] Construct primary path";
+    routing_table.clear();
+    addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+    setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
+    if(isSinkNextHop()) {
+        trace()<<"[info] No secondary path needed, as sink is the neighbor";
+        return;
+    }
+    try {
+        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
+    } catch (std::string &s) {
+        trace()<<"[error] "<<s;
+    }
+}
+
+
 void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio) {
     addRoutingEntry(nw_address, ne, prio, efmrpPathStatus::AVAILABLE, 0.0);
 }
@@ -501,6 +519,17 @@ bool efmrp::isSinkNextHop() {
     return false;
 }
 
+bool efmrp::checkNextHop(std::string ne, int prio) {
+    trace()<<"[info] checkNextHop(ne="<<ne<<")";
+    for(auto re: routing_table) {
+        if(re.next_hop==ne && re.nw_address==SELF_NETWORK_ADDRESS && re.prio==prio) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 routing_entry efmrp::getPath(std::string ne, int prio) {
     trace()<<"[info] Entering getPath(ne="<<ne<<", prio="<<prio<<")";
     for(auto entry: routing_table) {
@@ -665,19 +694,7 @@ void efmrp::timerFiredCallback(int index) {
         case efmrpTimerDef::FIELD: {
             trace()<<"[timer] FIELD timer expired";
             setState(efmrpStateDef::WORK);
-            trace()<<"[info] Construct primary path";
-            routing_table.clear();
-            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
-            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
-            if(isSinkNextHop()) {
-                trace()<<"[info] No secondary path needed, as sink is the neighbor";
-                break;
-            }
-            try {
-                addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
-            } catch (std::string &s) {
-                trace()<<"[error] "<<s;
-            }
+            initRouting();
             break;
         }
         case efmrpTimerDef::ENV_CHK: {
@@ -925,13 +942,33 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
         case efmrpPacketDef::ALARM_PACKET: {
             trace()<<"[info] ALARM_PACKET received";
             efmrpAlarmPacket *alarm_pkt=dynamic_cast<efmrpAlarmPacket*>(efmrp_pkt);
-            if(alarm_pkt->getEfmrpAlarmKind() == efmrpAlarmDef::ENERGY_ALARM) {
-                trace()<<"[info] ENERGY_ALARM received, removing node";
-                removeEntries(alarm_pkt->getSource());
-            } else {
-                trace()<<"[info] ENVIRONMENT_ALARM received, updating tables";
+            switch (alarm_pkt->getEfmrpAlarmKind()) {
+                case efmrpAlarmDef::ENERGY_ALARM: {
+                    trace()<<"[info] ENERGY_ALARM received, removing node";
+                    if(checkNextHop(efmrp_pkt->getSource(),1)) {
+                        trace()<<"[info] Node is primary path for this node";
+                        removeEntries(alarm_pkt->getSource());
+                        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+                    } else if(checkNextHop(efmrp_pkt->getSource(),2)) {
+                        trace()<<"[info] Node is secondary path for this node";
+                        removeEntries(alarm_pkt->getSource());
+                        try {
+                            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
+                        } catch (std::string &s) {
+                            trace()<<"[error] "<<s;
+                        }
+                    } else {
+                        trace()<<"[info] Node is not primary or secondary at least for this node";
+                        removeEntries(alarm_pkt->getSource());
+                    }
+                    break;
+                }
+                case efmrpAlarmDef::ENVIRONMENT_ALARM: {
+                    trace()<<"[info] ENVIRONMENT_ALARM received, updating tables";
+                    // FIXME
+                    break;
+                }
             }
-            break;
         }
 
         case efmrpPacketDef::UNDEF_PACKET: {
