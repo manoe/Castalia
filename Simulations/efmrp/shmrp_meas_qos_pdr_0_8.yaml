@@ -1,1 +1,261 @@
-runs: []
+runs:
+  - seed: 1678184087
+    pdr:
+      - node: 0
+      - node: 1
+        report_pdr: 0.9342857
+      - node: 2
+        report_pdr: 0.874285698
+      - node: 3
+        report_pdr: 0.865714312
+      - node: 4
+        report_pdr: 0.334285706
+      - node: 5
+        report_pdr: 0.388571441
+      - node: 6
+        report_pdr: 0.362857133
+      - node: 7
+        report_pdr: 0.340000004
+      - node: 8
+        report_pdr: 0.928571403
+      - node: 9
+        report_pdr: 0.89142859
+      - node: 10
+        report_pdr: 0.699999988
+      - node: 11
+        report_pdr: 0.621776521
+      - node: 12
+        report_pdr: 0.37249285
+      - node: 13
+        report_pdr: 0.469914049
+      - node: 14
+        report_pdr: 0.392550141
+      - node: 15
+        report_pdr: 0.312320918
+      - node: 16
+        report_pdr: 0.853868186
+      - node: 17
+        report_pdr: 0.787965596
+      - node: 18
+        report_pdr: 0.455587387
+      - node: 19
+        report_pdr: 0.369627506
+      - node: 20
+        report_pdr: 0.369627506
+      - node: 21
+        report_pdr: 0.37068966
+      - node: 22
+        report_pdr: 0.132183909
+      - node: 23
+        report_pdr: 0.494252861
+      - node: 24
+        report_pdr: 0.50287354
+      - node: 25
+        report_pdr: 0.522988498
+      - node: 26
+        report_pdr: 0.367816091
+      - node: 27
+        report_pdr: 0.281609207
+      - node: 28
+        report_pdr: 0.120689653
+      - node: 29
+        report_pdr: 0.321839094
+      - node: 30
+        report_pdr: 0.0230547544
+      - node: 31
+        report_pdr: 0.146974057
+      - node: 32
+        report_pdr: 0.466858804
+      - node: 33
+        report_pdr: 0.331412107
+      - node: 34
+        report_pdr: 0.1757925
+      - node: 35
+        report_pdr: 0
+      - node: 36
+        report_pdr: 0.337142855
+        event_pdr: 0
+      - node: 37
+        report_pdr: 0.226720646
+        event_pdr: 0
+      - node: 38
+        report_pdr: 0.0720461085
+      - node: 39
+        report_pdr: 0.100864552
+      - node: 40
+        report_pdr: 0.319884717
+      - node: 41
+        report_pdr: 0.0838150308
+      - node: 42
+        report_pdr: 0.196531788
+      - node: 43
+        report_pdr: 0
+      - node: 44
+        report_pdr: 0
+      - node: 45
+        report_pdr: 0.0173410401
+      - node: 46
+        report_pdr: 0.187861279
+      - node: 47
+        report_pdr: 0.239884391
+      - node: 48
+        report_pdr: 0.35838151
+      - node: 49
+        report_pdr: 0.109826587
+      - node: 50
+        report_pdr: 0.0549132936
+      - node: 51
+        report_pdr: 0.124637678
+      - node: 52
+        report_pdr: 0
+      - node: 53
+        report_pdr: 0.0347826071
+      - node: 54
+        report_pdr: 0
+      - node: 55
+        report_pdr: 0.0695652142
+      - node: 56
+        report_pdr: 0.428985506
+      - node: 57
+        report_pdr: 0.202898547
+      - node: 58
+        report_pdr: 0.0579710156
+      - node: 59
+        report_pdr: 0.20869565
+      - node: 60
+        report_pdr: 0.0755813941
+      - node: 61
+        report_pdr: 0.0174418613
+      - node: 62
+        report_pdr: 0.00872093067
+      - node: 63
+        report_pdr: 0.0116279069
+    loc_pdr:
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
+      - x: 0
+        y: 0
