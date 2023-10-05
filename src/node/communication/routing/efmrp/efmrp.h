@@ -124,6 +124,8 @@ class efmrp: public VirtualRouting {
         void updateFieldTable(efmrpFieldPacket *);
         void updateFieldTableWithQA(efmrpQueryAckPacket *);
         void updateFieldTableWithPE(std::string, std::string, efmrpPathStatus);
+        void updateFieldTableEntry(std::string, double, double, double);
+        bool checkFieldEntry(std::string);
         double calculateTargetValue();
 
         void constructPath(std::string, int prio);
@@ -133,6 +135,7 @@ class efmrp: public VirtualRouting {
         node_entry findSecondaryPath(std::string, std::vector<std::string>);
 
         int numOfAvailPaths(std::string);
+        void initRouting();
         void addRoutingEntry(std::string, node_entry, int);
         void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus, double timestamp);
         void updateRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
@@ -144,6 +147,7 @@ class efmrp: public VirtualRouting {
         routing_entry getPath(std::string, int);
         bool checkPath(std::string);
         bool isSinkNextHop();
+        bool checkNextHop(std::string, int);
 
         void sendQuery(std::string);
         void sendQueryAck(std::string, std::string, bool);
