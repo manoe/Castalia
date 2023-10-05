@@ -905,7 +905,11 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     node_entry ne;
                     updateFieldTableWithPE(retreat_pkt->getSource(), retreat_pkt->getOrigin(), efmrpPathStatus::DEAD);
                     removeRoutingEntry(SELF_NETWORK_ADDRESS, retreat_pkt->getPri());
-                    addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}, true),2);
+                    try {
+                        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}, true),2);
+                    } catch (std::string &e) {
+                        trace()<<"[error] Giving up secondary path: "<<e;
+                    }
                 } else {
                     trace()<<"[info] Node is interim";
                     node_entry ne;
