@@ -220,7 +220,7 @@ bool efmrp::checkFieldEntry(std::string ne) {
 
 void efmrp::initRouting() {
     trace()<<"[info] Entering initRouting()";
-    trace()<<"[info] Construct primary path";
+    trace()<<"[info] Clearing routing table, construct primary path";
     routing_table.clear();
     addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
     setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
@@ -984,6 +984,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     if(checkFieldEntry(alarm_pkt->getSource())) {
                         trace()<<"[info] Sender present in field table";
                         updateFieldTableEntry(alarm_pkt->getSource(),alarm_pkt->getEnv(), alarm_pkt->getNrg(), alarm_pkt->getTrg());
+                        initRouting();
                     }
                     break;
                 }
