@@ -36,17 +36,18 @@ simple efmrp like node.communication.routing.iRouting
 
     string sink_address = default("0");
 
-    double t_start = default(2);    // Sink start timer
-    double t_ttl   = default(20);
-    double t_field = default(5);
-    double t_query = default(2);
-    double t_env_c = default(10);
+    double t_start      = default(2);    // Sink start timer
+    double t_ttl        = default(20);
+    double t_field      = default(5);
+    double t_query      = default(2);
+    double t_env_c      = default(10);
+    double t_d_update   = default(600);
 
-    double p_alpha = default(0.2);
-    double p_beta  = default(0.2);
-    int    p_pnum  = default(2); // Number of paths to establish
-    double p_gamma = default(0.5);
-    double p_n_lim = default(0.1);
+    double p_alpha      = default(0.2);
+    double p_beta       = default(0.2);
+    int    p_pnum       = default(2); // Number of paths to establish
+    double p_gamma      = default(0.5);
+    double p_n_lim      = default(0.1);
 
 
  gates:

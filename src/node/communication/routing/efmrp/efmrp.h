@@ -80,6 +80,7 @@ struct feat_par {
     double field;
     double query;
     double env_c;
+    double d_update;
 
     // PARAMETER
     double alpha;

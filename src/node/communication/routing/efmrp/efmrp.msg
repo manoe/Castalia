@@ -73,3 +73,6 @@ packet efmrpAlarmPacket extends efmrpPacket {
     double trg;
 }
 
+packet efmrpDepthUpdatePacket extends efmrpPacket {
+    int hop;
+}

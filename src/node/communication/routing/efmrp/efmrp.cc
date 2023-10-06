@@ -35,16 +35,17 @@ void efmrp::startup() {
         setState(efmrpStateDef::INIT);
     }
 
-    fp.ttl   =  par("t_ttl");
-    fp.field =  par("t_field");
-    fp.query =  par("t_query");
-    fp.env_c =  par("t_env_c");
+    fp.ttl      =  par("t_ttl");
+    fp.field    =  par("t_field");
+    fp.query    =  par("t_query");
+    fp.env_c    =  par("t_env_c");
+    fp.d_update = par("t_d_update");
 
-    fp.alpha =  par("p_alpha");
-    fp.beta  =  par("p_beta");
-    fp.pnum  =  par("p_pnum");
-    fp.gamma =  par("p_gamma");
-    fp.n_lim =  par("p_n_lim");
+    fp.alpha    =  par("p_alpha");
+    fp.beta     =  par("p_beta");
+    fp.pnum     =  par("p_pnum");
+    fp.gamma    =  par("p_gamma");
+    fp.n_lim    =  par("p_n_lim");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 
@@ -1040,7 +1041,6 @@ void efmrp::generateYaml() {
 
         serializeRoutingTable(efmrp_instance->getRoutingTable());
         y_out<<YAML::EndMap;
-
     }
     y_out<<YAML::EndSeq;
     
