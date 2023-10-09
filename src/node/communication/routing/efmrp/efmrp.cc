@@ -777,7 +777,7 @@ void efmrp::timerFiredCallback(int index) {
 void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     trace()<<"[info] Entering fromApplicationLayer(..)";
 
-    if(0!=std::strcmp(destination,BROADCAST_NETWORK_ADDRESS)) {
+    if(0==std::strcmp(destination,BROADCAST_NETWORK_ADDRESS)) {
         trace()<<"[info] Broadcast network address";
         sendData(std::string(destination),pkt);
         return;
