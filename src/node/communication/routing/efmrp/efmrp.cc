@@ -477,6 +477,24 @@ void efmrp::sendData(routing_entry re, cPacket *pkt) {
 
 }
 
+void efmrp::sendData(std::string ne, cPacket *pkt) {
+    trace()<<"[info] Entering sendData(ne="<<ne<<")";
+    efmrpDataPacket *data_pkt=new efmrpDataPacket("EFMRP DATA packet", NETWORK_LAYER_PACKET);
+
+    data_pkt->setByteLength(netDataFrameOverhead);
+    data_pkt->setEfmrpPacketKind(efmrpPacketDef::DATA_PACKET);
+    data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
+    data_pkt->setSource(SELF_NETWORK_ADDRESS);
+    data_pkt->setDestination(ne.c_str());
+
+    data_pkt->setPri(1);
+
+    data_pkt->encapsulate(pkt);
+
+    toMacLayer(data_pkt, resolveNetworkAddress(ne.c_str()));
+
+}
+
 void efmrp::forwardData(efmrpDataPacket *data_pkt) {
     trace()<<"[info] Entering forwardData()";
     routing_entry re;
@@ -758,6 +776,13 @@ void efmrp::timerFiredCallback(int index) {
 
 void efmrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     trace()<<"[info] Entering fromApplicationLayer(..)";
+
+    if(0!=std::strcmp(destination,BROADCAST_NETWORK_ADDRESS)) {
+        trace()<<"[info] Broadcast network address";
+        sendData(std::string(destination),pkt);
+        return;
+            
+    }
     if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
         trace()<<"[error] Packet's destination not sink: "<<destination;
         return;

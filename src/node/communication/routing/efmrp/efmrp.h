@@ -157,6 +157,8 @@ class efmrp: public VirtualRouting {
         bool queryCompleted(std::string);
 
         void sendData(routing_entry, cPacket *);
+        void sendData(std::string, cPacket *);
+
         void forwardData(efmrpDataPacket *);
 
         void sendRetreat(efmrpDataPacket *);
