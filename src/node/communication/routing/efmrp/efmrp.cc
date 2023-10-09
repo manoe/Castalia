@@ -236,6 +236,27 @@ void efmrp::initRouting() {
     }
 }
 
+void efmrp::cleanRouting(std::string ne) {
+    trace()<<"[info] Entering cleanRouting(ne="<<ne<<")";
+    trace()<<"[info] Assess change impact: ";
+    if(checkNextHop(ne,1)) {
+        trace()<<"Entry is primary path for node";
+        removeRoutingEntry(ne, 1, true);
+        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+    } else if(checkNextHop(ne,2)) {
+        trace()<<"Entry is secondary path for node";
+        removeRoutingEntry(ne, 2, true);
+        try {
+            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
+        } catch (std::string &s) {
+            trace()<<"[error] "<<s;
+        }
+    } else {
+        trace()<<"Entry does not affect node";
+        removeRoutingEntry(ne,1,true);
+    }
+}
+
 
 void efmrp::addRoutingEntry(std::string nw_address, node_entry ne, int prio) {
     addRoutingEntry(nw_address, ne, prio, efmrpPathStatus::AVAILABLE, 0.0);
@@ -297,19 +318,17 @@ routing_entry efmrp::getRoutingEntry(std::string ne, int prio) {
     throw std::string("[error] Entry not found.");
 }
 
-void efmrp::removeRoutingEntry(std::string ne, int prio) {
-    trace()<<"[info] Entering removeRoutingEntry(ne="<<ne<<", prio="<<prio<<")";
+void efmrp::removeRoutingEntry(std::string ne, int prio, bool noprio=false) {
+    trace()<<"[info] Entering removeRoutingEntry(ne="<<ne<<", prio="<<prio<<", noprio="<<noprio<<")";
     for(auto it=routing_table.begin() ; it != routing_table.end();) {
-        if(it->nw_address==ne && it->prio==prio) {
+        if(it->nw_address==ne && (it->prio==prio || noprio )) {
             trace()<<"[info] Record present in routing table, erasing.";
             it=routing_table.erase(it);
         } else {
             ++it;
         }
     }
-
 }
-
 
 double efmrp::calculateTargetValue() {
     trace()<<"[info] Entering calculateTargetValue()";
@@ -985,7 +1004,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     if(checkFieldEntry(alarm_pkt->getSource())) {
                         trace()<<"[info] Sender present in field table";
                         updateFieldTableEntry(alarm_pkt->getSource(),alarm_pkt->getEnv(), alarm_pkt->getNrg(), alarm_pkt->getTrg());
-                        initRouting();
+                        cleanRouting(alarm_pkt->getSource());
                     }
                     break;
                 }
