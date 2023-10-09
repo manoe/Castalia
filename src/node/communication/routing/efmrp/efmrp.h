@@ -56,7 +56,7 @@ struct path_entry {
     efmrpPathStatus status;
 };
 
-struct node_entry {
+struct ef_node_entry {
     std::string nw_address;
     int         hop;
     double      nrg;
@@ -99,8 +99,8 @@ class efmrp: public VirtualRouting {
         efmrpStateDef   g_state;
         double          env_val;
 
-        std::map<std::string,node_entry> hello_table;
-        std::map<std::string,node_entry> field_table;
+        std::map<std::string,ef_node_entry> hello_table;
+        std::map<std::string,ef_node_entry> field_table;
         std::vector<routing_entry>       routing_table;
 
         
@@ -131,20 +131,20 @@ class efmrp: public VirtualRouting {
 
         void constructPath(std::string, int prio);
 
-        node_entry getNthTargetValueEntry(int, std::vector<std::string>);
-        node_entry getNthTargetValueEntry(int, std::vector<std::string>, bool);
-        node_entry findSecondaryPath(std::string, std::vector<std::string>);
+        ef_node_entry getNthTargetValueEntry(int, std::vector<std::string>);
+        ef_node_entry getNthTargetValueEntry(int, std::vector<std::string>, bool);
+        ef_node_entry findSecondaryPath(std::string, std::vector<std::string>);
 
         int numOfAvailPaths(std::string);
         void initRouting();
         void cleanRouting(std::string);
-        void addRoutingEntry(std::string, node_entry, int);
-        void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus, double timestamp);
-        void updateRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
+        void addRoutingEntry(std::string, ef_node_entry, int);
+        void addRoutingEntry(std::string, ef_node_entry, int, efmrpPathStatus, double timestamp);
+        void updateRoutingEntry(std::string, ef_node_entry, int, efmrpPathStatus);
         bool checkRoutingEntry(std::string, int);
         routing_entry getRoutingEntry(std::string, int);
         void removeRoutingEntry(std::string, int, bool);
-        double targetFunction(node_entry);
+        double targetFunction(ef_node_entry);
         routing_entry getPath(std::string);
         routing_entry getPath(std::string, int);
         bool checkPath(std::string);
