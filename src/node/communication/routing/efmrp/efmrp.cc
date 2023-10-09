@@ -905,6 +905,11 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             trace()<<"[info] DATA_PACKET received";
             efmrpDataPacket *data_pkt=dynamic_cast<efmrpDataPacket *>(efmrp_pkt);
             trace()<<"[info] origin: "<<data_pkt->getOrigin()<<" pri: "<<data_pkt->getPri();
+            if(std::string(data_pkt->getOrigin()) == BROADCAST_NETWORK_ADDRESS) {
+                trace()<<"[info] Broadcast pkt received, forwarding to application layer";
+                toApplicationLayer(decapsulatePacket(data_pkt));
+                break;
+            }
             if(std::string(data_pkt->getOrigin()) == SELF_NETWORK_ADDRESS) {
                 trace()<<"[error] Loop detected, origin equals destination";
                 break;
