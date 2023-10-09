@@ -80,6 +80,7 @@ struct feat_par {
     double field;
     double query;
     double env_c;
+    double d_update;
 
     // PARAMETER
     double alpha;
@@ -136,12 +137,13 @@ class efmrp: public VirtualRouting {
 
         int numOfAvailPaths(std::string);
         void initRouting();
+        void cleanRouting(std::string);
         void addRoutingEntry(std::string, node_entry, int);
         void addRoutingEntry(std::string, node_entry, int, efmrpPathStatus, double timestamp);
         void updateRoutingEntry(std::string, node_entry, int, efmrpPathStatus);
         bool checkRoutingEntry(std::string, int);
         routing_entry getRoutingEntry(std::string, int);
-        void removeRoutingEntry(std::string, int);
+        void removeRoutingEntry(std::string, int, bool);
         double targetFunction(node_entry);
         routing_entry getPath(std::string);
         routing_entry getPath(std::string, int);
@@ -176,11 +178,14 @@ class efmrp: public VirtualRouting {
 
         std::string pathStatusToStr(efmrpPathStatus) const;
 
-        
+        void generateYaml();
+        void serializeRoutingTable(std::vector<routing_entry> rt);
     public:
         efmrp() : g_is_sink(false),
                   g_hop(std::numeric_limits<int>::max()),
                   g_state(efmrpStateDef::UNDEF) {};
+        
+        std::vector<routing_entry> getRoutingTable() { return routing_table; };
 };
 
 #endif /* _EFMRP_H_ */
