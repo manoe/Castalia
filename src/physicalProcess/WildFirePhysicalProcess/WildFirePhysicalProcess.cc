@@ -65,6 +65,10 @@ void WildFirePhysicalProcess::initialize()
     trace() << "First CA step at: "<<ca_start_timer<<" seconds";
     scheduleAt(SimTime()+static_cast<double>(ca_start_timer), new cMessage("CA step timer expired", TIMER_SERVICE));
     first_step=true;
+
+    if(plane_to_yaml) {
+        y_out<<YAML::BeginSeq;
+    }
 }
 
 double WildFirePhysicalProcess::calculateDistance(CellPosition x, CellPosition y) {
@@ -141,6 +145,9 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                 }
             }
             scheduleAt(simTime() + static_cast<double>(ca_step_period), msg);
+            if(plane_to_yaml) {
+                dumpPlane();
+            }
             return;
         }
 
@@ -163,6 +170,12 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 
 void WildFirePhysicalProcess::finishSpecific()
 {
+    if(plane_to_yaml) {
+        y_out<<YAML::EndSeq;
+        ofstream pdr_file("phy_proc.yaml");
+        pdr_file<<y_out.c_str();
+        pdr_file.close();
+    }
     delete wf_ca;
 }
 
@@ -189,8 +202,7 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     spatial_sense   = par("spatial_sense");
     sense_distance  = par("sense_distance");
     sense_attn      = par("sense_attn");
-
-
+    plane_to_yaml   = par("plane_to_yaml");
 }
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {
@@ -314,5 +326,48 @@ void WildFirePhysicalProcess::signalTermination(std::vector<int> nodes) {
         msg->setEvent(EventType::TERMINATE);
         send(msg, "toNode", msg->getSrcID());
     }
+}
+
+void WildFirePhysicalProcess::dumpPlane() {
+    auto to_str = [](CellState s) -> std::string {
+        switch (s) {
+            case CellState::NO_FUEL: {
+                return "no_fuel";
+            }
+            case CellState::NOT_IGNITED: {
+                return "not_ignited";
+            }
+            case CellState::BURNING: {
+                return "burning";
+            }
+            case CellState::BURNED_DOWN: {
+                return "burned_down";
+            }
+            default: {
+                return "unknown";
+            }
+        }
+    };
+
+    auto plane=wf_ca->getPlane();
+    y_out<<YAML::BeginMap;
+    y_out<<YAML::Key<<"timestamp";
+    y_out<<YAML::Value<<SimTime().str();
+    y_out<<YAML::Key<<"plane";
+    y_out<<YAML::BeginSeq;
+    for(int x=0; x < wf_ca->getSizeX(); ++x) {
+        for(int y=0; y < wf_ca->getSizeY(); ++y) {
+            y_out<<YAML::BeginMap;
+            y_out<<YAML::Key<<"x";
+            y_out<<YAML::Value<<x;
+            y_out<<YAML::Key<<"y";
+            y_out<<YAML::Value<<y;
+            y_out<<YAML::Key<<"state";
+            y_out<<YAML::Value<<to_str(plane[x][y].state);
+            y_out<<YAML::EndMap;
+        }
+    }
+    y_out<<YAML::EndSeq;
+    y_out<<YAML::EndMap;
 }
 
