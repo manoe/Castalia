@@ -761,7 +761,7 @@ void efmrp::timerFiredCallback(int index) {
                 sendAlarm(efmrpAlarmDef::ENERGY_ALARM,0.0,0.0,0.0);
                 break;
             }
-            trace()<<"[info] Sensor difference: "<<abs(new_env_val-env_val);
+            trace()<<"[info] Sensor difference - abs("<<new_env_val<<"-"<<env_val<<")="<<abs(new_env_val-env_val);
             if(abs(new_env_val-env_val)>fp.gamma) {
                 trace()<<"[info] Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
                 sendAlarm(efmrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,nrg_val, calculateTargetValue());
@@ -1041,6 +1041,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     break;
                 }
             }
+            break;
         }
 
         case efmrpPacketDef::UNDEF_PACKET: {
