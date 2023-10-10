@@ -753,6 +753,7 @@ void efmrp::timerFiredCallback(int index) {
         }
         case efmrpTimerDef::ENV_CHK: {
             trace()<<"[timer] ENV_CHK timer expired";
+            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
             double nrg_val=ff_app->getEnergyValue();
             double new_env_val=ff_app->getEmergencyValue();
             if(nrg_val<fp.n_lim) {
@@ -760,6 +761,7 @@ void efmrp::timerFiredCallback(int index) {
                 sendAlarm(efmrpAlarmDef::ENERGY_ALARM,0.0,0.0,0.0);
                 break;
             }
+            trace()<<"[info] Sensor difference: "<<abs(new_env_val-env_val);
             if(abs(new_env_val-env_val)>fp.gamma) {
                 trace()<<"[info] Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
                 sendAlarm(efmrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,nrg_val, calculateTargetValue());
