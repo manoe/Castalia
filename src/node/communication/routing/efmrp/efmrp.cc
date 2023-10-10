@@ -322,7 +322,7 @@ void efmrp::removeRoutingEntry(std::string ne, int prio, bool noprio=false) {
     trace()<<"[info] Entering removeRoutingEntry(ne="<<ne<<", prio="<<prio<<", noprio="<<noprio<<")";
     for(auto it=routing_table.begin() ; it != routing_table.end();) {
         if(it->nw_address==ne && (it->prio==prio || noprio )) {
-            trace()<<"[info] Record present in routing table, erasing.";
+            trace()<<"[info] Record present in routing table, erasing - ne: "<<ne<<" next_hop: "<<it->next_hop;
             it=routing_table.erase(it);
         } else {
             ++it;
@@ -574,7 +574,7 @@ bool efmrp::isSinkNextHop() {
 }
 
 bool efmrp::checkNextHop(std::string ne, int prio) {
-    trace()<<"[info] checkNextHop(ne="<<ne<<")";
+    trace()<<"[info] checkNextHop(ne="<<ne<<", prio="<<prio<<")";
     for(auto re: routing_table) {
         if(re.next_hop==ne && re.nw_address==SELF_NETWORK_ADDRESS && re.prio==prio) {
             return true;
@@ -753,6 +753,7 @@ void efmrp::timerFiredCallback(int index) {
         }
         case efmrpTimerDef::ENV_CHK: {
             trace()<<"[timer] ENV_CHK timer expired";
+            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
             double nrg_val=ff_app->getEnergyValue();
             double new_env_val=ff_app->getEmergencyValue();
             if(nrg_val<fp.n_lim) {
@@ -760,6 +761,7 @@ void efmrp::timerFiredCallback(int index) {
                 sendAlarm(efmrpAlarmDef::ENERGY_ALARM,0.0,0.0,0.0);
                 break;
             }
+            trace()<<"[info] Sensor difference - abs("<<new_env_val<<"-"<<env_val<<")="<<abs(new_env_val-env_val);
             if(abs(new_env_val-env_val)>fp.gamma) {
                 trace()<<"[info] Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
                 sendAlarm(efmrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,nrg_val, calculateTargetValue());
@@ -1039,6 +1041,7 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     break;
                 }
             }
+            break;
         }
 
         case efmrpPacketDef::UNDEF_PACKET: {

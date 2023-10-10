@@ -36,6 +36,7 @@ parameters:
     bool    spatial_sense    = default(false);  // - sense neighbouring cells
     int     sense_distance   = default(5);      // - how far the sensor reaches
     double  sense_attn       = default(1);      // - how fast sense attenuated
+    bool    plane_to_yaml    = default(false);  // - serialize WF plane to yaml after every iteration
 	string  description      = default ("CA based wildfire");
 
  gates:
