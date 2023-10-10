@@ -352,7 +352,7 @@ void WildFirePhysicalProcess::dumpPlane() {
     auto plane=wf_ca->getPlane();
     y_out<<YAML::BeginMap;
     y_out<<YAML::Key<<"timestamp";
-    y_out<<YAML::Value<<SimTime().str();
+    y_out<<YAML::Value<<simTime().dbl();
     y_out<<YAML::Key<<"plane";
     y_out<<YAML::BeginSeq;
     for(int x=0; x < wf_ca->getSizeX(); ++x) {
