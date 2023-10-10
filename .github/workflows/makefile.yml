@@ -47,13 +47,13 @@ jobs:
         ./configure
         make
 
-    - name: Configure Castalia for shmrp
+    - name: Configure Castalia
       run: |
         source omnetpp/setenv
         cd castalia
-        ./make_wo_efmrp.sh
+        ./makemake
 
-    - name: Compile Castalia for shmrp
+    - name: Compile Castalia
       run: |
         source omnetpp/setenv
         cd castalia
@@ -70,18 +70,6 @@ jobs:
       run: |
         cd castalia/Simulations/shmrp_nf
         tail Castalia-Trace.txt
-
-    - name: Configure Castalia for efmrp
-      run: |
-        source omnetpp/setenv
-        cd castalia
-        ./make_wo_shmrp.sh
-
-    - name: Compile Castalia for efmrp
-      run: |
-        source omnetpp/setenv
-        cd castalia
-        make
 
     - name: Test Castalia for efmrp
       run: |

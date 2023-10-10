@@ -57,6 +57,7 @@ void WildFirePhysicalProcess::initialize()
        }
     }
     if(wf_start_x_coord < 0 || wf_start_x_coord >= map_x_size || wf_start_y_coord < 0 || wf_start_y_coord >= map_y_size) {
+        trace()<<"[info] wf_start_x_coord="<<wf_start_x_coord<<", wf_start_y_coord="<<wf_start_y_coord;
         throw cRuntimeError("WildFire starting coordinate is invalid");
     }
 
@@ -124,19 +125,20 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
         }
 
         case TIMER_SERVICE: {
+            trace()<<"CA timer expired";
             if(first_step) {
+                trace()<<"[info] First step, do not burn anything.";
                 wf_ca->addFireSpot({wf_start_x_coord,wf_start_y_coord});
                 first_step=false;
-            }
-
-            trace()<<"CA timer expired";
-            auto b_cells=wf_ca->stepAndCollect();
-            for(auto cell: b_cells) {
-                trace()<<"Burnt cell: "<<cell;
-            }
-            auto d_nodes=getDestroyedNodes(b_cells);
-            if(d_nodes.size()) {
-                signalTermination(d_nodes);
+            } else {
+                auto b_cells=wf_ca->stepAndCollect();
+                for(auto cell: b_cells) {
+                    trace()<<"Burnt cell: "<<cell;
+                }
+                auto d_nodes=getDestroyedNodes(b_cells);
+                if(d_nodes.size()) {
+                    signalTermination(d_nodes);
+                }
             }
             scheduleAt(simTime() + static_cast<double>(ca_step_period), msg);
             return;
