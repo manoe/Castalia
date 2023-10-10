@@ -322,7 +322,7 @@ void efmrp::removeRoutingEntry(std::string ne, int prio, bool noprio=false) {
     trace()<<"[info] Entering removeRoutingEntry(ne="<<ne<<", prio="<<prio<<", noprio="<<noprio<<")";
     for(auto it=routing_table.begin() ; it != routing_table.end();) {
         if(it->nw_address==ne && (it->prio==prio || noprio )) {
-            trace()<<"[info] Record present in routing table, erasing.";
+            trace()<<"[info] Record present in routing table, erasing - ne: "<<ne<<" next_hop: "<<it->next_hop;
             it=routing_table.erase(it);
         } else {
             ++it;
@@ -574,7 +574,7 @@ bool efmrp::isSinkNextHop() {
 }
 
 bool efmrp::checkNextHop(std::string ne, int prio) {
-    trace()<<"[info] checkNextHop(ne="<<ne<<")";
+    trace()<<"[info] checkNextHop(ne="<<ne<<", prio="<<prio<<")";
     for(auto re: routing_table) {
         if(re.next_hop==ne && re.nw_address==SELF_NETWORK_ADDRESS && re.prio==prio) {
             return true;
