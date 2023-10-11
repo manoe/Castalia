@@ -200,7 +200,7 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
         trace()<<"[info] New record of node "<<ne.nw_address;
         field_table.insert({ne.nw_address,ne});
     }
-    trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env;
+    trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env<<" trg: "<<ne.trg;
 }
 
 void efmrp::updateFieldTableEntry(std::string ne, double env, double nrg, double trg) {
@@ -256,7 +256,6 @@ void efmrp::cleanRouting(std::string ne) {
         removeRoutingEntry(ne,1,true);
     }
 }
-
 
 void efmrp::addRoutingEntry(std::string nw_address, ef_node_entry ne, int prio) {
     addRoutingEntry(nw_address, ne, prio, efmrpPathStatus::AVAILABLE, 0.0);
@@ -529,7 +528,7 @@ void efmrp::sendRetreat(efmrpDataPacket *data_pkt) {
 }
 
 void efmrp::sendAlarm(efmrpAlarmDef alarm_kind, double env_val, double nrg_val, double trg_val) {
-    trace()<<"[info] Entering sendAlarm(alarm_kind="<<alarm_kind<<", env_val="<<env_val<<")";
+    trace()<<"[info] Entering sendAlarm(alarm_kind="<<alarm_kind<<", env_val="<<env_val<<", nrg_val="<<nrg_val<<", trg_val="<<trg_val<<")";
     efmrpAlarmPacket *alarm_pkt=new efmrpAlarmPacket("EFMRP ALARM packet",NETWORK_LAYER_PACKET);
 
     alarm_pkt->setByteLength(netDataFrameOverhead);
