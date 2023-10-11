@@ -158,6 +158,7 @@ void efmrp::sendField(int hop, double nrg, double env, double trg) {
     field_pkt->setHop(hop);
     field_pkt->setNrg(nrg);
     field_pkt->setEnv(env);
+    field_pkt->setTrg(trg);
 
     toMacLayer(field_pkt, BROADCAST_MAC_ADDRESS);
 }
@@ -200,7 +201,7 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
         trace()<<"[info] New record of node "<<ne.nw_address;
         field_table.insert({ne.nw_address,ne});
     }
-    trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env<<" trg: "<<ne.trg;
+    trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<" env: "<<ne.env<<" trg: "<<ne.trg;
 }
 
 void efmrp::updateFieldTableEntry(std::string ne, double env, double nrg, double trg) {
