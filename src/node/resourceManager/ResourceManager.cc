@@ -64,7 +64,7 @@ void ResourceManager::calculateEnergySpent()
 	if (remainingEnergy > 0) {
 		simtime_t timePassed = simTime() - timeOfLastCalculation;
 		trace() << "energy consumed in the last " << timePassed << 
-			"s is " <<(timePassed * currentNodePower);
+			"s is " <<(timePassed * currentNodePower)<<" leftover energy is "<< remainingEnergy;
 		consumeEnergy(SIMTIME_DBL(timePassed * currentNodePower / 1000.0));
 		timeOfLastCalculation = simTime();
 

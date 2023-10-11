@@ -130,7 +130,7 @@ void efmrp::sendHello() {
 }
 
 void efmrp::sendHello(int hop, double env, double nrg, double timestamp) {
-    trace()<<"[info] Entering sendHello(hop="<<hop<<", env="<<env<<"timestamp="<<timestamp<<")";
+    trace()<<"[info] Entering sendHello(hop="<<hop<<", env="<<env<<", nrg="<<nrg<<", timestamp="<<timestamp<<")";
     auto *hello_pkt=new efmrpHelloPacket("EFMRP HELLO packet", NETWORK_LAYER_PACKET);
     hello_pkt->setByteLength(netDataFrameOverhead);
     hello_pkt->setEfmrpPacketKind(efmrpPacketDef::HELLO_PACKET);
@@ -158,6 +158,7 @@ void efmrp::sendField(int hop, double nrg, double env, double trg) {
     field_pkt->setHop(hop);
     field_pkt->setNrg(nrg);
     field_pkt->setEnv(env);
+    field_pkt->setTrg(trg);
 
     toMacLayer(field_pkt, BROADCAST_MAC_ADDRESS);
 }
@@ -200,7 +201,7 @@ void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
         trace()<<"[info] New record of node "<<ne.nw_address;
         field_table.insert({ne.nw_address,ne});
     }
-    trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<"env: "<<ne.env;
+    trace()<<"[info] hop: "<<ne.hop<<" nrg: "<<ne.nrg<<" env: "<<ne.env<<" trg: "<<ne.trg;
 }
 
 void efmrp::updateFieldTableEntry(std::string ne, double env, double nrg, double trg) {
@@ -240,11 +241,11 @@ void efmrp::cleanRouting(std::string ne) {
     trace()<<"[info] Entering cleanRouting(ne="<<ne<<")";
     trace()<<"[info] Assess change impact: ";
     if(checkNextHop(ne,1)) {
-        trace()<<"Entry is primary path for node";
+        trace()<<"[info] Entry is primary path for node";
         removeRoutingEntry(ne, 1, true);
         addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
     } else if(checkNextHop(ne,2)) {
-        trace()<<"Entry is secondary path for node";
+        trace()<<"[info] Entry is secondary path for node";
         removeRoutingEntry(ne, 2, true);
         try {
             addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
@@ -252,11 +253,10 @@ void efmrp::cleanRouting(std::string ne) {
             trace()<<"[error] "<<s;
         }
     } else {
-        trace()<<"Entry does not affect node";
+        trace()<<"[info] Entry does not affect node";
         removeRoutingEntry(ne,1,true);
     }
 }
-
 
 void efmrp::addRoutingEntry(std::string nw_address, ef_node_entry ne, int prio) {
     addRoutingEntry(nw_address, ne, prio, efmrpPathStatus::AVAILABLE, 0.0);
@@ -339,6 +339,7 @@ double efmrp::calculateTargetValue() {
             min_ne=ne.second;
         }
     }
+    trace()<<"[info] min ne: "<<min_ne.nw_address<<"  min env: "<<min_ne.env<<" own env: "<<ff_app->getEmergencyValue();
     return (min_ne.env+ff_app->getEmergencyValue())/2;
 }
 
@@ -529,7 +530,7 @@ void efmrp::sendRetreat(efmrpDataPacket *data_pkt) {
 }
 
 void efmrp::sendAlarm(efmrpAlarmDef alarm_kind, double env_val, double nrg_val, double trg_val) {
-    trace()<<"[info] Entering sendAlarm(alarm_kind="<<alarm_kind<<", env_val="<<env_val<<")";
+    trace()<<"[info] Entering sendAlarm(alarm_kind="<<alarm_kind<<", env_val="<<env_val<<", nrg_val="<<nrg_val<<", trg_val="<<trg_val<<")";
     efmrpAlarmPacket *alarm_pkt=new efmrpAlarmPacket("EFMRP ALARM packet",NETWORK_LAYER_PACKET);
 
     alarm_pkt->setByteLength(netDataFrameOverhead);
@@ -753,7 +754,6 @@ void efmrp::timerFiredCallback(int index) {
         }
         case efmrpTimerDef::ENV_CHK: {
             trace()<<"[timer] ENV_CHK timer expired";
-            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
             double nrg_val=ff_app->getEnergyValue();
             double new_env_val=ff_app->getEmergencyValue();
             if(nrg_val<fp.n_lim) {
@@ -761,6 +761,7 @@ void efmrp::timerFiredCallback(int index) {
                 sendAlarm(efmrpAlarmDef::ENERGY_ALARM,0.0,0.0,0.0);
                 break;
             }
+            setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
             trace()<<"[info] Sensor difference - abs("<<new_env_val<<"-"<<env_val<<")="<<abs(new_env_val-env_val);
             if(abs(new_env_val-env_val)>fp.gamma) {
                 trace()<<"[info] Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
