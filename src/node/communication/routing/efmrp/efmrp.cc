@@ -130,7 +130,7 @@ void efmrp::sendHello() {
 }
 
 void efmrp::sendHello(int hop, double env, double nrg, double timestamp) {
-    trace()<<"[info] Entering sendHello(hop="<<hop<<", env="<<env<<"timestamp="<<timestamp<<")";
+    trace()<<"[info] Entering sendHello(hop="<<hop<<", env="<<env<<", nrg="<<nrg<<", timestamp="<<timestamp<<")";
     auto *hello_pkt=new efmrpHelloPacket("EFMRP HELLO packet", NETWORK_LAYER_PACKET);
     hello_pkt->setByteLength(netDataFrameOverhead);
     hello_pkt->setEfmrpPacketKind(efmrpPacketDef::HELLO_PACKET);
@@ -338,6 +338,7 @@ double efmrp::calculateTargetValue() {
             min_ne=ne.second;
         }
     }
+    trace()<<"[info] min ne: "<<min_ne.nw_address<<"  min env: "<<min_ne.env<<" own env: "<<ff_app->getEmergencyValue();
     return (min_ne.env+ff_app->getEmergencyValue())/2;
 }
 
