@@ -53,6 +53,7 @@ void shmrp::startup() {
     fp.cost_func_pi      = par("f_cost_func_pi");
     fp.cost_func_phi     = par("f_cost_func_phi");
     fp.cost_func_mu      = par("f_cost_func_mu");
+    fp.cost_func_eta     = par("f_cost_func_eta");
     fp.cf_after_rresp    = par("f_cf_after_rresp");
     fp.random_t_l        = par("f_random_t_l");
     fp.random_t_l_sigma  = par("f_random_t_l_sigma");
@@ -740,6 +741,14 @@ double shmrp::calculateCostFunction(node_entry ne) {
         }
         case shmrpCostFuncDef::XPR_HOP_PDR_AND_INTERF: {
             ret_val=fp.cost_func_phi * log10(static_cast<double>(ne.hop)) + fp.cost_func_pi * log10(static_cast<double>(ne.pkt_count)/static_cast<double>(ne.ack_count)) + fp.cost_func_iota * log10(ne.interf);
+            break;
+        }
+        case shmrpCostFuncDef::SUM_HOP_ENERGY_EMERG_PDR_AND_INTERF: {
+            // CostFunction = 1 - ObjectiveFunction
+            // CostFunction = 1 - [ (1-Pi-Epsilon-Iota-Eta-Mu)*1/(1+hop)  ]
+            //            1 - ( (1-fp.cost_func_pi-fp.cost_func_epsilon-fp.cost_func_iota-fp.cost_func_eta-fp.cost_func_mu)*(1/(1+ne.hop)) + fp.cost_func_pi*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count) + fp.cost_func_epsilon*ne.emerg);
+
+            1 - ( (1-fp.cost_func_pi-fp.cost_func_epsilon)*(1/(1+ne.hop)) + fp.cost_func_pi*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count) + fp.cost_func_epsilon*ne.emerg);
             break;
         }
         default: {
