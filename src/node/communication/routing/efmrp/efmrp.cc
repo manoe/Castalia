@@ -241,11 +241,11 @@ void efmrp::cleanRouting(std::string ne) {
     trace()<<"[info] Entering cleanRouting(ne="<<ne<<")";
     trace()<<"[info] Assess change impact: ";
     if(checkNextHop(ne,1)) {
-        trace()<<"Entry is primary path for node";
+        trace()<<"[info] Entry is primary path for node";
         removeRoutingEntry(ne, 1, true);
         addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
     } else if(checkNextHop(ne,2)) {
-        trace()<<"Entry is secondary path for node";
+        trace()<<"[info] Entry is secondary path for node";
         removeRoutingEntry(ne, 2, true);
         try {
             addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
