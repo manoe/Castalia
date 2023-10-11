@@ -252,7 +252,7 @@ void efmrp::cleanRouting(std::string ne) {
             trace()<<"[error] "<<s;
         }
     } else {
-        trace()<<"Entry does not affect node";
+        trace()<<"[info] Entry does not affect node";
         removeRoutingEntry(ne,1,true);
     }
 }
