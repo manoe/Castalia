@@ -560,13 +560,28 @@ void shmrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
                             }
                         }
                         if(!found) {
-                            pathid.push_back({p.pathid, p.nmas+1});
+                            pathid_entry pe;
+                            pe.pathid = p.pathid;
+                            pe.nmas   = p.nmas+1;
+                            pe.enrgy  = getEnergyValue(); // select min
+                            pe.emerg  = getEmergencyValue(); // select min
+                            pe.pdr    = static_cast<double>(rreq_table[ne.first].ack_count)/static_cast<double>(rreq_table[ne.first].pkt_count);
+
+                            pathid.push_back(pe);
                         }
                     }
                 }
             } else {
                 trace()<<"[info] Node is sensor node, selecting random pathid";
-                pathid.push_back(selectPathid(false));
+                auto pe = selectPathid(false);
+                pe.enrgy = getEnergyValue();
+                pe.emerg = getEmergencyValue();
+
+                // PDR not working yet.
+                pe.pdr    = 0;
+
+
+                pathid.push_back(pe);
             }
         } catch (std::exception &e) {
             trace()<<e.what();
@@ -746,9 +761,15 @@ double shmrp::calculateCostFunction(node_entry ne) {
         case shmrpCostFuncDef::SUM_HOP_ENERGY_EMERG_PDR_AND_INTERF: {
             // CostFunction = 1 - ObjectiveFunction
             // CostFunction = 1 - [ (1-Pi-Epsilon-Iota-Eta-Mu)*1/(1+hop)  ]
-            //            1 - ( (1-fp.cost_func_pi-fp.cost_func_epsilon-fp.cost_func_iota-fp.cost_func_eta-fp.cost_func_mu)*(1/(1+ne.hop)) + fp.cost_func_pi*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count) + fp.cost_func_epsilon*ne.emerg);
+            ret_val = 1 - ( 
+                    (1-fp.cost_func_pi-fp.cost_func_epsilon-fp.cost_func_iota-fp.cost_func_eta-fp.cost_func_mu)*(1/(1+ne.hop))
+                    + fp.cost_func_pi*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count)
+                    + fp.cost_func_epsilon*ne.pathid[0].emerg
+                    + fp.cost_func_iota*ne.interf
+                    + fp.cost_func_eta*ne.pathid[0].enrgy
+                    + fp.cost_func_mu*ne.pathid[0].nmas
+                    );
 
-            1 - ( (1-fp.cost_func_pi-fp.cost_func_epsilon)*(1/(1+ne.hop)) + fp.cost_func_pi*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count) + fp.cost_func_epsilon*ne.emerg);
             break;
         }
         default: {
@@ -760,7 +781,9 @@ double shmrp::calculateCostFunction(node_entry ne) {
         trace()<<"[error] Ambigous pathid array";
         throw state_not_permitted("[error] pathid array size not 1");
     }
-    ret_val=ret_val/pow(static_cast<double>(ne.pathid[0].nmas+1), fp.cost_func_mu);
+    if(shmrpCostFuncDef::SUM_HOP_ENERGY_EMERG_PDR_AND_INTERF != fp.cost_func) {
+        ret_val=ret_val/pow(static_cast<double>(ne.pathid[0].nmas+1), fp.cost_func_mu);
+    }
     trace()<<"[info] Cost function for node entry "<<ne.nw_address<<": "<<ret_val;
     return ret_val;
 }
