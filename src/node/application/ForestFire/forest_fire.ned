@@ -50,6 +50,9 @@ simple ForestFire like node.application.iApplication {
                                         // routing table
 
 
+    bool    srlz_pkt_arr = default(false); // serialize packet arrival
+
+
  gates:
  	output toCommunicationModule;
 	output toSensorDeviceManager;
