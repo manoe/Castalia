@@ -127,6 +127,7 @@ class efmrp: public VirtualRouting {
         void updateFieldTableWithPE(std::string, std::string, efmrpPathStatus);
         void updateFieldTableEntry(std::string, double, double, double);
         bool checkFieldEntry(std::string);
+        ef_node_entry getSinkFieldTableEntry();
         double calculateTargetValue();
 
         void constructPath(std::string, int prio);

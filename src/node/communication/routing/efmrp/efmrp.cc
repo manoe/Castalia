@@ -279,6 +279,15 @@ void efmrp::addRoutingEntry(std::string nw_address, ef_node_entry ne, int prio, 
     routing_table.push_back(re);
 }
 
+ef_node_entry efmrp::getSinkFieldTableEntry() {
+    trace()<<"[info] Entering getSinkFieldTableEntry()";
+    if(field_table.find(getSinkAddress()) == field_table.end()) {
+        trace()<<"[error] Sink address not found.";
+        throw std::string("[error] No sink entry");
+    }
+    return field_table[getSinkAddress()];
+}
+
 void efmrp::updateRoutingEntry(std::string nw_address, ef_node_entry ne, int prio, efmrpPathStatus status) {
     trace()<<"[info] Entering updateRoutingEntry(nw_address="<<nw_address<<", ef_node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<status;
     for(auto &&re: routing_table) {
@@ -931,7 +940,12 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 if(checkRoutingEntry(data_pkt->getOrigin(), pri)) {
                     forwardData(data_pkt->dup());
                 } else {
-                    addRoutingEntry(std::string(data_pkt->getOrigin()),getNthTargetValueEntry(1, {data_pkt->getSource()}),1);
+                    if(isSinkNextHop()) {
+                        trace()<<"[info] Adding sink as next hop";
+                        addRoutingEntry(std::string(data_pkt->getOrigin()), getSinkFieldTableEntry(), pri);
+                    } else {
+                        addRoutingEntry(std::string(data_pkt->getOrigin()),getNthTargetValueEntry(1, {data_pkt->getSource()}),1);
+                    }
                     forwardData(data_pkt->dup());
                 }
                 break;
@@ -943,29 +957,35 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"[info] Secondary path exists";
                     forwardData(data_pkt->dup());
                 } else {
-                    trace()<<"[info] Secondary path not available, check status";
-                    if(queryCompleted(data_pkt->getOrigin())) {
-                        trace()<<"[info] Query completed";
-                        ef_node_entry ne;
-                        try {
-                            ne=findSecondaryPath(data_pkt->getOrigin(),{data_pkt->getSource() } );
-                        } catch (std::string &e) {
-                            trace()<<"[error] "<<e;
-                            removeRoutingEntry(data_pkt->getOrigin(), data_pkt->getPri());
-                            sendRetreat(data_pkt);
+                    trace()<<"[info] Secondary path not available";
+                    if(isSinkNextHop()) {
+                        trace()<<"[info] Adding sink as next hop";
+                        addRoutingEntry(std::string(data_pkt->getOrigin()), getSinkFieldTableEntry(), pri);
+                    } else {
+                        trace()<<"[info] Check query status";
+                        if(queryCompleted(data_pkt->getOrigin())) {
+                            trace()<<"[info] Query completed";
+                            ef_node_entry ne;
+                            try {
+                                ne=findSecondaryPath(data_pkt->getOrigin(),{data_pkt->getSource() } );
+                            } catch (std::string &e) {
+                                trace()<<"[error] "<<e;
+                                removeRoutingEntry(data_pkt->getOrigin(), data_pkt->getPri());
+                                sendRetreat(data_pkt);
+                                break;
+                            }
+                            updateRoutingEntry(data_pkt->getOrigin(),ne,pri,efmrpPathStatus::AVAILABLE);
+                            forwardData(data_pkt->dup());
+                        } else if(queryStarted(data_pkt->getOrigin())) {
+                            trace()<<"[info] Query ongoing, dropping packet.";
+                            break;
+                        } else {
+                            trace()<<"[info] No secondary path available.";
+                            ef_node_entry ne;
+                            addRoutingEntry(data_pkt->getOrigin(), ne, pri, efmrpPathStatus::UNDER_QUERY,getClock().dbl());
+                            sendQuery(data_pkt->getOrigin());
                             break;
                         }
-                        updateRoutingEntry(data_pkt->getOrigin(),ne,pri,efmrpPathStatus::AVAILABLE);
-                        forwardData(data_pkt->dup());
-                    } else if(queryStarted(data_pkt->getOrigin())) {
-                        trace()<<"[info] Query ongoing, dropping packet.";
-                        break;
-                    } else {
-                        trace()<<"[info] No secondary path available.";
-                        ef_node_entry ne;
-                        addRoutingEntry(data_pkt->getOrigin(), ne, pri, efmrpPathStatus::UNDER_QUERY,getClock().dbl());
-                        sendQuery(data_pkt->getOrigin());
-                        break;
                     }
                 }
             }

@@ -194,6 +194,7 @@ struct feat_par {
     double cost_func_pi;
     double cost_func_phi;
     double cost_func_mu;
+    double cost_func_eta;
     bool   cf_after_rresp;
     bool   random_t_l;
     double random_t_l_sigma;
