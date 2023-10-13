@@ -189,9 +189,9 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
             yp_out<<YAML::Value<<source;
             yp_out<<YAML::Key<<"timestamp";
             yp_out<<YAML::Value<<simTime().dbl();
-            yp_out<<YAML::EndMap;
             yp_out<<YAML::Key<<"energy";
             yp_out<<YAML::Value<<getAverageSpentEnergy();
+            yp_out<<YAML::EndMap;
         }
 
 		// this is report packet which contains sensor reading information
