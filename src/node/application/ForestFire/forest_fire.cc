@@ -344,6 +344,7 @@ void ForestFire::finishSpecific()
         yp_out<<YAML::EndSeq;
         ofstream pkt_file("pkt.yaml", std::ios::app);
         pkt_file<<yp_out.c_str();
+        pkt_file<<std::endl;
         pkt_file.close();
     }
 
