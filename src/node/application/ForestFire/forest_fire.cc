@@ -61,6 +61,12 @@ void ForestFire::startup()
     d_max       = par("d_max");
     d_high      = par("d_high");
     d_gamma     = par("d_gamma");
+    srlz_pkt_arr= par("srlz_pkt_arr");
+
+    if(srlz_pkt_arr) {
+        yp_out<<YAML::BeginSeq;
+    }
+
 }
 
 int ForestFire::getEventSent() {
@@ -173,10 +179,21 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
         }
     }
     if(!isPacketSeen(atoi(source),rcvPacket->getSequenceNumber() )) {
-
     if (packetName.compare(REPORT_PACKET_NAME) == 0) {
         collectOutput("Report packet","Received");
         reportRecv[atoi(source)]++;
+
+        if(srlz_pkt_arr) {
+            yp_out<<YAML::BeginMap;
+            yp_out<<YAML::Key<<"source";
+            yp_out<<YAML::Value<<source;
+            yp_out<<YAML::Key<<"timestamp";
+            yp_out<<YAML::Value<<simTime().dbl();
+            yp_out<<YAML::Key<<"energy";
+            yp_out<<YAML::Value<<getAverageSpentEnergy();
+            yp_out<<YAML::EndMap;
+        }
+
 		// this is report packet which contains sensor reading information
 		// NOTE that data field is used to store source address instead of using char *source
 		// this is done because some routing and flooding is done on the application layer
@@ -257,6 +274,21 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 
 }
 
+double ForestFire::getAverageSpentEnergy() {
+    int numNodes = getParentModule()->getParentModule()->par("numNodes");
+	cTopology *topo;	// temp variable to access packets received by other nodes
+	topo = new cTopology("topo");
+	topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+    double nrg=0.0;
+	for (int i = 0; i < numNodes; i++) {
+		auto *rm = dynamic_cast<ResourceManager*>
+			(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
+        nrg+=rm->getSpentEnergy();
+    }
+    return nrg;
+}
+
+
 void ForestFire::finishSpecific()
 {
 	declareOutput("Event reception rate");
@@ -307,6 +339,12 @@ void ForestFire::finishSpecific()
     ofstream pdr_file("pdr.yaml");
     pdr_file<<y_out.c_str();
     pdr_file.close();
+
+    if(srlz_pkt_arr) {
+        yp_out<<YAML::EndSeq;
+        ofstream pkt_file("pkt.yaml", std::ios::app);
+        pkt_file<<yp_out.c_str();
+        pkt_file.close();
     }
 
 	if (isSink) {
@@ -318,7 +356,7 @@ void ForestFire::finishSpecific()
 					"Fail", report_info_table[i].seq - report_info_table[i].parts.size());
 		}
 	}
-    
+    }
 }
 
 double ForestFire::getEnergyValue() {

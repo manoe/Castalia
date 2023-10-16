@@ -54,10 +54,12 @@ class ForestFire : public VirtualApplication {
     bool emergency;
     ResourceManager *rm;
 
-    bool   pot_field;
-    double d_max;
-    double d_high;
-    double d_gamma;
+    bool    pot_field;
+    double  d_max;
+    double  d_high;
+    double  d_gamma;
+
+    bool    srlz_pkt_arr;
 
 	int currentVersion;
 	int currentVersionPacket;
@@ -76,6 +78,8 @@ class ForestFire : public VirtualApplication {
     map<int,set<int>> packetsSeen;
     map<int,int> reportRecv;
     map<int,int> eventRecv;
+    YAML::Emitter yp_out;
+
  protected:
 	virtual void startup();
 	void finishSpecific();
@@ -90,6 +94,7 @@ class ForestFire : public VirtualApplication {
     void sendEmergencyBroadcast();
     bool isPacketSeen(int source, int sn);
     void alertRouting();
+    double getAverageSpentEnergy();
  public:
     int getReportSent();
     int getEventSent();
