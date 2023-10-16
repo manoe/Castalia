@@ -342,7 +342,7 @@ void ForestFire::finishSpecific()
 
     if(srlz_pkt_arr) {
         yp_out<<YAML::EndSeq;
-        ofstream pkt_file("pkt.yaml");
+        ofstream pkt_file("pkt.yaml", std::ios::app);
         pkt_file<<yp_out.c_str();
         pkt_file.close();
     }
