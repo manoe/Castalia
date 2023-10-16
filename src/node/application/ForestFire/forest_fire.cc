@@ -64,6 +64,8 @@ void ForestFire::startup()
     srlz_pkt_arr= par("srlz_pkt_arr");
 
     if(srlz_pkt_arr) {
+        yp_out<<YAML::BeginMap;
+        yp_out<<YAML::Key<<"pkt_list";
         yp_out<<YAML::BeginSeq;
     }
 
@@ -342,6 +344,7 @@ void ForestFire::finishSpecific()
 
     if(srlz_pkt_arr) {
         yp_out<<YAML::EndSeq;
+        yp_out<<YAML::EndMap;
         ofstream pkt_file("pkt.yaml", std::ios::app);
         pkt_file<<yp_out.c_str();
         pkt_file<<std::endl;
