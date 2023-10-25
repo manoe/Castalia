@@ -297,7 +297,8 @@ class WildFireCA {
 
             for(auto i : neighbors) {
                 float p_burn=params.p_h * (1 + getPveg(plane[i.x][i.y].veg)) * (1 + getPden(plane[i.x][i.y].den)) * getPw(pos,i)*getPs(pos,i);
-                if(p_burn>dist(gen)) {
+                auto rnd=dist(gen);
+                if(p_burn>rnd) {
                     plane[i.x][i.y].state=CellState::BURNING;
                     if(params.sp && getWindSpread() > 0 && getPropagationWindAngle(pos,i) < static_cast<float>(M_PI)/10.0f) {
                         auto prop_dir=i-pos;
