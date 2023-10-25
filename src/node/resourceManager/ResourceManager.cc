@@ -189,6 +189,10 @@ void ResourceManager::consumeEnergy(double amount)
 {
 	Enter_Method("consumeEnergy(double amount)");
 
+    if(master) {
+        return;
+    }
+
 	if (remainingEnergy <= amount) {
 		remainingEnergy = 0;
 		send(new cMessage("Destroy node message", OUT_OF_ENERGY), "toSensorDevManager");
