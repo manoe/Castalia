@@ -51,6 +51,8 @@ simple ForestFire like node.application.iApplication {
 
 
     bool    srlz_pkt_arr = default(false); // serialize packet arrival
+    bool    srlz_nrg     = default(false); // serialize nrg consumption
+    double  t_srlz_nrg   = default(10);    // srlz_nrg timer
 
 
  gates:
