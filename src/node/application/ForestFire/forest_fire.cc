@@ -322,6 +322,26 @@ void ForestFire::serializeEnergy() {
         yn_out<<YAML::Value<<i;
         yn_out<<YAML::Key<<"energy";
         yn_out<<YAML::Value<<rm->getRemainingEnergy();
+        yn_out<<YAML::Key<<"state";
+        yn_out<<YAML::Value<<(rm->isDead()?"dead":"live");
+        yn_out<<YAML::Key<<"report_sent";
+        auto app = dynamic_cast<ForestFire *>(topo->getNode(i)->getModule()->getSubmodule("Application"));
+        
+        yn_out<<YAML::Value<<app->getReportSent();
+        yn_out<<YAML::Key<<"event_sent";
+        yn_out<<YAML::Value<<app->getEventSent();
+        yn_out<<YAML::Key<<"report_recv";
+        if(reportRecv.find(i) != reportRecv.end()) {
+            yn_out<<YAML::Value<<reportRecv[i];
+        } else {
+            yn_out<<YAML::Value<<0;
+        }
+        yn_out<<YAML::Key<<"event_recv";
+        if(eventRecv.find(i) != eventRecv.end()) {
+            yn_out<<YAML::Value<<eventRecv[i];
+        } else {
+            yn_out<<YAML::Value<<0;
+        }
         yn_out<<YAML::EndMap;
     }
     yn_out<<YAML::EndSeq;
@@ -383,7 +403,7 @@ void ForestFire::finishSpecific()
     if(srlz_pkt_arr) {
         yp_out<<YAML::EndSeq;
         yp_out<<YAML::EndMap;
-        ofstream pkt_file("pkt.yaml", std::ios::app);
+        ofstream pkt_file("pkt.yaml");
         pkt_file<<yp_out.c_str();
         pkt_file<<std::endl;
         pkt_file.close();
@@ -392,7 +412,7 @@ void ForestFire::finishSpecific()
     if(srlz_nrg) {
         yn_out<<YAML::EndSeq;
         yn_out<<YAML::EndMap;
-        ofstream nrg_file("nrg.yaml",std::ios::app);
+        ofstream nrg_file("nrg.yaml");
         nrg_file<<yn_out.c_str();
         nrg_file<<std::endl;
         nrg_file.close();
