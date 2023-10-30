@@ -203,6 +203,7 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     sense_distance  = par("sense_distance");
     sense_attn      = par("sense_attn");
     plane_to_yaml   = par("plane_to_yaml");
+    yp_coding       = par("yp_coding").stringValue();
 }
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {
@@ -329,6 +330,27 @@ void WildFirePhysicalProcess::signalTermination(std::vector<int> nodes) {
 }
 
 void WildFirePhysicalProcess::dumpPlane() {
+    auto to_char = [](CellState s) -> std::string {
+        switch(s) {
+            case CellState::NO_FUEL: {
+                return "0";
+            }
+            case CellState::NOT_IGNITED: {
+                return "1";
+            }
+            case CellState::BURNING: {
+                return "2";
+            }
+            case CellState::BURNED_DOWN: {
+                return "3";
+            }
+            default: {
+                return "4";
+            }
+
+        }
+    };
+
     auto to_str = [](CellState s) -> std::string {
         switch (s) {
             case CellState::NO_FUEL: {
@@ -350,24 +372,46 @@ void WildFirePhysicalProcess::dumpPlane() {
     };
 
     auto plane=wf_ca->getPlane();
-    y_out<<YAML::BeginMap;
-    y_out<<YAML::Key<<"timestamp";
-    y_out<<YAML::Value<<simTime().dbl();
-    y_out<<YAML::Key<<"plane";
-    y_out<<YAML::BeginSeq;
-    for(int x=0; x < wf_ca->getSizeX(); ++x) {
+    if(yp_coding == "enum") {
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"timestamp";
+        y_out<<YAML::Value<<simTime().dbl();
+        y_out<<YAML::Key<<"plane";
+        y_out<<YAML::BeginSeq;
+        for(int x=0; x < wf_ca->getSizeX(); ++x) {
+            for(int y=0; y < wf_ca->getSizeY(); ++y) {
+                y_out<<YAML::BeginMap;
+                y_out<<YAML::Key<<"x";
+                y_out<<YAML::Value<<x;
+                y_out<<YAML::Key<<"y";
+                y_out<<YAML::Value<<y;
+                y_out<<YAML::Key<<"state";
+                y_out<<YAML::Value<<to_str(plane[x][y].state);
+                y_out<<YAML::EndMap;
+            }
+        }
+        y_out<<YAML::EndSeq;
+        y_out<<YAML::EndMap;
+    }
+    if(yp_coding == "digit") {
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"timestamp";
+        y_out<<YAML::Value<<simTime().dbl();
+        y_out<<YAML::Key<<"plane";
+        y_out<<YAML::BeginSeq;
         for(int y=0; y < wf_ca->getSizeY(); ++y) {
             y_out<<YAML::BeginMap;
-            y_out<<YAML::Key<<"x";
-            y_out<<YAML::Value<<x;
             y_out<<YAML::Key<<"y";
-            y_out<<YAML::Value<<y;
-            y_out<<YAML::Key<<"state";
-            y_out<<YAML::Value<<to_str(plane[x][y].state);
+            std::string line;
+            for(int x=0; x < wf_ca->getSizeX(); ++x) {
+                line+=to_char(plane[x][y].state);
+            }
+            y_out<<YAML::Value<<line;
             y_out<<YAML::EndMap;
         }
+        y_out<<YAML::EndSeq;
+        y_out<<YAML::EndMap;
+
     }
-    y_out<<YAML::EndSeq;
-    y_out<<YAML::EndMap;
 }
 

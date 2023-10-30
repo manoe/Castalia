@@ -2435,13 +2435,7 @@ void shmrp::finishSpecific() {
         topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
 
         set<int> paths;
-        ofstream g_out("graph.py"), p_out("pos.py"),r_out("role.py");
-        g_out<<"edges=[";
-        p_out<<"pos={";
-        r_out<<"role={";
         auto sink_pos=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"))->getLocation();
-        p_out<<"'0':["<<sink_pos.x<<","<<sink_pos.y<<"],";
-        r_out<<"'0':'"<<ringToStr(getRingStatus())<<"',";
 
         y_out<<YAML::BeginSeq;
         y_out<<YAML::BeginMap;
@@ -2557,17 +2551,10 @@ void shmrp::finishSpecific() {
             serializeRadioStats(radio->getStats());
 
             auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
-            if(res_mgr->isDead()) {
-                r_out<<"'"<<i<<"':'"<<"dead',";
-            } else {
-                r_out<<"'"<<i<<"':'"<<ringToStr(shmrp_instance->getRingStatus())<<"',";
-            }
-
 
 
             // Format: {'Node1': [0,0], 'Node2': [0,10],'Node3':[10,0]}
             auto loc=mob_mgr->getLocation();
-            p_out<<"'"<<i<<"':["<<loc.x<<","<<loc.y<<"],";
             y_out<<YAML::Key<<"x";
             y_out<<loc.x;
             y_out<<YAML::Key<<"y";
@@ -2623,14 +2610,6 @@ void shmrp::finishSpecific() {
         ofstream loc_pdr_file("loc_pdr.yaml");
         loc_pdr_file<<y_out.c_str();
         loc_pdr_file.close();
-        g_out.seekp(g_out.tellp()-static_cast<long int>(1));
-        p_out.seekp(p_out.tellp()-static_cast<long int>(1));
-        r_out.seekp(r_out.tellp()-static_cast<long int>(1));
-
-        g_out<<"]"<<std::endl;
-        p_out<<"}"<<std::endl;
-        r_out<<"}"<<std::endl;
-
 
         delete(topo);
     }

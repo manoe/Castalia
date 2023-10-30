@@ -36,7 +36,8 @@ enum ForestFireTimers {
 	REQUEST_SAMPLE      = 1,
     EMERGENCY_BROADCAST = 2,
     EVENT_PERIOD        = 3,
-    REPORT_PERIOD       = 4
+    REPORT_PERIOD       = 4,
+    SRLZ_NRG            = 5
 };
 
 class ForestFire : public VirtualApplication {
@@ -60,6 +61,8 @@ class ForestFire : public VirtualApplication {
     double  d_gamma;
 
     bool    srlz_pkt_arr;
+    bool    srlz_nrg;
+    double  t_srlz_nrg;
 
 	int currentVersion;
 	int currentVersionPacket;
@@ -79,6 +82,7 @@ class ForestFire : public VirtualApplication {
     map<int,int> reportRecv;
     map<int,int> eventRecv;
     YAML::Emitter yp_out;
+    YAML::Emitter yn_out;
 
  protected:
 	virtual void startup();
@@ -95,6 +99,7 @@ class ForestFire : public VirtualApplication {
     bool isPacketSeen(int source, int sn);
     void alertRouting();
     double getAverageSpentEnergy();
+    void serializeEnergy();
  public:
     int getReportSent();
     int getEventSent();
