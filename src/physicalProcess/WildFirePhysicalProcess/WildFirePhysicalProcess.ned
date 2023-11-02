@@ -19,6 +19,8 @@ parameters:
 	bool    collectTraceInfo = default (false);
     int     wf_start_x_coord = default (0);
     int     wf_start_y_coord = default (0);
+    int     wf_start_x_offset= default (1);
+    int     wf_start_y_offset= default (1);
     bool    no_map_file      = default (false);
     string  map_file;
     int     map_scale        = default (90);

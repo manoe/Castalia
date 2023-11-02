@@ -35,6 +35,8 @@ class WildFirePhysicalProcess: public CastaliaModule {
  private:
     int wf_start_x_coord;
     int wf_start_y_coord;
+    int wf_start_x_offset;
+    int wf_start_y_offset;
     int sim_x_size;
     int sim_y_size;
     bool no_map_file;

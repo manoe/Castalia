@@ -36,6 +36,7 @@ void ResourceManager::initialize()
 	baselineNodePower = par("baselineNodePower");
 	periodicEnergyCalculationInterval = (double)par("periodicEnergyCalculationInterval") / 1000;
     selfDestructTimer = par("selfDestructTimer");
+    nullEnergyOnFail = par("nullEnergyOnFail");
 
     if(selfDestructTimer > 0.0) {
         scheduleAt(simTime() + selfDestructTimer, new cMessage("Destroy node message", DESTROY_NODE));
@@ -91,7 +92,9 @@ void ResourceManager::handleMessage(cMessage * msg)
 		}
 	
 		case TIMER_SERVICE:{
-			calculateEnergySpent();
+            if(!disabled) {
+    			calculateEnergySpent();
+            }
 			return;
 		}
 
@@ -218,9 +221,14 @@ void ResourceManager::destroyNode(void)
 	send(new cMessage("Destroy node message", DESTROY_NODE), "toMac");
 	send(new cMessage("Destroy node message", DESTROY_NODE), "toRadio");
 	disabled = true;
+
     declareOutput("Dead Node");
 	collectOutput("Dead Node", "yes?", 1);
 	collectOutput("Dead Node", "time", SIMTIME_DBL(simTime()));
+
+    if(nullEnergyOnFail) {
+        remainingEnergy = 0;
+    }
 }
 
 bool ResourceManager::isDead() {
