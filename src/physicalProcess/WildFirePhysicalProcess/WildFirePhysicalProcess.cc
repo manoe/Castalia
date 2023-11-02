@@ -182,6 +182,9 @@ void WildFirePhysicalProcess::finishSpecific()
 void WildFirePhysicalProcess::readIniFileParameters() {
     wf_start_x_coord = par("wf_start_x_coord");
     wf_start_y_coord = par("wf_start_y_coord");
+    wf_start_x_offset= par("wf_start_x_offset");
+    wf_start_y_offset= par("wf_start_y_offset");
+
     map_scale        = par("map_scale");
     ca_step_period   = par("ca_step_period");
     ca_start_timer   = par("ca_start_timer");
