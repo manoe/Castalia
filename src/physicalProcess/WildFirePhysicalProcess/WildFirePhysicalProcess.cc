@@ -56,7 +56,7 @@ void WildFirePhysicalProcess::initialize()
            throw cRuntimeError("Cannot generate plane\n");
        }
     }
-    if(wf_start_x_coord < 0 || wf_start_x_coord >= map_x_size || wf_start_y_coord < 0 || wf_start_y_coord >= map_y_size) {
+    if(wf_start_x_coord < 0 || wf_start_x_coord+wf_start_x_offset-1 >= map_x_size || wf_start_y_coord < 0 || wf_start_y_coord+wf_start_y_offset-1 >= map_y_size) {
         trace()<<"[info] wf_start_x_coord="<<wf_start_x_coord<<", wf_start_y_coord="<<wf_start_y_coord;
         throw cRuntimeError("WildFire starting coordinate is invalid");
     }
@@ -132,7 +132,11 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             trace()<<"CA timer expired";
             if(first_step) {
                 trace()<<"[info] First step, do not burn anything.";
-                wf_ca->addFireSpot({wf_start_x_coord,wf_start_y_coord});
+                for(auto i=0 ; i < wf_start_x_offset ; ++i) {
+                    for(auto j=0 ; j < wf_start_y_offset ; ++j) {
+                        wf_ca->addFireSpot({wf_start_x_coord+i,wf_start_y_coord+j});
+                    }
+                }
                 first_step=false;
             } else {
                 auto b_cells=wf_ca->stepAndCollect();
