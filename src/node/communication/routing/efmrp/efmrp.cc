@@ -75,8 +75,19 @@ int efmrp::getHop() const {
 
 void efmrp::setState(efmrpStateDef state) {
     trace()<<"[info] State change from "<<stateToStr(g_state)<<" to "<<stateToStr(state);
+    cTopology *topo = new cTopology("topo");
+    topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+    auto *efmrp_instance = dynamic_cast<efmrp*>
+                (topo->getNode(atoi(getSinkAddress().c_str()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+    efmrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state);
+    delete topo;
     g_state=state;
 }
+
+void efmrp::writeState(int node, double timestamp, efmrpStateDef state) {
+    state_chng_log.push_back({node,timestamp,state});
+}
+
 
 string efmrp::stateToStr(efmrpStateDef state) const {
     switch (state) {
@@ -1149,6 +1160,24 @@ void efmrp::generateYaml() {
     ofstream loc_pdr_file("loc_pdr.yaml");
     loc_pdr_file<<y_out.c_str();
     loc_pdr_file.close();
+
+    YAML::Emitter ys_out;
+    ys_out<<YAML::BeginSeq;
+    for(auto se: state_chng_log) {
+        ys_out<<YAML::BeginMap;
+        ys_out<<YAML::Key<<"node";
+        ys_out<<YAML::Value<<se.node;
+        ys_out<<YAML::Key<<"timestamp";
+        ys_out<<YAML::Value<<se.timestamp;
+        ys_out<<YAML::Key<<"state";
+        ys_out<<YAML::Value<<stateToStr(se.state);
+        ys_out<<YAML::EndMap;
+
+    }
+    ys_out<<YAML::EndSeq;
+    ofstream state_file("state_chng.yaml");
+    state_file<<ys_out.c_str();
+    state_file.close();
 
     delete(topo);
 }
