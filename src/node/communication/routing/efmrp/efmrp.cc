@@ -75,8 +75,20 @@ int efmrp::getHop() const {
 
 void efmrp::setState(efmrpStateDef state) {
     trace()<<"[info] State change from "<<stateToStr(g_state)<<" to "<<stateToStr(state);
+    cTopology *topo = new cTopology("topo");
+    topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+    auto *efmrp_instance = dynamic_cast<efmrp*>
+                (topo->getNode(atoi(getSinkAddress().c_str()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+    auto *res_mgr = dynamic_cast<ResourceManager *>(getParentModule()->getParentModule()->getSubmodule("ResourceManager"));
+    efmrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state, res_mgr->getSpentEnergy());
+    delete topo;
     g_state=state;
 }
+
+void efmrp::writeState(int node, double timestamp, efmrpStateDef state, double energy) {
+    state_chng_log.push_back({node,timestamp,state,energy});
+}
+
 
 string efmrp::stateToStr(efmrpStateDef state) const {
     switch (state) {
@@ -243,7 +255,11 @@ void efmrp::cleanRouting(std::string ne) {
     if(checkNextHop(ne,1)) {
         trace()<<"[info] Entry is primary path for node";
         removeRoutingEntry(ne, 1, true);
-        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+        try {
+            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+        } catch (std::string &e) {
+            trace()<<e;
+        }
     } else if(checkNextHop(ne,2)) {
         trace()<<"[info] Entry is secondary path for node";
         removeRoutingEntry(ne, 2, true);
@@ -255,6 +271,20 @@ void efmrp::cleanRouting(std::string ne) {
     } else {
         trace()<<"[info] Entry does not affect node";
         removeRoutingEntry(ne,1,true);
+    }
+}
+
+void efmrp::logRouting() {
+    trace()<<"[info] Entering logRouting()";
+    for(auto re: routing_table) {
+        trace()<<"[info] nw_address: "<<re.nw_address<<" next_hop: "<<re.next_hop<<" status: "<<pathStatusToStr(re.status)<<" prio: "<<re.prio;
+    }
+}
+
+void efmrp::logField() {
+    trace()<<"[info] Entering logField()";
+    for(auto ne: field_table) {
+        trace()<<"[info] nw_address: "<<ne.second.nw_address;
     }
 }
 
@@ -944,7 +974,12 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                         trace()<<"[info] Adding sink as next hop";
                         addRoutingEntry(std::string(data_pkt->getOrigin()), getSinkFieldTableEntry(), pri);
                     } else {
-                        addRoutingEntry(std::string(data_pkt->getOrigin()),getNthTargetValueEntry(1, {data_pkt->getSource()}),1);
+                        try {
+                            addRoutingEntry(std::string(data_pkt->getOrigin()),getNthTargetValueEntry(1, {data_pkt->getSource()}),1);
+                        } catch (std::string &e) {
+                            trace()<<e;
+                            break;
+                        }
                     }
                     forwardData(data_pkt->dup());
                 }
@@ -1034,10 +1069,16 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             switch (alarm_pkt->getEfmrpAlarmKind()) {
                 case efmrpAlarmDef::ENERGY_ALARM: {
                     trace()<<"[info] ENERGY_ALARM received, removing node";
+                    logRouting();
+                    logField();
                     if(checkNextHop(efmrp_pkt->getSource(),1)) {
                         trace()<<"[info] Node is primary path for this node";
                         removeEntries(alarm_pkt->getSource());
-                        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+                        try {
+                            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+                        } catch (std::string &e) {
+                            trace()<<e;
+                        }
                     } else if(checkNextHop(efmrp_pkt->getSource(),2)) {
                         trace()<<"[info] Node is secondary path for this node";
                         removeEntries(alarm_pkt->getSource());
@@ -1120,6 +1161,26 @@ void efmrp::generateYaml() {
     ofstream loc_pdr_file("loc_pdr.yaml");
     loc_pdr_file<<y_out.c_str();
     loc_pdr_file.close();
+
+    YAML::Emitter ys_out;
+    ys_out<<YAML::BeginSeq;
+    for(auto se: state_chng_log) {
+        ys_out<<YAML::BeginMap;
+        ys_out<<YAML::Key<<"node";
+        ys_out<<YAML::Value<<se.node;
+        ys_out<<YAML::Key<<"timestamp";
+        ys_out<<YAML::Value<<se.timestamp;
+        ys_out<<YAML::Key<<"state";
+        ys_out<<YAML::Value<<stateToStr(se.state);
+        ys_out<<YAML::Key<<"energy";
+        ys_out<<YAML::Value<<se.energy;
+        ys_out<<YAML::EndMap;
+
+    }
+    ys_out<<YAML::EndSeq;
+    ofstream state_file("state_chng.yaml");
+    state_file<<ys_out.c_str();
+    state_file.close();
 
     delete(topo);
 }

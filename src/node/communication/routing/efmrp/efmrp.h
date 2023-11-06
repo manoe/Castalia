@@ -74,6 +74,14 @@ struct routing_entry {
     int         prio;
 };
 
+struct efmrp_state_chng_entry {
+    int node;
+    double timestamp;
+    efmrpStateDef state;
+    double energy;
+};
+
+
 struct feat_par {
     // TIMER
     double ttl;
@@ -102,7 +110,7 @@ class efmrp: public VirtualRouting {
         std::map<std::string,ef_node_entry> hello_table;
         std::map<std::string,ef_node_entry> field_table;
         std::vector<routing_entry>       routing_table;
-
+        std::vector<efmrp_state_chng_entry> state_chng_log;
         
         ForestFire* ff_app;
 
@@ -139,6 +147,8 @@ class efmrp: public VirtualRouting {
         int numOfAvailPaths(std::string);
         void initRouting();
         void cleanRouting(std::string);
+        void logRouting();
+        void logField();
         void addRoutingEntry(std::string, ef_node_entry, int);
         void addRoutingEntry(std::string, ef_node_entry, int, efmrpPathStatus, double timestamp);
         void updateRoutingEntry(std::string, ef_node_entry, int, efmrpPathStatus);
@@ -189,6 +199,7 @@ class efmrp: public VirtualRouting {
                   g_state(efmrpStateDef::UNDEF) {};
         
         std::vector<routing_entry> getRoutingTable() { return routing_table; };
+        void writeState(int,double,efmrpStateDef,double);
 };
 
 #endif /* _EFMRP_H_ */

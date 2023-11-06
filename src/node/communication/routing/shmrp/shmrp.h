@@ -180,6 +180,13 @@ struct node_entry {
     int reroute_count = 0;
 };
 
+struct shmrp_state_chng_entry {
+    int node;
+    double timestamp;
+    shmrpStateDef state;
+    double energy;
+};
+
 struct feat_par {
     int    ring_radius;
     double t_l;
@@ -250,6 +257,9 @@ class shmrp: public VirtualRouting {
         std::map<std::string,node_entry> traffic_table;
 
         YAML::Emitter y_out;
+
+        std::vector<shmrp_state_chng_entry> state_chng_log;
+
         std::unordered_set<int> local_id_table;
 
         ForestFire *ff_app;
@@ -406,6 +416,7 @@ class shmrp: public VirtualRouting {
 
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
+        void writeState(int,double,shmrpStateDef,double);
         int getHop() const;
         int getHop(int);
         int  getRound() const;
