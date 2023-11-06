@@ -78,6 +78,7 @@ struct efmrp_state_chng_entry {
     int node;
     double timestamp;
     efmrpStateDef state;
+    double energy;
 };
 
 
@@ -198,7 +199,7 @@ class efmrp: public VirtualRouting {
                   g_state(efmrpStateDef::UNDEF) {};
         
         std::vector<routing_entry> getRoutingTable() { return routing_table; };
-        void writeState(int,double,efmrpStateDef);
+        void writeState(int,double,efmrpStateDef,double);
 };
 
 #endif /* _EFMRP_H_ */

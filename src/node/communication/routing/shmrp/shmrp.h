@@ -184,6 +184,7 @@ struct shmrp_state_chng_entry {
     int node;
     double timestamp;
     shmrpStateDef state;
+    double energy;
 };
 
 struct feat_par {
@@ -415,7 +416,7 @@ class shmrp: public VirtualRouting {
 
         shmrpRingDef getRingStatus() const;
         shmrpStateDef getState() const;
-        void writeState(int,double,shmrpStateDef);
+        void writeState(int,double,shmrpStateDef,double);
         int getHop() const;
         int getHop(int);
         int  getRound() const;

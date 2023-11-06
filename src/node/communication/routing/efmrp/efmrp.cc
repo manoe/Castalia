@@ -79,13 +79,14 @@ void efmrp::setState(efmrpStateDef state) {
     topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
     auto *efmrp_instance = dynamic_cast<efmrp*>
                 (topo->getNode(atoi(getSinkAddress().c_str()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
-    efmrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state);
+    auto *res_mgr = dynamic_cast<ResourceManager *>(getParentModule()->getParentModule()->getSubmodule("ResourceManager"));
+    efmrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state, res_mgr->getSpentEnergy());
     delete topo;
     g_state=state;
 }
 
-void efmrp::writeState(int node, double timestamp, efmrpStateDef state) {
-    state_chng_log.push_back({node,timestamp,state});
+void efmrp::writeState(int node, double timestamp, efmrpStateDef state, double energy) {
+    state_chng_log.push_back({node,timestamp,state,energy});
 }
 
 
@@ -1171,6 +1172,8 @@ void efmrp::generateYaml() {
         ys_out<<YAML::Value<<se.timestamp;
         ys_out<<YAML::Key<<"state";
         ys_out<<YAML::Value<<stateToStr(se.state);
+        ys_out<<YAML::Key<<"energy";
+        ys_out<<YAML::Value<<se.energy;
         ys_out<<YAML::EndMap;
 
     }

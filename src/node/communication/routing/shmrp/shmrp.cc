@@ -388,14 +388,15 @@ void shmrp::setState(shmrpStateDef state) {
     topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
     auto *shmrp_instance = dynamic_cast<shmrp*>
                 (topo->getNode(atoi(getSinkAddress().c_str()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
-    shmrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state);
+    auto *res_mgr = dynamic_cast<ResourceManager *>(getParentModule()->getParentModule()->getSubmodule("ResourceManager"));
+    shmrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state, res_mgr->getSpentEnergy());
     delete topo;
 
     g_state=state;
 }
 
-void shmrp::writeState(int node, double timestamp, shmrpStateDef state) {
-    state_chng_log.push_back({node,timestamp,state});
+void shmrp::writeState(int node, double timestamp, shmrpStateDef state, double energy) {
+    state_chng_log.push_back({node,timestamp,state,energy});
 }
 
 string shmrp::stateToStr(shmrpStateDef state) const {
@@ -2632,6 +2633,8 @@ void shmrp::finishSpecific() {
             ys_out<<YAML::Value<<se.timestamp;
             ys_out<<YAML::Key<<"state";
             ys_out<<YAML::Value<<stateToStr(se.state);
+            ys_out<<YAML::Key<<"energy";
+            ys_out<<YAML::Value<<se.energy;
             ys_out<<YAML::EndMap;
 
         }
