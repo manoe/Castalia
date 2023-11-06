@@ -1,6 +1,7 @@
 #!/bin/sh -x
 
-PROTOS="efmrp shmrp flooding hdmrp"
+# PROTOS="efmrp shmrp flooding hdmrp"
+PROTOS="efmrp"
 
 for i in $PROTOS
 do

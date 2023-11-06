@@ -243,7 +243,11 @@ void efmrp::cleanRouting(std::string ne) {
     if(checkNextHop(ne,1)) {
         trace()<<"[info] Entry is primary path for node";
         removeRoutingEntry(ne, 1, true);
-        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+        try {
+            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+        } catch (std::string &e) {
+            trace()<<e;
+        }
     } else if(checkNextHop(ne,2)) {
         trace()<<"[info] Entry is secondary path for node";
         removeRoutingEntry(ne, 2, true);
@@ -255,6 +259,20 @@ void efmrp::cleanRouting(std::string ne) {
     } else {
         trace()<<"[info] Entry does not affect node";
         removeRoutingEntry(ne,1,true);
+    }
+}
+
+void efmrp::logRouting() {
+    trace()<<"[info] Entering logRouting()";
+    for(auto re: routing_table) {
+        trace()<<"[info] nw_address: "<<re.nw_address<<" next_hop: "<<re.next_hop<<" status: "<<pathStatusToStr(re.status)<<" prio: "<<re.prio;
+    }
+}
+
+void efmrp::logField() {
+    trace()<<"[info] Entering logField()";
+    for(auto ne: field_table) {
+        trace()<<"[info] nw_address: "<<ne.second.nw_address;
     }
 }
 
@@ -944,7 +962,12 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                         trace()<<"[info] Adding sink as next hop";
                         addRoutingEntry(std::string(data_pkt->getOrigin()), getSinkFieldTableEntry(), pri);
                     } else {
-                        addRoutingEntry(std::string(data_pkt->getOrigin()),getNthTargetValueEntry(1, {data_pkt->getSource()}),1);
+                        try {
+                            addRoutingEntry(std::string(data_pkt->getOrigin()),getNthTargetValueEntry(1, {data_pkt->getSource()}),1);
+                        } catch (std::string &e) {
+                            trace()<<e;
+                            break;
+                        }
                     }
                     forwardData(data_pkt->dup());
                 }
@@ -1034,10 +1057,16 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             switch (alarm_pkt->getEfmrpAlarmKind()) {
                 case efmrpAlarmDef::ENERGY_ALARM: {
                     trace()<<"[info] ENERGY_ALARM received, removing node";
+                    logRouting();
+                    logField();
                     if(checkNextHop(efmrp_pkt->getSource(),1)) {
                         trace()<<"[info] Node is primary path for this node";
                         removeEntries(alarm_pkt->getSource());
-                        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+                        try {
+                            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+                        } catch (std::string &e) {
+                            trace()<<e;
+                        }
                     } else if(checkNextHop(efmrp_pkt->getSource(),2)) {
                         trace()<<"[info] Node is secondary path for this node";
                         removeEntries(alarm_pkt->getSource());

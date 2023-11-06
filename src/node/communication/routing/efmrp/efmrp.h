@@ -139,6 +139,8 @@ class efmrp: public VirtualRouting {
         int numOfAvailPaths(std::string);
         void initRouting();
         void cleanRouting(std::string);
+        void logRouting();
+        void logField();
         void addRoutingEntry(std::string, ef_node_entry, int);
         void addRoutingEntry(std::string, ef_node_entry, int, efmrpPathStatus, double timestamp);
         void updateRoutingEntry(std::string, ef_node_entry, int, efmrpPathStatus);
