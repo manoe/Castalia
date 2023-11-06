@@ -79,6 +79,7 @@ struct efmrp_state_chng_entry {
     double timestamp;
     efmrpStateDef state;
     double energy;
+    double total_energy;
 };
 
 

@@ -86,7 +86,18 @@ void efmrp::setState(efmrpStateDef state) {
 }
 
 void efmrp::writeState(int node, double timestamp, efmrpStateDef state, double energy) {
-    state_chng_log.push_back({node,timestamp,state,energy});
+    int numNodes = getParentModule()->getParentModule()->getParentModule()->par("numNodes");
+    cTopology *topo;
+    topo = new cTopology("topo");
+    topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+    double nrg=0.0;
+    for (int i = 0; i < numNodes; i++) {
+        auto *rm = dynamic_cast<ResourceManager*>
+                        (topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
+        nrg+=rm->getSpentEnergy();
+    }
+    delete topo;
+    state_chng_log.push_back({node,timestamp,state,energy,nrg});
 }
 
 
@@ -1174,6 +1185,8 @@ void efmrp::generateYaml() {
         ys_out<<YAML::Value<<stateToStr(se.state);
         ys_out<<YAML::Key<<"energy";
         ys_out<<YAML::Value<<se.energy;
+        ys_out<<YAML::Key<<"total_energy";
+        ys_out<<YAML::Value<<se.total_energy;
         ys_out<<YAML::EndMap;
 
     }

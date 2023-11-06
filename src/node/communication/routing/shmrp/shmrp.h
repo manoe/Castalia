@@ -185,6 +185,7 @@ struct shmrp_state_chng_entry {
     double timestamp;
     shmrpStateDef state;
     double energy;
+    double total_energy;
 };
 
 struct feat_par {
