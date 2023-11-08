@@ -50,6 +50,7 @@ void efmrp::startup() {
     ff_app = dynamic_cast<ForestFire *>(appModule);
 
     env_val=1.0;
+    forw_pkt_count = 0;
 }
 
 bool efmrp::isSink() const {
@@ -525,7 +526,6 @@ void efmrp::sendData(routing_entry re, cPacket *pkt) {
     data_pkt->encapsulate(pkt);
 
     toMacLayer(data_pkt, resolveNetworkAddress(re.next_hop.c_str()));
-
 }
 
 void efmrp::sendData(std::string ne, cPacket *pkt) {
@@ -543,7 +543,6 @@ void efmrp::sendData(std::string ne, cPacket *pkt) {
     data_pkt->encapsulate(pkt);
 
     toMacLayer(data_pkt, resolveNetworkAddress(ne.c_str()));
-
 }
 
 void efmrp::forwardData(efmrpDataPacket *data_pkt) {
@@ -560,7 +559,7 @@ void efmrp::forwardData(efmrpDataPacket *data_pkt) {
     data_pkt->setSource(SELF_NETWORK_ADDRESS);
 
     toMacLayer(data_pkt, resolveNetworkAddress(re.next_hop.c_str()));
-
+    ++forw_pkt_count;
 }
 
 void efmrp::sendRetreat(efmrpDataPacket *data_pkt) {
@@ -1165,6 +1164,10 @@ void efmrp::generateYaml() {
                 (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
 
         serializeRoutingTable(efmrp_instance->getRoutingTable());
+        y_out<<YAML::Key<<"forw_data_pkt_count";
+        y_out<<YAML::Value<<efmrp_instance->getForwDataPkt();
+        y_out<<YAML::Key<<"hop";
+        y_out<<YAML::Value<<efmrp_instance->getHop();
         y_out<<YAML::EndMap;
     }
     y_out<<YAML::EndSeq;
