@@ -265,6 +265,8 @@ class shmrp: public VirtualRouting {
 
         ForestFire *ff_app;
 
+        int forw_pkt_count;
+
     protected:
         void startup();
         void parseRouting(std::string);
@@ -420,6 +422,7 @@ class shmrp: public VirtualRouting {
         void writeState(int,double,shmrpStateDef,double);
         int getHop() const;
         int getHop(int);
+        int getForwDataPkt() { return forw_pkt_count; };
         int  getRound() const;
         bool getSecL();
         bool isMaster() const;
