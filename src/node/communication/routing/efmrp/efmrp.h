@@ -117,6 +117,8 @@ class efmrp: public VirtualRouting {
 
         YAML::Emitter y_out;
 
+        int             forw_pkt_count;
+
     protected:
         void startup();
         void fromApplicationLayer(cPacket *, const char *);
@@ -184,7 +186,6 @@ class efmrp: public VirtualRouting {
         std::string getSinkAddress() const;
 
         void setHop(int);
-        int getHop() const;
 
         void setState(efmrpStateDef);
         std::string stateToStr(efmrpStateDef) const;
@@ -201,6 +202,9 @@ class efmrp: public VirtualRouting {
         
         std::vector<routing_entry> getRoutingTable() { return routing_table; };
         void writeState(int,double,efmrpStateDef,double);
+        int getForwDataPkt() { return forw_pkt_count; };
+        int getHop() const;
+
 };
 
 #endif /* _EFMRP_H_ */
