@@ -2789,7 +2789,7 @@ void shmrp::incPktCountInTrafficTable(std::string node, int pathid, int reroute)
 }
 
 void shmrp::handleLinkFailure(int p) {
-    trace()<<"[info] Entering handleLinkFailure()";
+    trace()<<"[info] Entering handleLinkFailure(p="<<p<<")";
     try {
         if(fp.rt_fallb_wo_qos) {
             constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, 0, true /* update */);
