@@ -1672,6 +1672,10 @@ void shmrp::timerFiredCallback(int index) {
                                 throw std::runtime_error("[error] Invalid state");
                             }
                             case shmrpSecLParDef::BROADCAST: {
+                            while(!isSecLPathidEmpty()) {
+                                sendLreqBroadcast(getRound(),popSecLPathid());
+                            }
+
                                 sendLreqBroadcast(getRound(),getSecLPathid());
                                 break;
                             }
