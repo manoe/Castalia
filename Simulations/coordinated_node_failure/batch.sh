@@ -1,7 +1,7 @@
 #!/bin/sh -x
 
 #PROTOS="efmrp shmrp hdmrp flooding"
-PROTO="efmrp"
+PROTO="shmrp"
 NUM=3
 
 rm loc_pdr.yaml
