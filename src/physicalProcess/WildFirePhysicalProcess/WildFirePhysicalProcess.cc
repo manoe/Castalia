@@ -63,9 +63,10 @@ void WildFirePhysicalProcess::initialize()
 
 
     trace() << "First CA step at: "<<ca_start_timer<<" seconds";
-    scheduleAt(SimTime()+static_cast<double>(ca_start_timer), new cMessage("CA step timer expired", TIMER_SERVICE));
-    first_step=true;
-
+    if(par("enabled")) {
+        scheduleAt(SimTime()+static_cast<double>(ca_start_timer), new cMessage("CA step timer expired", TIMER_SERVICE));
+        first_step=true;
+    }
     if(plane_to_yaml) {
         y_out<<YAML::BeginSeq;
     }

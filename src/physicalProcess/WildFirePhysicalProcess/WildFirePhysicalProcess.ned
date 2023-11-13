@@ -17,6 +17,7 @@ package physicalProcess.WildFirePhysicalProcess;
 simple WildFirePhysicalProcess like physicalProcess.iPhysicalProcess {
 parameters:
 	bool    collectTraceInfo = default (false);
+    bool    enabled          = default (true);
     int     wf_start_x_coord = default (0);
     int     wf_start_y_coord = default (0);
     int     wf_start_x_offset= default (1);
