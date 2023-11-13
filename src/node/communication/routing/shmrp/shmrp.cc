@@ -104,6 +104,7 @@ void shmrp::startup() {
         }
     }
     setRound(0);
+    forw_pkt_count=0;
 }
 
 void shmrp::parseRouting(std::string file) {
@@ -1135,6 +1136,7 @@ void shmrp::forwardData(shmrpDataPacket *data_pkt, std::string dest, int pathid,
     }
     data_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
+    ++forw_pkt_count;
 }
 
 void shmrp::clearRoutingTable() {
@@ -2517,6 +2519,10 @@ void shmrp::finishSpecific() {
                 y_out<<YAML::EndMap;
             }
             y_out<<YAML::EndSeq;
+            y_out<<YAML::Key<<"forw_data_pkt_count";
+            y_out<<YAML::Value<<"0";
+            y_out<<YAML::Key<<"hop";
+            y_out<<YAML::Value<<"0";
 
         y_out<<YAML::EndMap;
 
@@ -2624,6 +2630,8 @@ void shmrp::finishSpecific() {
                 y_out<<YAML::EndMap;
             }
             y_out<<YAML::EndSeq;
+            y_out<<YAML::Key<<"forw_data_pkt_count";
+            y_out<<YAML::Value<<shmrp_instance->getForwDataPkt();
             y_out<<YAML::EndMap;
 
             // seek back one character
