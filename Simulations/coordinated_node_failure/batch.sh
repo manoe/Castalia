@@ -13,6 +13,10 @@ SEED=1678184087
 
 for i in `seq $NUM`
 do
+    if [ -f Castalia-Trace.txt ]
+    then
+        rm Castalia-Trace.txt
+    fi
     ./gen_routing.sh $PROTO
     ./gen_sim.sh `expr 1800 \* ${i}`
     ./gen.sh omnetpp.ini qos_pdr=0.8 $SEED omnetpp.yaml
