@@ -180,7 +180,7 @@ void shmrp::setSecL(bool flag) {
 }
 
 void shmrp::setSecL(int pathid, bool flag) {
-    trace()<<"Entering setSecL(pathid="<<pathid<<", flag="<<flag<<")";
+    trace()<<"[info] Entering setSecL(pathid="<<pathid<<", flag="<<flag<<")";
     for(auto &&ne: routing_table) {
         for(auto &&p: ne.second.pathid) {
             if(p.pathid == pathid) {
@@ -191,12 +191,12 @@ void shmrp::setSecL(int pathid, bool flag) {
 }
 
 void shmrp::pushSecLPathid(int pathid) {
-    trace()<<"Entering pushSecLPathid(pathid="<<pathid<<")";
+    trace()<<"[info] Entering pushSecLPathid(pathid="<<pathid<<")";
     g_sec_l_pathid.push(pathid);
 }
 
 int  shmrp::popSecLPathid() {
-   trace()<<"Entering popSecLPathid()";
+   trace()<<"[info] Entering popSecLPathid()";
    auto ret_val=g_sec_l_pathid.front();
    g_sec_l_pathid.pop();
    return ret_val;
@@ -240,7 +240,7 @@ double shmrp::getTest() const {
 void shmrp::handleTSecLTimer() {
     trace()<<"[info] Entering handleTSecLTimer()";
     if(fp.second_learn != shmrpSecLParDef::OFF) {
-        trace()<<"[info] Second learn active";
+        trace()<<"[info] Second learn feature active";
         if(getTimer(shmrpTimerDef::T_SEC_L) != -1) {
             trace()<<"[info] T_SEC_L timer active, restarting";
             cancelTimer(shmrpTimerDef::T_SEC_L);
@@ -1675,9 +1675,6 @@ void shmrp::timerFiredCallback(int index) {
                             while(!isSecLPathidEmpty()) {
                                 sendLreqBroadcast(getRound(),popSecLPathid());
                             }
-
-                                sendLreqBroadcast(getRound(),getSecLPathid());
-                                break;
                             }
                             case shmrpSecLParDef::UNICAST: {
                                 // most probably true...
@@ -2128,13 +2125,13 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                 //                break;
             }
 
-            if(shmrpRingDef::EXTERNAL == getRingStatus()) {
+//            if(shmrpRingDef::EXTERNAL == getRingStatus()) {
                 // Most probably always true
                 if(!checkPathid(lreq_packet->getPathid())) {
                     trace()<<"[info] LREQ_PACKET indicates unknown pathid, discarding.";
                     break;
                 }
-            }
+//            }
 
             if(0==std::strcmp(lreq_packet->getDestination(),SELF_NETWORK_ADDRESS)) {
                 sendLresp(lreq_packet->getSource(),getRound(),lreq_packet->getPathid());
