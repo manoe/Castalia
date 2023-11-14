@@ -222,6 +222,8 @@ struct feat_par {
     double t_sec_l_repeat;
     int    t_sec_l_timeout;
     double t_sec_l_start;
+    double t_restart;
+    bool   periodic_restart; 
     bool   detect_link_fail;
     bool   rt_fallb_wo_qos;
     bool   send_pfail_rwarn;

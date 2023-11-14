@@ -73,6 +73,8 @@ void shmrp::startup() {
     fp.t_sec_l_repeat    = par("f_t_sec_l_repeat");
     fp.t_sec_l_timeout   = par("f_t_sec_l_timeout");
     fp.t_sec_l_start     = par("f_t_sec_l_start");
+    fp.t_restart         = par("t_restart");
+    fp.periodic_restart  = par("f_periodic_restart");
     fp.detect_link_fail  = par("f_detect_link_fail");
     fp.rt_fallb_wo_qos   = par("f_rt_fallb_wo_qos");
     fp.send_pfail_rwarn  = par("f_send_pfail_rwarn");
