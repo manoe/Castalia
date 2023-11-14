@@ -60,7 +60,8 @@ enum shmrpTimerDef {
     T_SEC_L          = 6,
     T_SEC_L_REPEAT   = 7,
     T_SEC_L_START    = 8,
-    T_SEND_PKT       = 9
+    T_SEND_PKT       = 9,
+    T_RESTART        = 10
 };
 
 enum shmrpRingDef {

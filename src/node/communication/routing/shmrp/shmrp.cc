@@ -1545,7 +1545,21 @@ void shmrp::timerFiredCallback(int index) {
             setRound(1+getRound());
             sendRinv(getRound());
             setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            if(fp.periodic_restart) {
+                setTimer(shmrpTimerDef::T_RESTART,fp.t_restart);
+            }
             break;
+        }
+        case shmrpTimerDef::T_RESTART: {
+            trace()<<"[timer] T_RESTART timer expired";
+            setRound(1+getRound());
+            sendRinv(getRound());
+            if(getTimer(shmrpTimerDef::T_REPEAT)!=-1) {
+                trace()<<"[info] cancelling T_REPEAT timer";
+                cancelTimer(shmrpTimerDef::T_REPEAT);
+            }
+            setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            setTimer(shmrpTimerDef::T_RESTART,fp.t_restart);
         }
         case shmrpTimerDef::T_SEC_L_START: {
             trace()<<"[timer] T_SEC_L_START timer expired, starting T_SEC_L timer";
