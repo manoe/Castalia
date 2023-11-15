@@ -493,9 +493,12 @@ void shmrp::clearPongTable(int round) {
     if(pong_table.empty()) {
         return;
     }
-    for(auto it=pong_table.begin() ; it != pong_table.end() ; ++it) {
+
+    for(auto it = pong_table.begin() ; it != pong_table.end();) {
         if(it->second.round < round ) {
-            pong_table.erase(it);
+            it = pong_table.erase(it);
+        } else {
+            ++it;
         }
     }
 }
@@ -1560,6 +1563,7 @@ void shmrp::timerFiredCallback(int index) {
             }
             setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             setTimer(shmrpTimerDef::T_RESTART,fp.t_restart);
+            break;
         }
         case shmrpTimerDef::T_SEC_L_START: {
             trace()<<"[timer] T_SEC_L_START timer expired, starting T_SEC_L timer";
@@ -2003,6 +2007,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
 
             if(rinv_pkt->getRound() > getRound()) {
                 setRound(rinv_pkt->getRound());
+                setHop(std::numeric_limits<int>::max());
                 switch (getState()) {
                     case shmrpStateDef::LEARN: {
                         cancelTimer(shmrpTimerDef::T_L);
@@ -2317,6 +2322,9 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     } else {
                         break;
                     }
+                } catch (routing_table_empty &e) {
+                    trace()<<"[error] Routing table empty, giving up";
+                    break;
                 }
 
                 incPktCountInRoutingTable(next_hop);
