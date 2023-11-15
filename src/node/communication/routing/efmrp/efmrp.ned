@@ -42,12 +42,14 @@ simple efmrp like node.communication.routing.iRouting
     double t_query      = default(2);
     double t_env_c      = default(10);
     double t_d_update   = default(600);
+    double t_restart    = default(7800);
 
     double p_alpha      = default(0.2);
     double p_beta       = default(0.2);
     int    p_pnum       = default(2); // Number of paths to establish
     double p_gamma      = default(0.5);
     double p_n_lim      = default(0.1);
+    bool   p_periodic_restart = default(false);
 
 
  gates:

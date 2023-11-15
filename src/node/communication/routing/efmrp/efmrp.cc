@@ -35,17 +35,19 @@ void efmrp::startup() {
         setState(efmrpStateDef::INIT);
     }
 
-    fp.ttl      =  par("t_ttl");
-    fp.field    =  par("t_field");
-    fp.query    =  par("t_query");
-    fp.env_c    =  par("t_env_c");
+    fp.ttl      = par("t_ttl");
+    fp.field    = par("t_field");
+    fp.query    = par("t_query");
+    fp.env_c    = par("t_env_c");
     fp.d_update = par("t_d_update");
+    fp.restart  = par("t_restart");
 
-    fp.alpha    =  par("p_alpha");
-    fp.beta     =  par("p_beta");
-    fp.pnum     =  par("p_pnum");
-    fp.gamma    =  par("p_gamma");
-    fp.n_lim    =  par("p_n_lim");
+    fp.alpha            = par("p_alpha");
+    fp.beta             = par("p_beta");
+    fp.pnum             = par("p_pnum");
+    fp.gamma            = par("p_gamma");
+    fp.n_lim            = par("p_n_lim");
+    fp.periodic_restart = par("periodic_restart");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 
@@ -208,6 +210,11 @@ bool efmrp::checkHelloTable(std::string nw_address) {
     }
     return false;
 }
+
+void efmrp::initHelloTable() {
+
+}
+
 
 void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
     trace()<<"[info] Entering updateFieldTable(..)";
@@ -779,7 +786,16 @@ void efmrp::timerFiredCallback(int index) {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
             setTimer(efmrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
+            setTimer(efmrpTimerDef::RESTART,fp.restart);
             setState(efmrpStateDef::LEARN);
+            break;
+        }
+        case efmrpTimerDef::RESTART: {
+            trace()<<"[timer] RESTART timer expired";
+            sendHello();
+            setTimer(efmrpTimerDef::RESTART,fp.restart);
+            setState(efmrpStateDef::LEARN);
+            setTimer(efmrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
             break;
         }
         case efmrpTimerDef::BUILD_START: {
@@ -891,8 +907,10 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
 
             if(getState()==efmrpStateDef::WORK) {
-                trace()<<"[info] Node in WORK state, discarding HELLO_PACKET";
-                // should be re-learn?
+                trace()<<"[info] Node in WORK state, re-learn starts";
+                setState(efmrpStateDef::LEARN);
+
+                setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
                 break;
             }
 
