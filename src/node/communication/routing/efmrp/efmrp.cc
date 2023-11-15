@@ -35,17 +35,19 @@ void efmrp::startup() {
         setState(efmrpStateDef::INIT);
     }
 
-    fp.ttl      =  par("t_ttl");
-    fp.field    =  par("t_field");
-    fp.query    =  par("t_query");
-    fp.env_c    =  par("t_env_c");
+    fp.ttl      = par("t_ttl");
+    fp.field    = par("t_field");
+    fp.query    = par("t_query");
+    fp.env_c    = par("t_env_c");
     fp.d_update = par("t_d_update");
+    fp.restart  = par("t_restart");
 
-    fp.alpha    =  par("p_alpha");
-    fp.beta     =  par("p_beta");
-    fp.pnum     =  par("p_pnum");
-    fp.gamma    =  par("p_gamma");
-    fp.n_lim    =  par("p_n_lim");
+    fp.alpha            = par("p_alpha");
+    fp.beta             = par("p_beta");
+    fp.pnum             = par("p_pnum");
+    fp.gamma            = par("p_gamma");
+    fp.n_lim            = par("p_n_lim");
+    fp.periodic_restart = par("p_periodic_restart");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 
@@ -209,6 +211,12 @@ bool efmrp::checkHelloTable(std::string nw_address) {
     return false;
 }
 
+void efmrp::initHelloTable() {
+    trace()<<"[info] Entering initHelloTable()";
+    hello_table.clear();
+}
+
+
 void efmrp::updateFieldTable(efmrpFieldPacket *field_pkt) {
     trace()<<"[info] Entering updateFieldTable(..)";
     ef_node_entry ne;
@@ -259,6 +267,11 @@ void efmrp::initRouting() {
     } catch (std::string &s) {
         trace()<<"[error] "<<s;
     }
+}
+
+void efmrp::initRoutingTable() {
+    trace()<<"[info] Entering initRoutingTable()";
+    routing_table.clear();
 }
 
 void efmrp::cleanRouting(std::string ne) {
@@ -392,6 +405,11 @@ double efmrp::calculateTargetValue() {
     }
     trace()<<"[info] min ne: "<<min_ne.nw_address<<"  min env: "<<min_ne.env<<" own env: "<<ff_app->getEmergencyValue();
     return (min_ne.env+ff_app->getEmergencyValue())/2;
+}
+
+void efmrp::initFieldTable() {
+    trace()<<"[info] initFieldTable()";
+    field_table.clear();
 }
 
 ef_node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_lst) {
@@ -779,7 +797,16 @@ void efmrp::timerFiredCallback(int index) {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
             setTimer(efmrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
+            setTimer(efmrpTimerDef::RESTART,fp.restart);
             setState(efmrpStateDef::LEARN);
+            break;
+        }
+        case efmrpTimerDef::RESTART: {
+            trace()<<"[timer] RESTART timer expired";
+            sendHello();
+            setTimer(efmrpTimerDef::RESTART,fp.restart);
+            setState(efmrpStateDef::LEARN);
+            setTimer(efmrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
             break;
         }
         case efmrpTimerDef::BUILD_START: {
@@ -891,14 +918,17 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
 
             if(getState()==efmrpStateDef::WORK) {
-                trace()<<"[info] Node in WORK state, discarding HELLO_PACKET";
-                // should be re-learn?
-                break;
+                trace()<<"[info] Node in WORK state, re-learn starts";
+                setState(efmrpStateDef::LEARN);
+                initHelloTable();
+                setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
             }
 
             if(getState()==efmrpStateDef::INIT) {
                 trace()<<"[info] Node in INIT state, transitioning to LEARN and arming TTL timer";
                 setState(efmrpStateDef::LEARN);
+                initHelloTable();
+                initFieldTable();
                 // Add some random to TTL to compensate propagation delay
                 setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
             }

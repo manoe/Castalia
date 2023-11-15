@@ -40,7 +40,8 @@ enum efmrpTimerDef {
     FIELD       = 3,
     QUERY       = 4,
     ENV_CHK     = 5,
-    BUILD_START = 6
+    BUILD_START = 6,
+    RESTART     = 7
 };
 
 enum efmrpPathStatus {
@@ -90,6 +91,7 @@ struct feat_par {
     double query;
     double env_c;
     double d_update;
+    double restart;
 
     // PARAMETER
     double alpha;
@@ -97,6 +99,7 @@ struct feat_par {
     int    pnum;
     double gamma;
     double n_lim;
+    bool   periodic_restart;
 };
 
 class efmrp: public VirtualRouting {
@@ -130,6 +133,7 @@ class efmrp: public VirtualRouting {
         void sendHello(int, double, double, double);
         void updateHelloTable(efmrpHelloPacket *);
         bool checkHelloTable(std::string);
+        void initHelloTable();
 
 
         void sendField(int, double, double, double);
@@ -140,6 +144,7 @@ class efmrp: public VirtualRouting {
         bool checkFieldEntry(std::string);
         ef_node_entry getSinkFieldTableEntry();
         double calculateTargetValue();
+        void initFieldTable();
 
         void constructPath(std::string, int prio);
 
@@ -149,6 +154,7 @@ class efmrp: public VirtualRouting {
 
         int numOfAvailPaths(std::string);
         void initRouting();
+        void initRoutingTable();
         void cleanRouting(std::string);
         void logRouting();
         void logField();

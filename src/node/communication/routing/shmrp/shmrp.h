@@ -60,7 +60,8 @@ enum shmrpTimerDef {
     T_SEC_L          = 6,
     T_SEC_L_REPEAT   = 7,
     T_SEC_L_START    = 8,
-    T_SEND_PKT       = 9
+    T_SEND_PKT       = 9,
+    T_RESTART        = 10
 };
 
 enum shmrpRingDef {
@@ -222,6 +223,8 @@ struct feat_par {
     double t_sec_l_repeat;
     int    t_sec_l_timeout;
     double t_sec_l_start;
+    double t_restart;
+    bool   periodic_restart; 
     bool   detect_link_fail;
     bool   rt_fallb_wo_qos;
     bool   send_pfail_rwarn;

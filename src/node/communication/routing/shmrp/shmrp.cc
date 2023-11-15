@@ -73,6 +73,8 @@ void shmrp::startup() {
     fp.t_sec_l_repeat    = par("f_t_sec_l_repeat");
     fp.t_sec_l_timeout   = par("f_t_sec_l_timeout");
     fp.t_sec_l_start     = par("f_t_sec_l_start");
+    fp.t_restart         = par("t_restart");
+    fp.periodic_restart  = par("f_periodic_restart");
     fp.detect_link_fail  = par("f_detect_link_fail");
     fp.rt_fallb_wo_qos   = par("f_rt_fallb_wo_qos");
     fp.send_pfail_rwarn  = par("f_send_pfail_rwarn");
@@ -1543,7 +1545,21 @@ void shmrp::timerFiredCallback(int index) {
             setRound(1+getRound());
             sendRinv(getRound());
             setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            if(fp.periodic_restart) {
+                setTimer(shmrpTimerDef::T_RESTART,fp.t_restart);
+            }
             break;
+        }
+        case shmrpTimerDef::T_RESTART: {
+            trace()<<"[timer] T_RESTART timer expired";
+            setRound(1+getRound());
+            sendRinv(getRound());
+            if(getTimer(shmrpTimerDef::T_REPEAT)!=-1) {
+                trace()<<"[info] cancelling T_REPEAT timer";
+                cancelTimer(shmrpTimerDef::T_REPEAT);
+            }
+            setTimer(shmrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            setTimer(shmrpTimerDef::T_RESTART,fp.t_restart);
         }
         case shmrpTimerDef::T_SEC_L_START: {
             trace()<<"[timer] T_SEC_L_START timer expired, starting T_SEC_L timer";
