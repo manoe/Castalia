@@ -3,7 +3,7 @@
 case $1 in
 
   "none")
-    touch physical_process.ini
+    echo "include phy_proc_none.ini" > physical_process.ini
     ;;
 
   "northeast")
