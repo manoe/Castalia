@@ -14,7 +14,7 @@ do
     yq --null-input '{"runs": []}' > ${p}_pkt.yaml
     yq --null-input '{"runs": []}' > ${p}_nrg.yaml
     yq --null-input '{"runs": []}' > ${p}_pdr.yaml
-    for r in $SEED
+    for r in $SEED_SET
     do
         rm loc_pdr.yaml
         rm base_loc_pdr.yaml
