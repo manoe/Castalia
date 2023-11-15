@@ -47,7 +47,7 @@ void efmrp::startup() {
     fp.pnum             = par("p_pnum");
     fp.gamma            = par("p_gamma");
     fp.n_lim            = par("p_n_lim");
-    fp.periodic_restart = par("periodic_restart");
+    fp.periodic_restart = par("p_periodic_restart");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 
@@ -212,7 +212,8 @@ bool efmrp::checkHelloTable(std::string nw_address) {
 }
 
 void efmrp::initHelloTable() {
-
+    trace()<<"[info] Entering initHelloTable()";
+    hello_table.clear();
 }
 
 
@@ -266,6 +267,11 @@ void efmrp::initRouting() {
     } catch (std::string &s) {
         trace()<<"[error] "<<s;
     }
+}
+
+void efmrp::initRoutingTable() {
+    trace()<<"[info] Entering initRoutingTable()";
+    routing_table.clear();
 }
 
 void efmrp::cleanRouting(std::string ne) {
@@ -399,6 +405,11 @@ double efmrp::calculateTargetValue() {
     }
     trace()<<"[info] min ne: "<<min_ne.nw_address<<"  min env: "<<min_ne.env<<" own env: "<<ff_app->getEmergencyValue();
     return (min_ne.env+ff_app->getEmergencyValue())/2;
+}
+
+void efmrp::initFieldTable() {
+    trace()<<"[info] initFieldTable()";
+    field_table.clear();
 }
 
 ef_node_entry efmrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_lst) {
@@ -909,14 +920,15 @@ void efmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             if(getState()==efmrpStateDef::WORK) {
                 trace()<<"[info] Node in WORK state, re-learn starts";
                 setState(efmrpStateDef::LEARN);
-
+                initHelloTable();
                 setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
-                break;
             }
 
             if(getState()==efmrpStateDef::INIT) {
                 trace()<<"[info] Node in INIT state, transitioning to LEARN and arming TTL timer";
                 setState(efmrpStateDef::LEARN);
+                initHelloTable();
+                initFieldTable();
                 // Add some random to TTL to compensate propagation delay
                 setTimer(efmrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
             }

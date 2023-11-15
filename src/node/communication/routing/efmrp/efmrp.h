@@ -144,6 +144,7 @@ class efmrp: public VirtualRouting {
         bool checkFieldEntry(std::string);
         ef_node_entry getSinkFieldTableEntry();
         double calculateTargetValue();
+        void initFieldTable();
 
         void constructPath(std::string, int prio);
 
@@ -153,6 +154,7 @@ class efmrp: public VirtualRouting {
 
         int numOfAvailPaths(std::string);
         void initRouting();
+        void initRoutingTable();
         void cleanRouting(std::string);
         void logRouting();
         void logField();
