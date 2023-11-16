@@ -1,0 +1,37 @@
+#!/bin/sh -x
+
+PROTO=shmrp
+M_RATIO="0 10 20 30 50 100"
+MASTER="master no_depletion"
+ITER=10
+
+SEED=`date +%s`
+SEED_SET=`./rand.py -i $ITER $SEED`
+
+./gen_routing.sh $PROTO
+
+for r in $M_RATIO
+do
+    for m in $MASTER
+    do
+        yq --null-input '{"runs": []}' > ${PROTO}_${r}_${m}_pkt.yaml
+        yq --null-input '{"runs": []}' > ${PROTO}_${r}_${m}_nrg.yaml
+        yq --null-input '{"runs": []}' > ${PROTO}_${r}_${m}_pdr.yaml
+    done
+done
+
+for s in $SEED_SET
+do
+   ./gen_master.sh 64 ${r} $s
+   for r in $M_RATIO
+    do
+        for m in $MASTER
+        do
+            ./gen.sh omnetpp.ini master=${m} ${s} ${PROTO}_${r}_${m}_pkt.yaml
+            yq -i '.runs += [ load("pkt.yaml")]' ${PROTO}_${r}_${m}_pkt.yaml
+            yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_${r}_${m}_pkt.yaml
+
+        done
+    done
+done
+
