@@ -6,9 +6,10 @@ PLACEMENT="center side corner"
 ITER=10
 
 SEED=`date +%s`
-SEED_SET=`./rand.py -i $ITER $SEED`
+SEED_SET=`python3 ./rand.py -i $ITER $SEED`
 
 ./gen_routing.sh $PROTO
+./gen_phy_proc.sh none
 
 for q in $QOS
 do
@@ -27,8 +28,8 @@ do
         for p in $PLACEMENT
         do
             ./gen.sh omnetpp.ini qos_pdr=$q,$p $SEED ${PROTO}_${q}_${p}_pdr.yaml
-            yq -i '.runs += [ load("pkt.yaml")]' ${PROTO}_${q}_${p}_nrg.yaml
-            yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_${q}_${p}_pdr.yaml
+            yq -i '.runs += [ load("pkt.yaml")]' ${PROTO}_${q}_${p}_pkt.yaml
+            yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_${q}_${p}_nrg.yaml
 
         done
     done

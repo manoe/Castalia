@@ -15,7 +15,10 @@ if __name__ == '__main__':
     nodes = [ x for x in range(1, args.node) ]
     random.shuffle(nodes)
 
-    
-    for i in range(int(args.node*args.ratio/100)):
-        print(str(nodes[i]))
+    if args.ratio == 100:
+        for i in range(args.node):
+            print(i)
+    else:
+        for i in range(int(args.node*args.ratio/100)):
+            print(str(nodes[i]))
 

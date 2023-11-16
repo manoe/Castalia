@@ -6,9 +6,10 @@ MASTER="master no_depletion"
 ITER=10
 
 SEED=`date +%s`
-SEED_SET=`./rand.py -i $ITER $SEED`
+SEED_SET=`python3 ./rand.py -i $ITER $SEED`
 
 ./gen_routing.sh $PROTO
+./gen_phy_proc.sh none
 
 for r in $M_RATIO
 do
@@ -27,10 +28,9 @@ do
     do
         for m in $MASTER
         do
-            ./gen.sh omnetpp.ini master=${m} ${s} ${PROTO}_${r}_${m}_pkt.yaml
+            ./gen.sh omnetpp.ini master=${m} ${s} ${PROTO}_${r}_${m}_pdr.yaml
             yq -i '.runs += [ load("pkt.yaml")]' ${PROTO}_${r}_${m}_pkt.yaml
-            yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_${r}_${m}_pkt.yaml
-
+            yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_${r}_${m}_nrg.yaml
         done
     done
 done
