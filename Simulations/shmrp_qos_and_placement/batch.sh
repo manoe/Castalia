@@ -1,16 +1,36 @@
 #!/bin/sh -x
 
-#PROTOS="efmrp shmrp hdmrp flooding"
-#PROTOS="hdmrp"
-PROTOS=efmrp
+PROTO=shmrp
+QOS="0.0 0.2 0.4 0.6 0.8"
+PLACEMENT="center side corner"
+ITER=10
 
-for i in $PROTOS
+SEED=`date +%s`
+SEED_SET=`./rand.py -i $ITER $SEED`
+
+./gen_routing.sh $PROTO
+
+for q in $QOS
 do
-    SEED=1678184087
-    ./gen_routing.sh $i
-    ./gen.sh omnetpp.ini qos_pdr=0.8 $SEED ${i}.yaml
-    mv nrg.yaml ${i}_nrg.yaml
-    mv pdr.yaml ${i}_pdr.yaml
-    mv pkt.yaml ${i}_pkt.yaml
+    for p in $PLACEMENT
+    do
+        yq --null-input '{"runs": []}' > ${PROTO}_${q}_${p}_pkt.yaml
+        yq --null-input '{"runs": []}' > ${PROTO}_${q}_${p}_nrg.yaml
+        yq --null-input '{"runs": []}' > ${PROTO}_${q}_${p}_pdr.yaml
+    done
+done
+
+for s in $SEED_SET
+do
+    for q in $QOS
+    do
+        for p in $PLACEMENT
+        do
+            ./gen.sh omnetpp.ini qos_pdr=$q,$p $SEED ${PROTO}_${q}_${p}_pdr.yaml
+            yq -i '.runs += [ load("pkt.yaml")]' ${PROTO}_${q}_${p}_nrg.yaml
+            yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_${q}_${p}_pdr.yaml
+
+        done
+    done
 done
 
