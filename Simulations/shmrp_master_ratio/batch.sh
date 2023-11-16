@@ -31,7 +31,6 @@ do
             ./gen.sh omnetpp.ini master=${m} ${s} ${PROTO}_${r}_${m}_pdr.yaml
             yq -i '.runs += [ load("pkt.yaml")]' ${PROTO}_${r}_${m}_pkt.yaml
             yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_${r}_${m}_nrg.yaml
-
         done
     done
 done
