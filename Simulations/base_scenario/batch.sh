@@ -2,7 +2,7 @@
 
 #PROTOS="efmrp shmrp hdmrp flooding"
 #PROTOS="hdmrp"
-PROTOS=shmrp
+PROTOS=efmrp
 
 for i in $PROTOS
 do

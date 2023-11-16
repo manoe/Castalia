@@ -995,13 +995,20 @@ void shmrp::updateRreqEntryWithEmergency(const char *addr) {
 }
 
 
-void shmrp::removeRreqEntry(std::string ne) {
+void shmrp::removeRreqEntry(std::string ne, bool try_backup=false) {
     trace()<<"[info] Entering removeRreqEntry(ne="<<ne<<")";
     if(rreq_table.find(ne) != rreq_table.end()) {
         rreq_table.erase(ne);
+        return;
     } else {
-        throw no_available_entry("[error] Entry not available in RREQ table"); 
+        if(try_backup) {
+            if(backup_rreq_table.find(ne) != backup_rreq_table.end()) {
+                backup_rreq_table.erase(ne);
+                return;
+            }
+        }
     }
+    throw no_available_entry("[error] Entry not available in RREQ table"); 
 }
 
 void shmrp::sendRreqs(int count) {
@@ -2212,7 +2219,17 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"[info] PATH_FAILURE_EVENT";
                     if(checkRoute(std::string(rwarn_pkt->getSource()))) {
                         removeRoute(std::string(rwarn_pkt->getSource()));
-                        removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                        try { 
+                            removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                        } catch (no_available_entry &e) {
+                            trace()<<"[error] "<<e.what()<<", trying backup table";
+                            try {
+                                removeRreqEntry(std::string(rwarn_pkt->getSource()),true);
+                            } catch (no_available_entry &e) {
+                                trace()<<"[error] "<<e.what()<<", backup table failed, giving up";
+                                break;
+                            }
+                        }
                         markRinvEntryFail(std::string(rwarn_pkt->getSource()));
                         handleLinkFailure(rwarn_pkt->getPathid());
                     } else if(rreqEntryExists(std::string(rwarn_pkt->getSource()))) {
@@ -2257,7 +2274,17 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                     trace()<<"[error] Loop detected at path: "<<data_pkt->getPathid();
                     auto entry = getNextHop(data_pkt->getPathid());
                     removeRoute(entry);
-                    removeRreqEntry(entry);
+                    try { 
+                        removeRreqEntry(entry);
+                    } catch (no_available_entry &e) {
+                        trace()<<"[error] "<<e.what()<<", trying backup table";
+                        try {
+                            removeRreqEntry(entry,true);
+                        } catch (no_available_entry &e) {
+                            trace()<<"[error] "<<e.what()<<", backup table failed, giving up";
+                            break;
+                        }
+                    }
                     markRinvEntryFail(entry);
                     handleLinkFailure(data_pkt->getPathid());
                     break;
@@ -2285,6 +2312,7 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             if(next_hop == std::string(data_pkt->getSource())) {
                                 trace()<<"[error] Possible loop due to reroute, aborting, removing route: "<<next_hop;
                                 removeRoute(next_hop);
+
                                 removeRreqEntry(next_hop);
                                 markRinvEntryFail(next_hop);
 
