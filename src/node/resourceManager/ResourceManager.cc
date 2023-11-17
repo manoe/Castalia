@@ -51,12 +51,13 @@ void ResourceManager::initialize()
 	disabled = true;
      
     cModule *appModule = getParentModule()->getSubmodule("Application");
-    if(appModule->hasPar("isMaster") || par("isMaster")) {
+    if(appModule->hasPar("isMaster")) {
         master=appModule->par("isMaster");
-        trace()<<"Master node: "<<master;
     } else {
-        master=false;
+        master=par("isMaster");
     }
+    trace()<<"Master node: "<<master;
+
 }
 
 void ResourceManager::calculateEnergySpent()
