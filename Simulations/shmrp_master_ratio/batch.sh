@@ -23,12 +23,12 @@ done
 
 for s in $SEED_SET
 do
-   ./gen_master.sh 64 ${r} $s
    for r in $M_RATIO
-    do
+   do
+        ./gen_master.sh 64 ${r} $s
         for m in $MASTER
         do
-            ./gen.sh omnetpp.ini master=${m} ${s} ${PROTO}_${r}_${m}_pdr.yaml
+            ./gen.sh omnetpp.ini ${m} ${s} ${PROTO}_${r}_${m}_pdr.yaml
             yq -i '.runs += [ load("pkt.yaml")]' ${PROTO}_${r}_${m}_pkt.yaml
             yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_${r}_${m}_nrg.yaml
         done
