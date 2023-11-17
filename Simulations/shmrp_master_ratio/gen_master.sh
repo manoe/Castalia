@@ -5,8 +5,7 @@ rm no_depletion.ini
 touch master.ini
 touch no_depletion.ini
 
-SEED=`date +%s`
-NODES=`python3 ./rand_master.py -n $1 -r $2 $SEED`
+NODES=`python3 ./rand_master.py -n $1 -r $2 $3`
 
 echo $NODES
 

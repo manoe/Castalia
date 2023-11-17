@@ -8,6 +8,8 @@ ITER=10
 SEED=`date +%s`
 SEED_SET=`python3 ./rand.py -i $ITER $SEED`
 
+echo $SEED_SET > seed_set.txt
+
 ./gen_routing.sh $PROTO
 ./gen_phy_proc.sh none
 
