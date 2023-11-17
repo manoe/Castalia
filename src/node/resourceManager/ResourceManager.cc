@@ -51,10 +51,9 @@ void ResourceManager::initialize()
 	disabled = true;
      
     cModule *appModule = getParentModule()->getSubmodule("Application");
-    if(appModule->hasPar("isMaster")) {
+    master=par("isMaster");
+    if(appModule->hasPar("isMaster") && master==false ) {
         master=appModule->par("isMaster");
-    } else {
-        master=par("isMaster");
     }
     trace()<<"Master node: "<<master;
 
