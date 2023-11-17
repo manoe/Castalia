@@ -23,9 +23,9 @@ done
 
 for s in $SEED_SET
 do
-   for r in $M_RATIO
-   do
-        ./gen_master.sh 64 ${r} $s
+    for r in $M_RATIO
+    do
+    ./gen_master.sh 64 ${r} $s
         for m in $MASTER
         do
             ./gen.sh omnetpp.ini ${m} ${s} ${PROTO}_${r}_${m}_pdr.yaml
