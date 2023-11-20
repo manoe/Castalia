@@ -1199,7 +1199,8 @@ void efmrp::generateYaml() {
         y_out<<YAML::Key<<"hop";
         y_out<<YAML::Value<<efmrp_instance->getHop();
         y_out<<YAML::Key<<"state";
-        y_out<<YAML::Value<<stateToStr(efmrp_instance->getState());
+        auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
+        y_out<<(res_mgr->isDead()?"DEAD": stateToStr(efmrp_instance->getState()));
         y_out<<YAML::EndMap;
     }
     y_out<<YAML::EndSeq;

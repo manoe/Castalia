@@ -2619,9 +2619,10 @@ void shmrp::finishSpecific() {
             } catch (exception &e) {
                 trace()<<"[error] No rinv table: "<<e.what();
             }
+            auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
 
             y_out<<YAML::Key<<"state";
-            y_out<<YAML::Value<<stateToStr(shmrp_instance->getState());
+            y_out<<YAML::Value<<(res_mgr->isDead()?"DEAD":stateToStr(shmrp_instance->getState()));
             y_out<<YAML::Key<<"round";
             y_out<<YAML::Value<<shmrp_instance->getRound();
             y_out<<YAML::Key<<"second_learn";
@@ -2632,8 +2633,7 @@ void shmrp::finishSpecific() {
             y_out<<YAML::Value;
             serializeRadioStats(radio->getStats());
 
-            auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
-
+            
 
             // Format: {'Node1': [0,0], 'Node2': [0,10],'Node3':[10,0]}
             auto loc=mob_mgr->getLocation();
