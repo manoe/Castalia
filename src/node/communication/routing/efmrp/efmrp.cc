@@ -1198,6 +1198,8 @@ void efmrp::generateYaml() {
         y_out<<YAML::Value<<efmrp_instance->getForwDataPkt();
         y_out<<YAML::Key<<"hop";
         y_out<<YAML::Value<<efmrp_instance->getHop();
+        y_out<<YAML::Key<<"state";
+        y_out<<YAML::Value<<stateToStr(efmrp_instance->getState());
         y_out<<YAML::EndMap;
     }
     y_out<<YAML::EndSeq;
