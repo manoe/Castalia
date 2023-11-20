@@ -53,6 +53,8 @@ class WildFirePhysicalProcess: public CastaliaModule {
     int sense_distance;
     double sense_attn;
     bool plane_to_yaml;
+    int step_limit;
+    int step=0;
     std::string yp_coding;
     YAML::Emitter y_out;
 

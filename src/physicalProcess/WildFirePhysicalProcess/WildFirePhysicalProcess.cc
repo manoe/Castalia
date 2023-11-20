@@ -148,7 +148,12 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                 if(d_nodes.size()) {
                     signalTermination(d_nodes);
                 }
+                if(step_limit>step || step_limit>0) {
+                    trace()<<"[info] Step limit "<<step_limit<<" exceeded";
+                    return;
+                }
             }
+            ++step;
             scheduleAt(simTime() + static_cast<double>(ca_step_period), msg);
             if(plane_to_yaml) {
                 dumpPlane();
@@ -211,6 +216,7 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     sense_distance  = par("sense_distance");
     sense_attn      = par("sense_attn");
     plane_to_yaml   = par("plane_to_yaml");
+    step_limit      = par("step_limit");
     yp_coding       = par("yp_coding").stringValue();
 }
 
