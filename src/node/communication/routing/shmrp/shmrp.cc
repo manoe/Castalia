@@ -790,6 +790,8 @@ double shmrp::calculateCostFunction(node_entry ne) {
         case shmrpCostFuncDef::SUM_HOP_ENERGY_EMERG_PDR_AND_INTERF: {
             // CostFunction = 1 - ObjectiveFunction
             // CostFunction = 1 - [ (1-Pi-Epsilon-Iota-Eta-Mu)*1/(1+hop) + Pi*pdr + Epsilon*emerg + Iota*interf + Eta*enrgy + Mu*nmas  ]
+            trace()<<"[info] CF terms: hop="<<ne.hop<<", pdr="<<static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count)<<", emerg="<<ne.pathid[0].emerg<<", interf="<<ne.interf<<", enrgy="<<ne.pathid[0].enrgy<<", nmas="<<ne.pathid[0].nmas;
+
             ret_val = 1 - ( 
                     (1-fp.cost_func_pi-fp.cost_func_epsilon-fp.cost_func_iota-fp.cost_func_eta-fp.cost_func_mu)*(1/(1+ne.hop))
                     + fp.cost_func_pi*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count)
