@@ -789,7 +789,7 @@ double shmrp::calculateCostFunction(node_entry ne) {
         }
         case shmrpCostFuncDef::SUM_HOP_ENERGY_EMERG_PDR_AND_INTERF: {
             // CostFunction = 1 - ObjectiveFunction
-            // CostFunction = 1 - [ (1-Pi-Epsilon-Iota-Eta-Mu)*1/(1+hop)  ]
+            // CostFunction = 1 - [ (1-Pi-Epsilon-Iota-Eta-Mu)*1/(1+hop) + Pi*pdr + Epsilon*emerg + Iota*interf + Eta*enrgy + Mu*nmas  ]
             ret_val = 1 - ( 
                     (1-fp.cost_func_pi-fp.cost_func_epsilon-fp.cost_func_iota-fp.cost_func_eta-fp.cost_func_mu)*(1/(1+ne.hop))
                     + fp.cost_func_pi*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count)
@@ -986,12 +986,19 @@ bool shmrp::rrespReceived() const {
 }
 
 
-void shmrp::updateRreqEntryWithEmergency(const char *addr) {
-    trace()<<"Entering shmrp::updateRreqEntryWithEmergency(addr="<<addr<<")";
+void shmrp::updateRreqEntryWithEmergency(const char *addr, double emerg, double enrgy) {
+    trace()<<"Entering shmrp::updateRreqEntryWithEmergency(addr="<<addr<<", emerg="<<emerg<<", enrgy="<<enrgy<<")";
     if(rreq_table.find(string(addr)) == rreq_table.end()) {
         throw no_available_entry("[error] Entry not present in routing table"); 
     }
-    rreq_table[string(addr)].emerg++;
+    // Most probably, this is unused
+    rreq_table[string(addr)].emerg = emerg;
+    trace()<<"[info] Pathid size: "<<rreq_table[string(addr)].pathid.size();
+    for(auto &&pe: rreq_table[string(addr)].pathid) {
+        trace()<<"[info] Updating path "<<pe.pathid;
+        pe.emerg = emerg;
+        pe.enrgy = enrgy;
+    }
 }
 
 
@@ -2200,10 +2207,10 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
             switch (rwarn_pkt->getCause()) {
                 case shmrpWarnDef::EMERGENCY_EVENT: {
-                    trace()<<"[info] EMERGENCY_EVENT";
+                    trace()<<"[info] EMERGENCY_EVENT, emergency: "<<rwarn_pkt->getEmerg()<<", energy: "<<rwarn_pkt->getEnrgy();
                     if(fp.rt_recalc_warn) {
                         try {
-                            updateRreqEntryWithEmergency(rwarn_pkt->getSource());
+                            updateRreqEntryWithEmergency(rwarn_pkt->getSource(), rwarn_pkt->getEmerg(), rwarn_pkt->getEnrgy());
                             if(fp.cf_after_rresp) {
                                 constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
                             } else {
@@ -2813,6 +2820,8 @@ void shmrp::sendRwarn(shmrpWarnDef cause, int pathid) {
     warn_pkt->setRound(getRound());
     warn_pkt->setPathid(pathid);
     warn_pkt->setHop(getHop());
+    warn_pkt->setEmerg(getEnergyValue());
+    warn_pkt->setEnrgy(getEmergencyValue());
     warn_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);
 

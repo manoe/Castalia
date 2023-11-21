@@ -2,7 +2,11 @@
 
 #PROTOS="efmrp shmrp hdmrp flooding"
 #PROTOS="hdmrp"
-PROTOS=efmrp
+PROTOS=shmrp
+
+./gen_phy_proc.sh rectangular
+
+rm Castalia-Trace.txt
 
 for i in $PROTOS
 do

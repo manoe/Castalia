@@ -339,7 +339,7 @@ class shmrp: public VirtualRouting {
         int  getRreqPktCount();
         void updateRreqTableWithRresp(const char *, int);
         bool rrespReceived() const;
-        void updateRreqEntryWithEmergency(const char *);
+        void updateRreqEntryWithEmergency(const char *, double, double);
         void removeRreqEntry(std::string, bool);
         double calculateCostFunction(node_entry);
 
