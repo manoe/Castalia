@@ -653,6 +653,15 @@ void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
 
         bool used = rinv_table.find(ne.nw_address)->second.used;
         ne.used=used;
+        trace()<<"[info] Do not loose pathid used flags";
+        for(auto &&new_pe: ne.pathid) {
+            for(auto old_pe: rinv_table[ne.nw_address].pathid) {
+                if(old_pe.pathid == new_pe.pathid) {
+                    trace()<<"[info] pathid found: "<<old_pe.pathid<<" with flag: "<<old_pe.used;
+                    new_pe.used=old_pe.used;
+                }
+            }
+        }
         rinv_table[ne.nw_address]=ne;
     } else {
         trace()<<"[info] Adding new entry";
@@ -730,7 +739,7 @@ void shmrp::mergePathids(std::vector<pathid_entry> &p1, std::vector<pathid_entry
     for(auto pe: p1) {
         for(auto pe2: p2) {
             if(pe.pathid == pe2.pathid) {
-                trace()<<"[error] Matching pathid entries";
+                trace()<<"[error] Matching pathid entries: "<<pe.pathid;
                 throw state_not_permitted("[error] Matching pathid entries");
             } 
         }
@@ -865,6 +874,7 @@ void shmrp::constructRreqTable() {
                         rinv_table[n.nw_address].used = true;
                         trace()<<"[info] Updating pathid entries";
                         for(auto it = rinv_table[n.nw_address].pathid.begin() ; it != rinv_table[n.nw_address].pathid.end() ; ++it) {
+                            trace()<<"[info] "<<it->pathid;
                             it->used = true;
                         } 
                     }
@@ -915,7 +925,7 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
         bool erase=false;
         for(auto i: path_filter) {
             for(auto p_it=it->second.pathid.begin() ; p_it != it->second.pathid.end() ;) {
-                if(i==p_it->pathid) {
+                if(i==p_it->pathid || p_it->used) {
                     // torol+leptet
                     trace()<<"[info] Erasing path: "<<p_it->pathid;
                     trace()<<"ne: "<<it->second.nw_address;
