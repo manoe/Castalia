@@ -4,7 +4,7 @@
 #PROTOS="hdmrp"
 PROTOS=shmrp
 
-./gen_phy_proc.sh none
+./gen_phy_proc.sh rectangular
 
 rm Castalia-Trace.txt
 
