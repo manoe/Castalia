@@ -19,7 +19,7 @@ void shmrp::startup() {
         g_is_sink=false;
     }
 
-    if(0==strcmp(appModule->getClassName(),"ForesFire")) {
+    if(0==strcmp(appModule->getClassName(),"ForestFire")) {
         trace()<<"[info] ForestFire app present";
         ff_app = check_and_cast<ForestFire *>(appModule);
     } else {
