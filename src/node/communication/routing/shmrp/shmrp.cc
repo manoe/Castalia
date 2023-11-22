@@ -863,6 +863,10 @@ void shmrp::constructRreqTable() {
                     if(n.hop < getHop()) {
                         rreq_table.insert({n.nw_address,n});
                         rinv_table[n.nw_address].used = true;
+                        trace()<<"[info] Updating pathid entries";
+                        for(auto it = rinv_table[n.nw_address].pathid.begin() ; it != rinv_table[n.nw_address].pathid.end() ; ++it) {
+                            it->used = true;
+                        } 
                     }
                 }
             }
@@ -922,11 +926,17 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
                 }
             }
         }
-        if(0==it->second.pathid.size() || it->second.used) {
+
+        auto pathidUnavailable = [&](std::vector<pathid_entry> pathid){ for(auto pe: pathid) { if(pe.used == false) { return false;  } } return true; };
+
+        if(0==it->second.pathid.size() || ( it->second.used && pathidUnavailable(it->second.pathid))) {
             trace()<<"[info] Erasing node: "<<it->second.nw_address<<" pathid: "<<pathidToStr(it->second.pathid);
             rreq_table.erase(it++);
         } else {
             rinv_table[it->first].used=true;
+            for(auto &&pe : rinv_table[it->first].pathid) {
+                pe.used=true;
+            }
             ++it;
         }
     }
