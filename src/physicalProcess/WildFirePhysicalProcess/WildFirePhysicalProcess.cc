@@ -148,7 +148,7 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                 if(d_nodes.size()) {
                     signalTermination(d_nodes);
                 }
-                if(step_limit>step && step_limit>0) {
+                if(step_limit<step && step_limit>0) {
                     trace()<<"[info] Step limit "<<step_limit<<" exceeded";
                     return;
                 }

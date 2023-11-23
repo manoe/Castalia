@@ -439,6 +439,7 @@ double ForestFire::getEmergencyValue() {
     if(d_high>=sensedValue) {
         ret_val=1.0;
     } else if(d_high<sensedValue && d_max>= sensedValue ) {
+        trace()<<"sensedValue: "<<sensedValue<<", result: "<<(d_max-sensedValue)/(d_max-d_high);
         return (d_max-sensedValue)/(d_max-d_high);
     } else {
         return 0.0;
