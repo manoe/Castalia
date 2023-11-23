@@ -1324,6 +1324,17 @@ void shmrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, b
         auto p=c_ne.pathid[0];
         p.secl=update;
         c_ne.pathid.clear();
+        for(auto &&ne: routing_table) {
+            for(auto it=ne.second.pathid.begin() ; it !=ne.second.pathid.end();) {
+                if(it->pathid==p.pathid) {
+                    trace()<<"Duplicate pathid found, erasing";
+                    it=ne.second.pathid.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
+
         if(routing_table.find(c_ne.nw_address) == routing_table.end()) {
             routing_table.insert({c_ne.nw_address,c_ne});
             routing_table[c_ne.nw_address].secl=update; // Set secl parameter to true, if second learn
@@ -2234,12 +2245,15 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                         try {
                             updateRreqEntryWithEmergency(rwarn_pkt->getSource(), rwarn_pkt->getEmerg(), rwarn_pkt->getEnrgy());
                             if(fp.cf_after_rresp) {
-                                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
+                                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
                             } else {
                                 constructRoutingTable(fp.rresp_req);
                             }
                         } catch (no_available_entry &e) {
                             trace()<<"[info] Entry not available (not a real error): "<<e.what();
+                        } catch (routing_table_empty &e) {
+                            trace()<<"[error] "<<e.what();
+                            setState(shmrpStateDef::INIT);
                         }
                     }
                     break;
@@ -2782,7 +2796,7 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
     if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
         if(routing_table.find(nw_address) != routing_table.end()) {
             routing_table[nw_address].fail_count++;
-            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getSecL() && getHop() > 2 && getState() == shmrpStateDef::WORK) { // Ugly :-(
+            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getHop() > 2 && getState() == shmrpStateDef::WORK) { // Ugly :-( - do not check for secL
                 trace()<<"[info] Link "<<nw_address<<" failed, removing";
                 auto p=routing_table[nw_address].pathid;
                 removeRoute(nw_address);
@@ -2892,13 +2906,17 @@ double shmrp::getEnergyValue() {
     if(ff_app==NULL) {
         return 1.0;
     }
-    return ff_app->getEnergyValue();
+    auto ret_val=ff_app->getEnergyValue();
+    trace()<<"[info] Energy Value: "<<ret_val;
+    return ret_val;
 }
 
 double shmrp::getEmergencyValue() {
     if(ff_app==NULL) {
         return 1.0;
     }
-    return ff_app->getEmergencyValue();
+    auto ret_val=ff_app->getEmergencyValue();
+    trace()<<"[info] Emergency value: "<<ret_val;
+    return ret_val;
 }
 

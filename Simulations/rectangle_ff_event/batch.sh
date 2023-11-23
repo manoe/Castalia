@@ -1,20 +1,24 @@
 #!/bin/sh -x
 
-#PROTOS="efmrp shmrp hdmrp flooding"
-#PROTOS="hdmrp"
-PROTOS=shmrp
+PROTOS="efmrp shmrp hdmrp flooding"
+ITER=10
+SEED=`date +%s`
+SEED_SET=`./rand.py -i $ITER $SEED`
+echo $SEED_SET > seed_set.txt
+
+for p in $PROTOS
+do
+    yq --null-input '{"runs": []}' > ${p}_pdr.yaml
+done
 
 ./gen_phy_proc.sh rectangular
 
-rm Castalia-Trace.txt
-
-for i in $PROTOS
+for s in $SEED_SET
 do
-    SEED=1678184087
-    ./gen_routing.sh $i
-    ./gen.sh omnetpp.ini qos_pdr=0.8 $SEED ${i}.yaml
-    mv nrg.yaml ${i}_nrg.yaml
-    mv pdr.yaml ${i}_pdr.yaml
-    mv pkt.yaml ${i}_pkt.yaml
+    for p in $PROTOS
+    do
+        ./gen_routing.sh $p
+        ./gen.sh omnetpp.ini qos_pdr=0.6 ${s} ${p}_pdr.yaml
+    done
 done
 
