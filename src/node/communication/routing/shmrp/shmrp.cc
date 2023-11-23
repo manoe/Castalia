@@ -19,7 +19,7 @@ void shmrp::startup() {
         g_is_sink=false;
     }
 
-    if(0==strcmp(appModule->getClassName(),"ForesFire")) {
+    if(0==strcmp(appModule->getClassName(),"ForestFire")) {
         trace()<<"[info] ForestFire app present";
         ff_app = check_and_cast<ForestFire *>(appModule);
     } else {
@@ -653,6 +653,15 @@ void shmrp::addToRinvTable(shmrpRinvPacket *rinv_pkt) {
 
         bool used = rinv_table.find(ne.nw_address)->second.used;
         ne.used=used;
+        trace()<<"[info] Do not loose pathid used flags";
+        for(auto &&new_pe: ne.pathid) {
+            for(auto old_pe: rinv_table[ne.nw_address].pathid) {
+                if(old_pe.pathid == new_pe.pathid) {
+                    trace()<<"[info] pathid found: "<<old_pe.pathid<<" with flag: "<<old_pe.used;
+                    new_pe.used=old_pe.used;
+                }
+            }
+        }
         rinv_table[ne.nw_address]=ne;
     } else {
         trace()<<"[info] Adding new entry";
@@ -730,7 +739,7 @@ void shmrp::mergePathids(std::vector<pathid_entry> &p1, std::vector<pathid_entry
     for(auto pe: p1) {
         for(auto pe2: p2) {
             if(pe.pathid == pe2.pathid) {
-                trace()<<"[error] Matching pathid entries";
+                trace()<<"[error] Matching pathid entries: "<<pe.pathid;
                 throw state_not_permitted("[error] Matching pathid entries");
             } 
         }
@@ -789,7 +798,9 @@ double shmrp::calculateCostFunction(node_entry ne) {
         }
         case shmrpCostFuncDef::SUM_HOP_ENERGY_EMERG_PDR_AND_INTERF: {
             // CostFunction = 1 - ObjectiveFunction
-            // CostFunction = 1 - [ (1-Pi-Epsilon-Iota-Eta-Mu)*1/(1+hop)  ]
+            // CostFunction = 1 - [ (1-Pi-Epsilon-Iota-Eta-Mu)*1/(1+hop) + Pi*pdr + Epsilon*emerg + Iota*interf + Eta*enrgy + Mu*nmas  ]
+            trace()<<"[info] CF terms: hop="<<ne.hop<<", pdr="<<static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count)<<", emerg="<<ne.pathid[0].emerg<<", interf="<<ne.interf<<", enrgy="<<ne.pathid[0].enrgy<<", nmas="<<ne.pathid[0].nmas;
+            trace()<<"[info] (1-Pi-Epsilon-Iota-Eta-Mu)="<<(1-fp.cost_func_pi-fp.cost_func_epsilon-fp.cost_func_iota-fp.cost_func_eta-fp.cost_func_mu)<<" Pi="<<fp.cost_func_pi<<", Epsilon="<<fp.cost_func_epsilon<<", Iota="<<fp.cost_func_iota<<", Eta="<<fp.cost_func_eta<<", Mu="<<fp.cost_func_mu;
             ret_val = 1 - ( 
                     (1-fp.cost_func_pi-fp.cost_func_epsilon-fp.cost_func_iota-fp.cost_func_eta-fp.cost_func_mu)*(1/(1+ne.hop))
                     + fp.cost_func_pi*static_cast<double>(ne.ack_count)/static_cast<double>(ne.pkt_count)
@@ -861,6 +872,11 @@ void shmrp::constructRreqTable() {
                     if(n.hop < getHop()) {
                         rreq_table.insert({n.nw_address,n});
                         rinv_table[n.nw_address].used = true;
+                        trace()<<"[info] Updating pathid entries";
+                        for(auto it = rinv_table[n.nw_address].pathid.begin() ; it != rinv_table[n.nw_address].pathid.end() ; ++it) {
+                            trace()<<"[info] "<<it->pathid;
+                            it->used = true;
+                        } 
                     }
                 }
             }
@@ -909,7 +925,7 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
         bool erase=false;
         for(auto i: path_filter) {
             for(auto p_it=it->second.pathid.begin() ; p_it != it->second.pathid.end() ;) {
-                if(i==p_it->pathid) {
+                if(i==p_it->pathid || p_it->used) {
                     // torol+leptet
                     trace()<<"[info] Erasing path: "<<p_it->pathid;
                     trace()<<"ne: "<<it->second.nw_address;
@@ -920,11 +936,17 @@ void shmrp::constructRreqTable(std::vector<int> path_filter) {
                 }
             }
         }
-        if(0==it->second.pathid.size() || it->second.used) {
+
+        auto pathidUnavailable = [&](std::vector<pathid_entry> pathid){ for(auto pe: pathid) { if(pe.used == false) { return false;  } } return true; };
+
+        if(0==it->second.pathid.size() || ( it->second.used && pathidUnavailable(it->second.pathid))) {
             trace()<<"[info] Erasing node: "<<it->second.nw_address<<" pathid: "<<pathidToStr(it->second.pathid);
             rreq_table.erase(it++);
         } else {
             rinv_table[it->first].used=true;
+            for(auto &&pe : rinv_table[it->first].pathid) {
+                pe.used=true;
+            }
             ++it;
         }
     }
@@ -986,12 +1008,19 @@ bool shmrp::rrespReceived() const {
 }
 
 
-void shmrp::updateRreqEntryWithEmergency(const char *addr) {
-    trace()<<"Entering shmrp::updateRreqEntryWithEmergency(addr="<<addr<<")";
+void shmrp::updateRreqEntryWithEmergency(const char *addr, double emerg, double enrgy) {
+    trace()<<"Entering shmrp::updateRreqEntryWithEmergency(addr="<<addr<<", emerg="<<emerg<<", enrgy="<<enrgy<<")";
     if(rreq_table.find(string(addr)) == rreq_table.end()) {
         throw no_available_entry("[error] Entry not present in routing table"); 
     }
-    rreq_table[string(addr)].emerg++;
+    // Most probably, this is unused
+    rreq_table[string(addr)].emerg = emerg;
+    trace()<<"[info] Pathid size: "<<rreq_table[string(addr)].pathid.size();
+    for(auto &&pe: rreq_table[string(addr)].pathid) {
+        trace()<<"[info] Updating path "<<pe.pathid;
+        pe.emerg = emerg;
+        pe.enrgy = enrgy;
+    }
 }
 
 
@@ -2200,10 +2229,10 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
             }
             switch (rwarn_pkt->getCause()) {
                 case shmrpWarnDef::EMERGENCY_EVENT: {
-                    trace()<<"[info] EMERGENCY_EVENT";
+                    trace()<<"[info] EMERGENCY_EVENT, emergency: "<<rwarn_pkt->getEmerg()<<", energy: "<<rwarn_pkt->getEnrgy();
                     if(fp.rt_recalc_warn) {
                         try {
-                            updateRreqEntryWithEmergency(rwarn_pkt->getSource());
+                            updateRreqEntryWithEmergency(rwarn_pkt->getSource(), rwarn_pkt->getEmerg(), rwarn_pkt->getEnrgy());
                             if(fp.cf_after_rresp) {
                                 constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr);
                             } else {
@@ -2813,6 +2842,8 @@ void shmrp::sendRwarn(shmrpWarnDef cause, int pathid) {
     warn_pkt->setRound(getRound());
     warn_pkt->setPathid(pathid);
     warn_pkt->setHop(getHop());
+    warn_pkt->setEmerg(getEnergyValue());
+    warn_pkt->setEnrgy(getEmergencyValue());
     warn_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);
 

@@ -27,6 +27,7 @@ parameters:
     int     map_scale        = default (90);
     int     ca_step_period;
     int     ca_start_timer;
+    int     step_limit       = default(0);       // - how many steps are performed
     double  p_h              = default(0.58);    // - p_h  - corrective probability coefficent
     double  c_1              = default(0.045);   // - c_1  - wind model's first coefficient - affects speed
     double  c_2              = default(0.131);   // - c_2  - wind model's second coefficient - affects angle
