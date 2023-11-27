@@ -28,6 +28,8 @@ simple ResourceManager {
 	double sigmaCPUClockDrift = default (0.00003);	// the standard deviation of the Drift of the CPU
 
 	double initialEnergy = default (18720);
+    double maximumCapacity = default (18720);
+
 	// energy of the node in Joules, default value corresponds to two AA batteries
 	// source http://www.allaboutbatteries.com/Energy-tables.html
 

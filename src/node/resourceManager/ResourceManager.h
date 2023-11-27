@@ -41,7 +41,7 @@ class ResourceManager: public CastaliaModule {
 	/*--- Custom class parameters ---*/
 	double remainingEnergy;
 	double totalRamData;
-
+    double maximumCapacity;
 	map<int,double> storedPowerConsumptions;
 
 	cMessage *energyMsg;

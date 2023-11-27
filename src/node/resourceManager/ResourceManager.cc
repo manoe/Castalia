@@ -37,6 +37,7 @@ void ResourceManager::initialize()
 	periodicEnergyCalculationInterval = (double)par("periodicEnergyCalculationInterval") / 1000;
     selfDestructTimer = par("selfDestructTimer");
     nullEnergyOnFail = par("nullEnergyOnFail");
+    maximumCapacity = par("maximumCapacity");
 
     if(selfDestructTimer > 0.0) {
         scheduleAt(simTime() + selfDestructTimer, new cMessage("Destroy node message", DESTROY_NODE));
