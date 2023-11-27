@@ -16,7 +16,6 @@ do
     for n in ${NRG_ETA}
     do
         ./gen.sh omnetpp.ini qos_pdr=0.6,eta_nrg=${n} $SEED ${PROTO}_pdr.yaml
-        exit
     done
 done
 
