@@ -431,7 +431,7 @@ void ForestFire::finishSpecific()
 }
 
 double ForestFire::getEnergyValue() {
-    return rm->getRemainingEnergy()/rm->getInitialEnergy();
+    return rm->getRemainingEnergy()/rm->getMaximumCapacity();
 }
 
 double ForestFire::getEmergencyValue() {

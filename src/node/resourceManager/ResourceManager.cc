@@ -182,6 +182,11 @@ double ResourceManager::getInitialEnergy(void) {
     return initialEnergy;
 }
 
+double ResourceManager::getMaximumCapacity(void) {
+    Enter_Method("getMaximumCapacity()");
+    return maximumCapacity;
+}
+
 double ResourceManager::getCPUClockDrift(void)
 {
 	Enter_Method("getCPUClockDrift(void)");
