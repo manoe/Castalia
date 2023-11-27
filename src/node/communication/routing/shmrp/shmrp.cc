@@ -2273,7 +2273,13 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                                 break;
                             }
                         }
-                        markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                        try {
+                            markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                        } catch ( no_available_entry &e) {
+                            trace()<<"[error] "<<e.what();
+                        }
+
+  
                         handleLinkFailure(rwarn_pkt->getPathid());
                     } else if(rreqEntryExists(std::string(rwarn_pkt->getSource()))) {
                         removeRreqEntry(std::string(rwarn_pkt->getSource()));
@@ -2328,7 +2334,11 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                             break;
                         }
                     }
-                    markRinvEntryFail(entry);
+                    try {
+                        markRinvEntryFail(entry);
+                    } catch ( no_available_entry &e) {
+                        trace()<<"[error] "<<e.what();
+                    }
                     handleLinkFailure(data_pkt->getPathid());
                     break;
 
@@ -2357,7 +2367,12 @@ void shmrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double l
                                 removeRoute(next_hop);
 
                                 removeRreqEntry(next_hop);
-                                markRinvEntryFail(next_hop);
+                                try {
+                                    markRinvEntryFail(next_hop);
+                                } catch ( no_available_entry &e) {
+                                    trace()<<"[error] "<<e.what();
+                                }
+
 
                                 if(getRoutingTableSize() == 0) {
                                     trace()<<"[error] Routing table empty";
@@ -2801,7 +2816,12 @@ void shmrp::handleMacControlMessage(cMessage *msg) {
                 auto p=routing_table[nw_address].pathid;
                 removeRoute(nw_address);
                 removeRreqEntry(nw_address);
-                markRinvEntryFail(nw_address);
+                try {
+                    markRinvEntryFail(nw_address);
+                } catch ( no_available_entry &e) {
+                    trace()<<"[error] "<<e.what();
+                }
+
                 handleLinkFailure(p[0].pathid);
             }
         }
