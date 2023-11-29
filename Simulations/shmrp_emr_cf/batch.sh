@@ -20,7 +20,6 @@ do
     for e in ${EMR_EPSILON}
     do
         ./gen.sh omnetpp.ini qos_pdr=0.6,epsilon_emr=${e} ${s} shmrp_emr_${e}_pdr.yaml
-        exit
     done
 done
 
