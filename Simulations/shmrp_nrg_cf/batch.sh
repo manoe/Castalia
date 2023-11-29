@@ -5,7 +5,7 @@ ITER=10
 SEED=`date +%s`
 SEED_SET=`python3 ./rand.py -i $ITER $SEED`
 echo $SEED_SET > seed_set.txt
-NRG_ETA="0.0 0.1 0.2 0.3 0.4 0.5"
+NRG_ETA="0.0 0.1 0.2 0.4 0.5 0.6 0.8 1.0"
 
 ./gen_phy_proc.sh none
 ./gen_routing.sh ${PROTO}
