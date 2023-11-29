@@ -9,7 +9,12 @@ SEED=$3
 echo "out file:" $4
 OUT=$4
 
-python3 ../../bin/Castalia3 -i $CFG -c seed=$SEED,$ARG 
+if [ "`python3 --version`" = "Python 3.6.3" ]
+then
+    ../../bin/Castalia -i $CFG -c seed=$SEED,$ARG
+else
+    python3 ../../bin/Castalia3 -i $CFG -c seed=$SEED,$ARG
+fi
 
 yq -i e '. += { "loc_pdr": load("loc_pdr.yaml") }' pdr.yaml
 yq -i '.runs += [ load("pdr.yaml")]' $OUT
