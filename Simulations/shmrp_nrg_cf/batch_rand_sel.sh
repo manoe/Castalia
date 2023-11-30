@@ -14,6 +14,7 @@ touch nrg.ini
 for n in ${NRG_ETA}
 do
     yq --null-input '{"runs": []}' > ${PROTO}_nrg_${n}_pdr.yaml
+    yq --null-input '{"runs": []}' > ${PROTO}_nrg_${n}_nrg.yaml
     yq --null-input '{"runs": []}' > ${PROTO}_nrg_test_pdr.yaml
 done
 
@@ -26,6 +27,7 @@ do
     for n in ${NRG_ETA}
     do
         ./gen.sh omnetpp.ini qos_pdr=0.6,eta_nrg=${n} ${s} ${PROTO}_nrg_${n}_pdr.yaml
+        yq -i '.runs += [ load("nrg.yaml")]' ${PROTO}_nrg_${n}_nrg.yaml
     done
 done
 
