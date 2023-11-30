@@ -3,7 +3,7 @@
 PROTO="shmrp"
 ITER=10
 SEED=`date +%s`
-SEED_SET=`./rand.py -i $ITER $SEED`
+SEED_SET=`python3 ./rand.py -i $ITER $SEED`
 echo $SEED_SET > seed_set.txt
 EMR_EPSILON="0.0 0.05 0.1 0.15 0.2"
 
