@@ -3,7 +3,7 @@
 rm nrg.ini
 cp nrg_base.ini nrg.ini
 
-NODES=`python3 ./failr.py -n ${1} -f ${2}`
+NODES=`python3 ./failr.py -n ${1} -rt -f ${2}`
 
 echo $NODES
 

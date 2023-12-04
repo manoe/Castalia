@@ -27,11 +27,8 @@ if __name__ == '__main__':
     stream = open(args.file, 'r')
     file_loader = yaml.safe_load(stream)
 
-    if args.table is not None:
-        node_list = {i['node']: len(i[args.table]) for i in file_loader if i['state'] != 'DEAD' and i['role'] == 'external' and args.table in i}
-    else:
+    if args.table is None:
         node_list = {i['node']: i['forw_data_pkt_count'] for i in file_loader if i['hop'] > args.hop and i['state'] != 'DEAD'}
-
         if args.basefile is not None:
             stream = open(args.basefile, 'r')
             base_loader = yaml.safe_load(stream)
@@ -39,7 +36,9 @@ if __name__ == '__main__':
 
             for i in base_list.keys():
                 node_list[i] = node_list[i]-base_list[i]
-
+    else:
+        node_list = {i['node']: len(i[args.table]) for i in file_loader if i['state'] != 'DEAD' and i['role'] == 'external' and args.table in i}
+        
     if args.debug:
         print(node_list)
         if args.basefile is not None:
