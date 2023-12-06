@@ -12,7 +12,7 @@ else
     echo $SEED_SET > seed_set.txt
 fi
 
-TIMES="1799 5000"
+TIMES="8000"
 
 ./gen_phy_proc.sh custom
 ./gen_routing.sh ${PROTO}
