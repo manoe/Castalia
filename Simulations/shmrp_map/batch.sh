@@ -1,9 +1,11 @@
 #!/bin/sh -x
 
 PROTO="shmrp hdmrp"
+#PROTO=shmrp
 SEED=`date +%s`
 #SEED_SET=`python3 ./rand.py -i $ITER $SEED`
 SEED_SET=$SEED
+SEED_SET=1705408132
 
 for p in ${PROTO}
 do
@@ -18,7 +20,7 @@ do
     for p in ${PROTO}
     do
         ./gen_routing.sh ${p}
-        ./gen.sh omnetpp.ini qos_pdr=0.6 ${s} ${p}_pdr.yaml
+        ./gen.sh omnetpp.ini master ${s} ${p}_pdr.yaml
         yq -i '.runs += [ load("nrg.yaml")]' ${p}_nrg.yaml
     done
 done
