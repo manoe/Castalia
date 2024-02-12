@@ -7,8 +7,8 @@
  *                                                                             *
  *******************************************************************************/
 
-#ifndef _R2MRP_H_
-#define _R2MRP_H_
+#ifndef _MSR2MRP_H_
+#define _MSR2MRP_H_
 
 #include <random>
 #include <algorithm>
@@ -22,7 +22,7 @@
 #include <list>
 
 #include "node/communication/routing/VirtualRouting.h"
-#include "node/communication/routing/r2mrp/r2mrp_m.h"
+#include "node/communication/routing/msr2mrp/msr2mrp_m.h"
 #include "node/application/ApplicationPacket_m.h"
 #include "node/application/ForestFire/forest_fire_packet_m.h"
 #include "node/mobilityManager/VirtualMobilityManager.h"
@@ -39,7 +39,7 @@
 ////}
 //
 
-enum r2mrpStateDef {
+enum msr2mrpStateDef {
     UNDEF       = 0,
     WORK        = 1,
     INIT        = 2,
@@ -51,7 +51,7 @@ enum r2mrpStateDef {
     S_ESTABLISH = 8
 };
 
-enum r2mrpTimerDef {
+enum msr2mrpTimerDef {
     SINK_START       = 1,
     T_L              = 2,
     T_ESTABLISH      = 3,
@@ -64,7 +64,7 @@ enum r2mrpTimerDef {
     T_RESTART        = 10
 };
 
-enum r2mrpRingDef {
+enum msr2mrpRingDef {
     UNKNOWN  = 0,
     CENTRAL  = 1,
     INTERNAL = 2,
@@ -72,7 +72,7 @@ enum r2mrpRingDef {
     EXTERNAL = 4
 };
 
-enum r2mrpCostFuncDef {
+enum msr2mrpCostFuncDef {
     NOT_DEFINED                         = 0,
     HOP                                 = 1,
     HOP_AND_INTERF                      = 2,
@@ -89,21 +89,21 @@ enum r2mrpCostFuncDef {
     SUM_HOP_ENERGY_EMERG_PDR_AND_INTERF = 14
 };
 
-enum r2mrpRinvTblAdminDef {
+enum msr2mrpRinvTblAdminDef {
     UNDEF_ADMIN    = 0,
     ERASE_ON_LEARN = 1,
     ERASE_ON_ROUND = 2,
     NEVER_ERASE    = 3 
 };
 
-enum r2mrpSecLParDef {
+enum msr2mrpSecLParDef {
     OFF            = 0,
     BROADCAST      = 1,
     UNICAST        = 2
 };
 
 
-//namespace r2mrp {
+//namespace msr2mrp {
 class rreq_table_empty : public std::runtime_error {
     public:
         explicit rreq_table_empty(const string &what_arg) : std::runtime_error(what_arg) {};
@@ -181,10 +181,10 @@ struct node_entry {
     int reroute_count = 0;
 };
 
-struct r2mrp_state_chng_entry {
+struct msr2mrp_state_chng_entry {
     int node;
     double timestamp;
-    r2mrpStateDef state;
+    msr2mrpStateDef state;
     double energy;
     double total_energy;
 };
@@ -197,7 +197,7 @@ struct feat_par {
     bool   rresp_req;
     bool   rst_learn;
     bool   replay_rinv;
-    r2mrpCostFuncDef cost_func;
+    msr2mrpCostFuncDef cost_func;
     double cost_func_epsilon;
     double cost_func_iota;
     double cost_func_pi;
@@ -207,7 +207,7 @@ struct feat_par {
     bool   cf_after_rresp;
     bool   random_t_l;
     double random_t_l_sigma;
-    r2mrpRinvTblAdminDef rinv_tbl_admin;
+    msr2mrpRinvTblAdminDef rinv_tbl_admin;
     bool   interf_ping;
     bool   round_keep_pong;
     bool   rand_ring_hop;
@@ -218,7 +218,7 @@ struct feat_par {
     double qos_pdr;
     bool   rt_recalc_warn;
     bool   reroute_pkt;
-    r2mrpSecLParDef second_learn;
+    msr2mrpSecLParDef second_learn;
     double t_sec_l;
     double t_sec_l_repeat;
     int    t_sec_l_timeout;
@@ -238,7 +238,7 @@ struct feat_par {
     bool   e2e_cost;
 };
 
-class r2mrp: public VirtualRouting {
+class msr2mrp: public VirtualRouting {
     private:
         bool g_is_sink;
         string g_sink_addr;
@@ -250,19 +250,19 @@ class r2mrp: public VirtualRouting {
         int g_sec_l_timeout = 0;
         bool g_is_master=false;
         feat_par fp;
-        r2mrpStateDef g_state;
+        msr2mrpStateDef g_state;
         std::map<std::string,node_entry> rinv_table;
         std::map<std::string,node_entry> rreq_table;
         std::map<std::string,node_entry> routing_table;
         std::map<std::string,node_entry> pong_table;
         std::map<std::string,node_entry> recv_table;
         std::map<std::string,node_entry> backup_rreq_table;
-        std::list<r2mrpDataPacket *> pkt_list;
+        std::list<msr2mrpDataPacket *> pkt_list;
         std::map<std::string,node_entry> traffic_table;
 
         YAML::Emitter y_out;
 
-        std::vector<r2mrp_state_chng_entry> state_chng_log;
+        std::vector<msr2mrp_state_chng_entry> state_chng_log;
 
         std::unordered_set<int> local_id_table;
 
@@ -279,9 +279,9 @@ class r2mrp: public VirtualRouting {
         void timerFiredCallback(int);
         void finishSpecific();
 
-        r2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
-        r2mrpCostFuncDef strToCostFunc(string) const;
-        r2mrpSecLParDef strToSecLPar(string) const; 
+        msr2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
+        msr2mrpCostFuncDef strToCostFunc(string) const;
+        msr2mrpSecLParDef strToSecLPar(string) const; 
 
         bool isSink() const;
         void setSinkAddress(const char *);
@@ -294,7 +294,7 @@ class r2mrp: public VirtualRouting {
 
         void sendPing(int);
         void sendPong(int);
-        void storePong(r2mrpPongPacket *);
+        void storePong(msr2mrpPongPacket *);
         void clearPongTable();
         void clearPongTable(int);
 
@@ -312,11 +312,11 @@ class r2mrp: public VirtualRouting {
         void storeLocalid(int id) { local_id_table.insert(id); };
         void clearLocalids() { local_id_table.clear(); };
 
-        void setState(r2mrpStateDef);
-        std::string stateToStr(r2mrpStateDef) const;
+        void setState(msr2mrpStateDef);
+        std::string stateToStr(msr2mrpStateDef) const;
 
         void clearRinvTable();
-        void addToRinvTable(r2mrpRinvPacket *);
+        void addToRinvTable(msr2mrpRinvPacket *);
         int  getRinvTableSize() const;
         void updateRinvTableFromRreqTable();
         void clearRinvTableLocalFlags();
@@ -382,12 +382,12 @@ class r2mrp: public VirtualRouting {
 
         void sendData(cPacket *, std::string, int);
         void schedulePkt(cPacket *, std::string, int); 
-        void forwardData(r2mrpDataPacket *, std::string, int, bool);
-        void forwardData(r2mrpDataPacket *, std::string, bool);
-        std::string ringToStr(r2mrpRingDef pos) const;
+        void forwardData(msr2mrpDataPacket *, std::string, int, bool);
+        void forwardData(msr2mrpDataPacket *, std::string, bool);
+        std::string ringToStr(msr2mrpRingDef pos) const;
 
         void sendRwarn();
-        void sendRwarn(r2mrpWarnDef, int);
+        void sendRwarn(msr2mrpWarnDef, int);
 
         void handleLinkFailure(int);
 
@@ -398,7 +398,7 @@ class r2mrp: public VirtualRouting {
         void serializeRecvTable(std::map<std::string,node_entry>);
         void serializeRadioStats(PktBreakdown);
 
-        std::string StateToString(r2mrpStateDef);
+        std::string StateToString(msr2mrpStateDef);
 
         virtual void handleMacControlMessage(cMessage *);
 
@@ -416,13 +416,13 @@ class r2mrp: public VirtualRouting {
         double getEnergyValue();
         double getEmergencyValue();
     public:
-        r2mrp() : g_hop(std::numeric_limits<int>::max()),
+        msr2mrp() : g_hop(std::numeric_limits<int>::max()),
                   g_round(0),
-                  g_state(r2mrpStateDef::UNDEF) {};
+                  g_state(msr2mrpStateDef::UNDEF) {};
 
-        r2mrpRingDef getRingStatus() const;
-        r2mrpStateDef getState() const;
-        void writeState(int,double,r2mrpStateDef,double);
+        msr2mrpRingDef getRingStatus() const;
+        msr2mrpStateDef getState() const;
+        void writeState(int,double,msr2mrpStateDef,double);
         int getHop() const;
         int getHop(int);
         int getForwDataPkt() { return forw_pkt_count; };
@@ -463,4 +463,4 @@ class r2mrp: public VirtualRouting {
         }
 };
 
-#endif // _R2MRP_H_
+#endif // _MSR2MRP_H_
