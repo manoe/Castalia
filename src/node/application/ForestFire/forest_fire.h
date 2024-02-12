@@ -103,6 +103,9 @@ class ForestFire : public VirtualApplication {
  public:
     int getReportSent();
     int getEventSent();
+    map<int,int> getReportRecv();
+    map<int,int> getEventRecv();
+
     double getEnergyValue();
     double getEmergencyValue();
 };

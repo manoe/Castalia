@@ -87,6 +87,15 @@ int ForestFire::getReportSent() {
     return report_sent;
 }
 
+map<int,int> ForestFire::getReportRecv() {
+    return reportRecv; 
+}
+
+map<int,int> ForestFire::getEventRecv() {
+    return eventRecv;
+}
+
+
 void ForestFire::sendEvent() {
 	ForestFirePacket *newPkt = new ForestFirePacket("ForestFire event packet", APPLICATION_PACKET);
 	newPkt->setName(EVENT_PACKET_NAME);

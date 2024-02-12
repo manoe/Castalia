@@ -2565,7 +2565,8 @@ void msr2mrp::serializeRadioStats(PktBreakdown stats) {
 
 
 void msr2mrp::finishSpecific() {
-    if (isSink()) { // && getParentModule()->getIndex() == 0 ) 
+    if (isSink() && resolveNetworkAddress(SELF_NETWORK_ADDRESS) == 0) {
+        trace()<<"Cukros faszom";
         cTopology *topo;        // temp variable to access energy spent by other nodes
         topo = new cTopology("topo");
         topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
