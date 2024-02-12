@@ -14,7 +14,7 @@ cplusplus {{
 
 class RoutingPacket;
 
-enum r2mrpPacketDef {
+enum msr2mrpPacketDef {
     UNDEF_PACKET        = 0;
     DATA_PACKET         = 1;
     RINV_PACKET         = 2;
@@ -27,14 +27,14 @@ enum r2mrpPacketDef {
     LRESP_PACKET        = 256;
 }
 
-enum r2mrpWarnDef {
+enum msr2mrpWarnDef {
     UNDEF_WARN          = 0;
     EMERGENCY_EVENT     = 1;
     NODE_FAILURE_EVENT  = 2;
     PATH_FAILURE_EVENT  = 3;
 }
 
-struct r2mrpPathDef {
+struct msr2mrpPathDef {
     int    pathid;
     int    nmas;
     double enrgy;
@@ -43,14 +43,14 @@ struct r2mrpPathDef {
 }
 
 // RREQ = { R, S, P, len, nmas }
-packet r2mrpPacket extends RoutingPacket {
-    int r2mrpPacketKind enum (r2mrpPacketDef); // 1 byte
+packet msr2mrpPacket extends RoutingPacket {
+    int msr2mrpPacketKind enum (msr2mrpPacketDef); // 1 byte
     string origin;
 }
 
-packet r2mrpRinvPacket extends r2mrpPacket {
+packet msr2mrpRinvPacket extends msr2mrpPacket {
     int          round;    // 2 byte
-    r2mrpPathDef pathid[]; // 1 byte
+    msr2mrpPathDef pathid[]; // 1 byte
     int          hop;      // 2 byte
     int          interf;   // 1 byte
     int          nmas;     // 1 byte
@@ -58,8 +58,8 @@ packet r2mrpRinvPacket extends r2mrpPacket {
     int          localid;  // 1 byte
 }
 
-packet r2mrpRwarnPacket extends r2mrpPacket {
-    int    cause enum (r2mrpWarnDef); // 1 byte
+packet msr2mrpRwarnPacket extends msr2mrpPacket {
+    int    cause enum (msr2mrpWarnDef); // 1 byte
     int    round;      // 2 byte
     int    pathid;     // 1 byte
     int    hop;        // 2 byte
@@ -67,43 +67,43 @@ packet r2mrpRwarnPacket extends r2mrpPacket {
     double enrgy;   // 1 byte
 }
 
-packet r2mrpRreqPacket extends r2mrpPacket {
+packet msr2mrpRreqPacket extends msr2mrpPacket {
     int round;      // 2 byte
     int pathid;     // 1 byte
 //    int hop;        // 2 byte probably makes no sense
 }
 
-packet r2mrpRrespPacket extends r2mrpPacket {
+packet msr2mrpRrespPacket extends msr2mrpPacket {
     int round;      // 2 byte
     int pathid;     // 1 byte
     int hop;        // 2 byte
 }
 
-// r2mrp learn request
-packet r2mrpLreqPacket extends r2mrpPacket {
+// msr2mrp learn request
+packet msr2mrpLreqPacket extends msr2mrpPacket {
     int round;
     int pathid;
     int hop;
 }
 
-// r2mrp learn response
-packet r2mrpLrespPacket extends r2mrpPacket {
+// msr2mrp learn response
+packet msr2mrpLrespPacket extends msr2mrpPacket {
     int round;
     int pathid;
     int hop;
 }
 
-packet r2mrpDataPacket extends r2mrpPacket {
+packet msr2mrpDataPacket extends msr2mrpPacket {
     int pathid;
     int hop;
     int reroute;
     int repeat;
 }
 
-packet r2mrpPingPacket extends r2mrpPacket {
+packet msr2mrpPingPacket extends msr2mrpPacket {
     int round;
 }
 
-packet r2mrpPongPacket extends r2mrpPacket {
+packet msr2mrpPongPacket extends msr2mrpPacket {
     int round;
 }
