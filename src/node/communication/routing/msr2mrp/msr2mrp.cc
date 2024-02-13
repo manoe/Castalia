@@ -95,7 +95,7 @@ void msr2mrp::startup() {
         if(isSink()) {
             setHop(0);
             initPongTableSize();
-            setTimer(msr2mrpTimerDef::SINK_START,par("t_start"));
+            setTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
             setState(msr2mrpStateDef::WORK);
             if(fp.second_learn != msr2mrpSecLParDef::OFF) {
                 setTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
@@ -1590,8 +1590,8 @@ void msr2mrp::updateRinvTableFromRreqTable() {
 
 void msr2mrp::timerFiredCallback(int index) {
     switch (index) {
-        case msr2mrpTimerDef::SINK_START: {
-            trace()<<"[timer] SINK_START timer expired";
+        case msr2mrpTimerDef::T_SINK_START: {
+            trace()<<"[timer] T_SINK_START timer expired";
             setRound(1+getRound());
             sendRinv(getRound());
             setTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);

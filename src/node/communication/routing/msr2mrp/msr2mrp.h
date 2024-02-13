@@ -52,7 +52,7 @@ enum msr2mrpStateDef {
 };
 
 enum msr2mrpTimerDef {
-    SINK_START       = 1,
+    T_SINK_START     = 1,
     T_L              = 2,
     T_ESTABLISH      = 3,
     T_MEASURE        = 4,
