@@ -70,7 +70,6 @@ jobs:
       if: always()
       run: |
         cd castalia/Simulations/shmrp_nf
-        tail Castalia-Trace.txt
 
     - name: Test Castalia for efmrp
       run: |
