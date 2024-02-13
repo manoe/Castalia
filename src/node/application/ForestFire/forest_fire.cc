@@ -362,7 +362,8 @@ void ForestFire::finishSpecific()
 {
 	declareOutput("Event reception rate");
 	declareOutput("Report reception rate");
-    if(isSink) {
+    if(isSink && std::strcmp(SELF_NETWORK_ADDRESS,"0")) {
+        trace()<<"mi a fasz";
 	int numNodes = getParentModule()->getParentModule()->par("numNodes");
 
     YAML::Emitter y_out;
@@ -377,6 +378,16 @@ void ForestFire::finishSpecific()
 	cTopology *topo;	// temp variable to access packets received by other nodes
 	topo = new cTopology("topo");
 	topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+    std::vector<map<int,int>> report_recvs;
+    std::vector<map<int,int>> event_recvs;
+    for (int i = 0 ; i < numNodes ; i++) {
+		ForestFire *appModule = dynamic_cast<ForestFire*>
+			(topo->getNode(i)->getModule()->getSubmodule("Application"));
+		if (appModule) {
+            report_recvs.push_back(appModule->getReportRecv());
+            event_recvs.push_back(appModule->getEventRecv());
+        }
+    }
 	for (int i = 0; i < numNodes; i++) {
         y_out<<YAML::BeginMap;
         y_out<<YAML::Key<<"node";
@@ -387,13 +398,27 @@ void ForestFire::finishSpecific()
 			int reportSent = appModule->getReportSent();
             int eventSent  = appModule->getEventSent();
 			if (reportSent > 0 ) { // this node sent us some packets
-				float rate = (float)reportRecv[i]/(float)reportSent;
+                int report_recv = 0;
+                for(auto r : report_recvs) {
+                    if(r.find(i) != r.end()) {
+                        report_recv+=r[i];
+                    }
+                }
+
+				float rate = (float)report_recv/(float)reportSent;
 				collectOutput("Report reception rate", i, "total", rate);
                 y_out<<YAML::Key<<"report_pdr";
                 y_out<<YAML::Value<<rate;
 			}
             if (eventSent > 0) {
-                float rate = (float)eventRecv[i] / (float)eventSent;
+                int event_recv = 0;
+                for(auto e : event_recvs) {
+                    if(e.find(i) != e.end()) {
+                        event_recv+=e[i];
+                    }
+                }
+
+                float rate = (float)event_recv/(float)eventSent;
 				collectOutput("Event reception rate", i, "total", rate);
                 y_out<<YAML::Key<<"event_pdr";
                 y_out<<YAML::Value<<rate;
