@@ -9,7 +9,7 @@ export NUM_NODES=`echo "${1} * ${2}"|bc `
 export NUM_NODES_NS=`echo "${NUM_NODES}-1"|bc`
 export NODES_X=$1
 export NODES_Y=$2
-export RANDOM="randomized_"
+export RANDOM_PREFIX="randomized_"
 export RND_RANGE=0.1
 
 envsubst < deployment.tmpl > deployment.ini
