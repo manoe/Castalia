@@ -35,6 +35,7 @@ enum msr2mrpWarnDef {
 }
 
 struct msr2mrpPathDef {
+    int    origin;
     int    pathid;
     int    nmas;
     double enrgy;

@@ -34,12 +34,6 @@ void msr2mrp::startup() {
         g_is_master=false;
     }
 
-    if(hasPar("sink_address")) {
-        g_sink_addr.assign(par("sink_address").stringValue());
-    } else {
-        trace()<<"[error] No sink address provisioned";
-    }
-
     fp.t_l               = par("t_l");
     fp.ring_radius       = par("ring_radius");
     fp.t_est             = par("t_est");
@@ -213,12 +207,30 @@ bool msr2mrp::isSecLPathidEmpty() {
 }
 
 
-void msr2mrp::setSinkAddress(const char *p_sink_addr) {
+void msr2mrp::setSinkAddress(std::string p_sink_addr) {
     g_sink_addr.assign(p_sink_addr);
 }
 
 std::string msr2mrp::getSinkAddress() const {
     return g_sink_addr;
+}
+
+std::string msr2mrp::getSinkAddressFromRtTbl() {
+    trace()<<"[info] Entering getSinkAddressFromRtTable()";
+    if(isRoutingTableEmpty()) {
+        throw routing_table_empty("[error] Routing table empty, cannot identify sink");
+    }
+    vector<int> origins;
+    for(auto re: routing_table) {
+        for(auto pe: re.second.pathid) {
+            origins.push_back(pe.origin);
+        }
+    }
+    trace()<<"[info] Sink addresses: "<<pathidToStr(origins);
+    if(!std::all_of(origins.begin(), origins.end(), [&origins](int i) { return i == origins.front(); })) {
+        throw state_not_permitted("[error] Sink entries ambigous");
+    }
+    return std::to_string(origins.front());
 }
 
 double msr2mrp::getTl() {
@@ -344,7 +356,7 @@ int msr2mrp::calculateHop(bool max_hop=false) {
         throw rinv_table_empty("[error] RINV table empty");
     }
 
-    if(std::all_of(rinv_table.begin(), rinv_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.used; } )) {
+    if(std::all_of(rinv_table.begin(), rinv_table.end(),[](std::pair<std::string,msr2mrp_node_entry> ne){return ne.second.used; } )) {
         throw no_available_entry("[error] All RINV table entry used");
     }
 
@@ -390,7 +402,8 @@ void msr2mrp::setState(msr2mrpStateDef state) {
     cTopology *topo = new cTopology("topo");
     topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
     auto *msr2mrp_instance = dynamic_cast<msr2mrp*>
-                (topo->getNode(atoi(getSinkAddress().c_str()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+                /* This should be collector node, or something */
+                (topo->getNode(atoi(par("collector_address").stringValue()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
     auto *res_mgr = dynamic_cast<ResourceManager *>(getParentModule()->getParentModule()->getSubmodule("ResourceManager"));
     msr2mrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state, res_mgr->getSpentEnergy());
     delete topo;
@@ -481,7 +494,7 @@ void msr2mrp::sendPong(int round) {
 
 void msr2mrp::storePong(msr2mrpPongPacket *pong_pkt) {
     trace()<<"[info] Entering msr2mrp::storePong(pong_pkt.source="<<pong_pkt->getSource()<<")";
-    pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),std::vector<pathid_entry>(1,{0,0}),0,false,0,0,false,pong_pkt->getRound()}});
+    pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),std::vector<msr2mrp_pathid_entry>(1,{0,0}),0,false,0,0,false,pong_pkt->getRound()}});
 }
 
 void msr2mrp::clearPongTable() {
@@ -509,13 +522,13 @@ int msr2mrp::getPongTableSize() const {
 
 void msr2mrp::initPongTableSize() {
     trace()<<"Entering setPongTableSize()";
-    node_entry ne;
+    msr2mrp_node_entry ne;
     ne.nw_address=SELF_NETWORK_ADDRESS;
 //    pong_table.insert({std::string(SELF_NETWORK_ADDRESS),ne});
 }
 
 
-void msr2mrp::sendRinv(int round, std::vector<pathid_entry> pathid, bool local=false, int local_id=0, int nmas=0) {
+void msr2mrp::sendRinv(int round, std::vector<msr2mrp_pathid_entry> pathid) {
     trace()<<"[info] Entering msr2mrp::sendRinv(round = "<<round<<", pathid = "<<pathidToStr(pathid)<<")";
     msr2mrpRinvPacket *rinv_pkt=new msr2mrpRinvPacket("MSR2MRP RINV packet", NETWORK_LAYER_PACKET);
     rinv_pkt->setByteLength(netDataFrameOverhead);
@@ -541,17 +554,14 @@ void msr2mrp::sendRinv(int round, std::vector<pathid_entry> pathid, bool local=f
         rinv_pkt->setHop(getHop());
     }
     rinv_pkt->setInterf(getPongTableSize());
-    rinv_pkt->setNmas(nmas);
-    rinv_pkt->setLocal(local);
-    rinv_pkt->setLocalid(local_id);
     rinv_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void msr2mrp::sendRinv(int round, bool local=false, int localid=0, int nmas=0) {
+void msr2mrp::sendRinv(int round, std::string origin) {
     trace()<<"[info] Entering msr2mrp::sendRinv(round = "<<round<<")";
-    std::vector<pathid_entry> pathid;
-    pathid_entry pe;
+    std::vector<msr2mrp_pathid_entry> pathid;
+    msr2mrp_pathid_entry pe;
     pe.pathid         = 0;
     pe.nmas           = 0;
     pe.secl           = 0;
@@ -560,24 +570,26 @@ void msr2mrp::sendRinv(int round, bool local=false, int localid=0, int nmas=0) {
     pe.enrgy          = getEnergyValue(); 
     pe.emerg          = getEmergencyValue();
     pe.pdr            = 1.0;
+    pe.origin         = atoi(origin.c_str()); 
     pathid.push_back(pe);
-    sendRinv(round,pathid,local,localid,nmas);
+    sendRinv(round,pathid);
 }
 
-void msr2mrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
+void msr2mrp::sendRinvBasedOnHop() {
     trace()<<"[info] Entering sendRinvBasedOnHop()";
     if(getHop() < fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
-        sendRinv(getRound(), local, localid, nmas);
+        sendRinv(getRound(),getSinkAddress());
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
         // With this the master/sensor node capabilities inside the ring won't matter
-        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0}), local, nmas);
+        sendRinv(getRound(), std::vector<msr2mrp_pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0,atoi(getSinkAddress().c_str())}) );
     } else {
         trace()<<"[info] Node outside mesh ring";
-        std::vector<pathid_entry> pathid;
+        std::vector<msr2mrp_pathid_entry> pathid;
         try {
             if(isMaster()) {
+                throw state_not_permitted(" Master functionality not implemented");
                 trace()<<"[info] Node is master node, selecting all pathids";
                 trace()<<"[info] Master hack, let's consume 1 random number, to keep simulation in-sync: "<<getRNG(0)->intRand(pathid.size());
                 for(auto ne: routing_table) {
@@ -589,12 +601,13 @@ void msr2mrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
                             }
                         }
                         if(!found) {
-                            pathid_entry pe;
+                            msr2mrp_pathid_entry pe;
                             pe.pathid = p.pathid;
                             pe.nmas   = p.nmas+1;
                             pe.enrgy  = getEnergyValue(); // select min
                             pe.emerg  = getEmergencyValue(); // select min
                             pe.pdr    = static_cast<double>(rreq_table[ne.first].ack_count)/static_cast<double>(rreq_table[ne.first].pkt_count);
+                            pe.origin = p.origin;
 
                             pathid.push_back(pe);
                         }
@@ -606,6 +619,8 @@ void msr2mrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
                 pe.enrgy = getEnergyValue();
                 pe.emerg = getEmergencyValue();
 
+                trace()<<"[info] Root sink selected: "<<pe.origin;
+                setSinkAddress(std::to_string(pe.origin));
                 // PDR not working yet.
                 pe.pdr    = 0;
 
@@ -616,7 +631,7 @@ void msr2mrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
             trace()<<e.what();
             throw e;
         }
-        sendRinv(getRound(), pathid, local, localid,nmas);
+        sendRinv(getRound(), pathid);
     }
 }
 
@@ -628,11 +643,11 @@ void msr2mrp::clearRinvTable() {
 
 void msr2mrp::addToRinvTable(msr2mrpRinvPacket *rinv_pkt) {
     trace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid size: "<<rinv_pkt->getPathidArraySize()<<" hop: "<<rinv_pkt->getHop()<<" interf: "<<rinv_pkt->getInterf();
-    node_entry ne;
+    msr2mrp_node_entry ne;
     ne.nw_address = std::string(rinv_pkt->getSource());
     ne.pathid.clear(); 
     for(int i=0 ; i < rinv_pkt->getPathidArraySize() ; ++i) {
-        pathid_entry pe;
+        msr2mrp_pathid_entry pe;
         pe.pathid         = rinv_pkt->getPathid(i).pathid;
         pe.nmas           = rinv_pkt->getPathid(i).nmas;
         pe.secl           = false;
@@ -734,7 +749,7 @@ void msr2mrp::retrieveAndMergeRreqTable() {
     }
 }
 
-void msr2mrp::mergePathids(std::vector<pathid_entry> &p1, std::vector<pathid_entry> &p2) {
+void msr2mrp::mergePathids(std::vector<msr2mrp_pathid_entry> &p1, std::vector<msr2mrp_pathid_entry> &p2) {
     trace()<<"[info] Entering mergePathids(p1="<<pathidToStr(p1)<<", p2="<<pathidToStr(p2)<<")";
     for(auto pe: p1) {
         for(auto pe2: p2) {
@@ -751,7 +766,7 @@ bool msr2mrp::isRreqTableEmpty() const {
     return rreq_table.empty();
 }
 
-double msr2mrp::calculateCostFunction(node_entry ne) {
+double msr2mrp::calculateCostFunction(msr2mrp_node_entry ne) {
     double ret_val;
 
     // FIXME
@@ -851,13 +866,13 @@ void msr2mrp::constructRreqTable() {
         }
     } else {
         trace()<<"[info] Node outside mesh ring";
-        std::map<int, std::vector<node_entry>> cl;
-        std::for_each(rinv_table.begin(),rinv_table.end(),[&](std::pair<std::string,node_entry> ne){
+        std::map<int, std::vector<msr2mrp_node_entry>> cl;
+        std::for_each(rinv_table.begin(),rinv_table.end(),[&](std::pair<std::string,msr2mrp_node_entry> ne){
                 if(ne.second.hop < getHop() && !ne.second.used) {
                     for(auto p: ne.second.pathid) {
                         if(cl.find(p.pathid) == cl.end()) {
                             trace()<<"[info] Creating entry for pathid: "<<p.pathid<<" and adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
-                            cl.insert({p.pathid,std::vector<node_entry>{ne.second}});
+                            cl.insert({p.pathid,std::vector<msr2mrp_node_entry>{ne.second}});
                         } else {
                             trace()<<"[info] Adding entry for pathid: "<<p.pathid<<" with address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
                             cl[p.pathid].push_back(ne.second);
@@ -883,7 +898,7 @@ void msr2mrp::constructRreqTable() {
         } else {
             for(auto l: cl) {
                 trace()<<"[info] Selecting nodes per pathid to RREQ";
-                node_entry c_ne=l.second[0];
+                msr2mrp_node_entry c_ne=l.second[0];
                 trace()<<"[info] Candidate list entries for pathid "<<l.first<<" is " <<l.second.size();
                 for(auto ne: l.second) {
                     if(calculateCostFunction(ne) < calculateCostFunction(c_ne)) {
@@ -937,7 +952,7 @@ void msr2mrp::constructRreqTable(std::vector<int> path_filter) {
             }
         }
 
-        auto pathidUnavailable = [&](std::vector<pathid_entry> pathid){ for(auto pe: pathid) { if(pe.used == false) { return false;  } } return true; };
+        auto pathidUnavailable = [&](std::vector<msr2mrp_pathid_entry> pathid){ for(auto pe: pathid) { if(pe.used == false) { return false;  } } return true; };
 
         if(0==it->second.pathid.size() || ( it->second.used && pathidUnavailable(it->second.pathid))) {
             trace()<<"[info] Erasing node: "<<it->second.nw_address<<" pathid: "<<pathidToStr(it->second.pathid);
@@ -1001,7 +1016,7 @@ int  msr2mrp::getRreqPktCount() {
 
 
 bool msr2mrp::rrespReceived() const {
-    if(std::any_of(rreq_table.begin(), rreq_table.end(),[](std::pair<std::string,node_entry> ne){return ne.second.rresp; } )) {
+    if(std::any_of(rreq_table.begin(), rreq_table.end(),[](std::pair<std::string,msr2mrp_node_entry> ne){return ne.second.rresp; } )) {
         return true;
     }
     return false;
@@ -1188,7 +1203,7 @@ void msr2mrp::clearRoutingTable() {
 void msr2mrp::addRoute(std::string next_hop, int pathid) {
     trace()<<"[info] Entering msr2mrp::addRoute(next_hop="<<next_hop<<", pathid="<<pathid<<")";
     if(routing_table.find(next_hop) == routing_table.end()) {
-        routing_table[next_hop]={next_hop,std::vector<pathid_entry>(1,{pathid,0}) };
+        routing_table[next_hop]={next_hop,std::vector<msr2mrp_pathid_entry>(1,{pathid,0}) };
     } else {
         trace()<<"[error] Route already exists";
     }
@@ -1200,7 +1215,7 @@ bool msr2mrp::isRoutingTableEmpty() const {
 
 void msr2mrp::constructRoutingTableFromRinvTable() {
     trace()<<"[info] Entering constructRoutingTableFromRinvTable()";
-    std::map<std::string,node_entry> filt_table;
+    std::map<std::string,msr2mrp_node_entry> filt_table;
     for(auto ne: rinv_table) {
         if(ne.second.local) {
             filt_table[ne.second.nw_address]=ne.second;
@@ -1236,8 +1251,8 @@ void msr2mrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0,
         return;
     }
 
-    auto calc_pdr=[&](node_entry n){ trace()<<"[info] PDR: "<<static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);return static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);};
-    auto clean_pathid=[](node_entry n, int p){ for(int i=0 ; i < n.pathid.size() ; ++i) { if(n.pathid[i].pathid == p) { auto ret=n; ret.pathid=std::vector<pathid_entry>(1,n.pathid[i]); return ret; } } };
+    auto calc_pdr=[&](msr2mrp_node_entry n){ trace()<<"[info] PDR: "<<static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);return static_cast<double>(n.ack_count)/static_cast<double>(n.pkt_count);};
+    auto clean_pathid=[](msr2mrp_node_entry n, int p){ for(int i=0 ; i < n.pathid.size() ; ++i) { if(n.pathid[i].pathid == p) { auto ret=n; ret.pathid=std::vector<msr2mrp_pathid_entry>(1,n.pathid[i]); return ret; } } };
 
     if(getHop() <= fp.ring_radius) {
         if(update) {
@@ -1259,15 +1274,15 @@ void msr2mrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0,
         return;
     }
 
-    std::map<int, std::vector<node_entry>> cl;
-    std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,node_entry> ne){
+    std::map<int, std::vector<msr2mrp_node_entry>> cl;
+    std::for_each(rreq_table.begin(),rreq_table.end(),[&](std::pair<std::string,msr2mrp_node_entry> ne){
             // Either select only hop-based, if rresp is not required or based on rresp received
             // During update do not consider hop
             if((update || ne.second.hop < getHop()) && (ne.second.rresp || !fp.rresp_req) && calc_pdr(ne.second) >= pdr ) {
                 for(auto p: ne.second.pathid) {
                     if(cl.find(p.pathid) == cl.end()) {
                         trace()<<"[info] Creating pathid entry "<<p.pathid<<" and adding entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
-                        cl.insert({p.pathid,std::vector<node_entry>{clean_pathid(ne.second,p.pathid)}});
+                        cl.insert({p.pathid,std::vector<msr2mrp_node_entry>{clean_pathid(ne.second,p.pathid)}});
                     } else {
                         trace()<<"[info] Adding to pathid entry "<<p.pathid<<" entry address: "<<ne.second.nw_address<<" hop: "<<ne.second.hop<<" pathid: "<<pathidToStr(ne.second.pathid);
                         cl[p.pathid].push_back(clean_pathid(ne.second,p.pathid));
@@ -1280,7 +1295,7 @@ void msr2mrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0,
 
     for(auto l: cl) {
         trace()<<"[info] Selecting nodes per pathid to RREQ";
-        node_entry c_ne=l.second[0];
+        msr2mrp_node_entry c_ne=l.second[0];
 
         trace()<<"[info] Candidate list entries for pathid "<<l.first<<" is " <<l.second.size();
         if(fp.drop_1st_rt_c && getRNG(0)->doubleRand() > 1.0-fp.drop_prob) {
@@ -1349,7 +1364,7 @@ void msr2mrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0,
     }
 }
 
-pathid_entry msr2mrp::selectPathid(bool replay) {
+msr2mrp_pathid_entry msr2mrp::selectPathid(bool replay) {
     trace()<<"[info] Entering msr2mrp::selectPathid(replay="<<replay<<")";
     if(!replay) {
         g_pathid=selectPathid();
@@ -1398,7 +1413,7 @@ std::vector<int> msr2mrp::selectAllPathid(int path_sel) {
     return pathid;
 }
 
-pathid_entry msr2mrp::selectPathid() {
+msr2mrp_pathid_entry msr2mrp::selectPathid() {
     trace()<<"[info] Entering msr2mrp::selectPathid()";
     if(routing_table.empty()) {
         throw routing_table_empty("[error] Routing table empty");
@@ -1424,7 +1439,7 @@ pathid_entry msr2mrp::selectPathid() {
         tmp_table = routing_table;
     }
 
-    std::vector<pathid_entry> pathid;
+    std::vector<msr2mrp_pathid_entry> pathid;
     for(auto ne: tmp_table) {
         for(auto p: ne.second.pathid) {
             trace()<<"[info] Pathid collected: "<<p.pathid;
@@ -1440,7 +1455,7 @@ pathid_entry msr2mrp::selectPathid() {
     return *it;
 }
 
-std::string msr2mrp::pathidToStr(vector<pathid_entry> pathid) {
+std::string msr2mrp::pathidToStr(vector<msr2mrp_pathid_entry> pathid) {
     std::string str;
     for(auto i: pathid) {
         str.append(std::to_string(i.pathid));
@@ -1460,10 +1475,10 @@ std::string msr2mrp::pathidToStr(vector<int> pathid) {
 
 std::string msr2mrp::getNextHop(int pathid) {
     trace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
-    node_entry next_hop;
+    msr2mrp_node_entry next_hop;
     bool found=false;
     std::for_each(routing_table.begin(),routing_table.end(),
-            [&](std::pair<std::string,node_entry> ne){
+            [&](std::pair<std::string,msr2mrp_node_entry> ne){
             for(auto p: ne.second.pathid) {
             if(p.pathid== pathid) {
             found=true;
@@ -1482,7 +1497,7 @@ std::string msr2mrp::getNextHop(int pathid, bool random_node) {
     trace()<<"[info] Entering getNextHop(pathid="<<pathid<<", random_node="<<random_node<<")";
     std::string next_hop;
     if(random_node) {
-        std::vector<node_entry> nodes;
+        std::vector<msr2mrp_node_entry> nodes;
         for(auto a : routing_table) {
             for(auto p: a.second.pathid) {
                 if(p.pathid==pathid) {
@@ -1563,7 +1578,7 @@ int msr2mrp::calculateRepeat(const char *dest) {
 void msr2mrp::incPktCountInRecvTable(std::string entry, int pathid, int round) {
     trace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
     if(recv_table.find(entry) == recv_table.end()) {
-        recv_table[entry] = {entry,std::vector<pathid_entry>(1,{pathid,0}),0,false,0,0,false,round,1};
+        recv_table[entry] = {entry,std::vector<msr2mrp_pathid_entry>(1,{pathid,0}),0,false,0,0,false,round,1};
     } else {
         bool create=true;
         for(auto p: recv_table[entry].pathid) {
@@ -1593,7 +1608,7 @@ void msr2mrp::timerFiredCallback(int index) {
         case msr2mrpTimerDef::T_SINK_START: {
             trace()<<"[timer] T_SINK_START timer expired";
             setRound(1+getRound());
-            sendRinv(getRound());
+            sendRinv(getRound(),SELF_NETWORK_ADDRESS);
             setTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             if(fp.periodic_restart) {
                 setTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
@@ -1603,7 +1618,7 @@ void msr2mrp::timerFiredCallback(int index) {
         case msr2mrpTimerDef::T_RESTART: {
             trace()<<"[timer] T_RESTART timer expired";
             setRound(1+getRound());
-            sendRinv(getRound());
+            sendRinv(getRound(),SELF_NETWORK_ADDRESS);
             if(getTimer(msr2mrpTimerDef::T_REPEAT)!=-1) {
                 trace()<<"[info] cancelling T_REPEAT timer";
                 cancelTimer(msr2mrpTimerDef::T_REPEAT);
@@ -1778,7 +1793,7 @@ void msr2mrp::timerFiredCallback(int index) {
         }
 
         case msr2mrpTimerDef::T_REPEAT: {
-            sendRinv(getRound());
+            sendRinv(getRound(),SELF_NETWORK_ADDRESS);
             setTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             break;
         }
@@ -1908,6 +1923,9 @@ void msr2mrp::timerFiredCallback(int index) {
                     constructRoutingTable(fp.rresp_req);
                 }
                 setHop(calculateHopFromRoutingTable());
+                if(getHop()<=fp.ring_radius) {
+                    setSinkAddress(getSinkAddressFromRtTbl());
+                }
             } catch (routing_table_empty &e) {
                 trace()<<e.what();
                 trace()<<"[info] Returning to LEARN state";
@@ -2461,7 +2479,7 @@ std::string msr2mrp::ringToStr(msr2mrpRingDef pos) const {
 void msr2mrp::serializeRoutingTable() {
     serializeRoutingTable(routing_table);
 }
-void msr2mrp::serializeRoutingTable(std::map<std::string,node_entry> table) {
+void msr2mrp::serializeRoutingTable(std::map<std::string,msr2mrp_node_entry> table) {
     y_out<<YAML::BeginSeq;
     for(auto i : table) {
         y_out<<YAML::BeginMap;
@@ -2509,7 +2527,7 @@ void msr2mrp::serializeRecvTable() {
     serializeRecvTable(recv_table);
 }
 
-void msr2mrp::serializeRecvTable(std::map<std::string,node_entry> table) {
+void msr2mrp::serializeRecvTable(std::map<std::string,msr2mrp_node_entry> table) {
     y_out<<YAML::BeginSeq;
     for(auto i : table) {
         y_out<<YAML::BeginMap;
