@@ -34,7 +34,7 @@ simple msr2mrp like node.communication.routing.iRouting
 	int    netDataFrameOverhead = default (10); // bytes
 	int    netBufferSize = default (32);	    // number of messages
 
-    string collector_address = default("0")     // Where to collect log data
+    string collector_address = default("0");    // Where to collect log data
 
     double t_l = default (1);                   // Tl timer, default 1 sec
     double t_est = default(2);                  // Test timer, default 2 sec
