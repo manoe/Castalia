@@ -150,7 +150,7 @@ class state_not_permitted : public std::runtime_error {
 
 //}
 
-struct pathid_entry {
+struct msr2mrp_pathid_entry {
     int pathid;
     int nmas;
     bool secl;
@@ -162,9 +162,9 @@ struct pathid_entry {
     int origin   = 0;
 };
 
-struct node_entry {
+struct msr2mrp_node_entry {
     string nw_address;
-    vector<pathid_entry> pathid;
+    vector<msr2mrp_pathid_entry> pathid;
     int  hop;
     bool rresp = false;
     int  interf;
@@ -244,21 +244,21 @@ class msr2mrp: public VirtualRouting {
         string g_sink_addr;
         int g_hop;
         int g_round;
-        pathid_entry g_pathid; // this is dangerous, even more dangerous
+        msr2mrp_pathid_entry g_pathid; // this is dangerous, even more dangerous
         bool g_sec_l = false;
         std::queue<int> g_sec_l_pathid;
         int g_sec_l_timeout = 0;
         bool g_is_master=false;
         feat_par fp;
         msr2mrpStateDef g_state;
-        std::map<std::string,node_entry> rinv_table;
-        std::map<std::string,node_entry> rreq_table;
-        std::map<std::string,node_entry> routing_table;
-        std::map<std::string,node_entry> pong_table;
-        std::map<std::string,node_entry> recv_table;
-        std::map<std::string,node_entry> backup_rreq_table;
+        std::map<std::string,msr2mrp_node_entry> rinv_table;
+        std::map<std::string,msr2mrp_node_entry> rreq_table;
+        std::map<std::string,msr2mrp_node_entry> routing_table;
+        std::map<std::string,msr2mrp_node_entry> pong_table;
+        std::map<std::string,msr2mrp_node_entry> recv_table;
+        std::map<std::string,msr2mrp_node_entry> backup_rreq_table;
         std::list<msr2mrpDataPacket *> pkt_list;
-        std::map<std::string,node_entry> traffic_table;
+        std::map<std::string,msr2mrp_node_entry> traffic_table;
 
         YAML::Emitter y_out;
 
@@ -299,7 +299,7 @@ class msr2mrp: public VirtualRouting {
         void clearPongTable(int);
 
         void sendRinv(int,std::string);
-        void sendRinv(int,vector<pathid_entry>);
+        void sendRinv(int,vector<msr2mrp_pathid_entry>);
         void sendRinvBasedOnHop();
 
         void setHop(int);
@@ -330,7 +330,7 @@ class msr2mrp: public VirtualRouting {
         void saveRreqTable();
         void retrieveRreqTable();
         void retrieveAndMergeRreqTable();
-        void mergePathids(std::vector<pathid_entry>&, std::vector<pathid_entry>&);
+        void mergePathids(std::vector<msr2mrp_pathid_entry>&, std::vector<msr2mrp_pathid_entry>&);
         bool isRreqTableEmpty() const;
         void constructRreqTable();
         void constructRreqTable(std::vector<int>);
@@ -341,7 +341,7 @@ class msr2mrp: public VirtualRouting {
         bool rrespReceived() const;
         void updateRreqEntryWithEmergency(const char *, double, double);
         void removeRreqEntry(std::string, bool);
-        double calculateCostFunction(node_entry);
+        double calculateCostFunction(msr2mrp_node_entry);
 
 
         void clearRoutingTable();
@@ -351,11 +351,11 @@ class msr2mrp: public VirtualRouting {
         void addRoute(std::string, int);
         void removeRoute(std::string);
         bool isRoutingTableEmpty() const;
-        pathid_entry selectPathid();
-        pathid_entry selectPathid(bool);
+        msr2mrp_pathid_entry selectPathid();
+        msr2mrp_pathid_entry selectPathid(bool);
         std::vector<int> selectAllPathid();
         std::vector<int> selectAllPathid(int);
-        std::string pathidToStr(vector<pathid_entry> pathid);
+        std::string pathidToStr(vector<msr2mrp_pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
 
         std::string getNextHop(int);
@@ -392,10 +392,10 @@ class msr2mrp: public VirtualRouting {
         void handleLinkFailure(int);
 
         void serializeRoutingTable();
-        void serializeRoutingTable(std::map<std::string,node_entry>);
+        void serializeRoutingTable(std::map<std::string,msr2mrp_node_entry>);
 
         void serializeRecvTable();
-        void serializeRecvTable(std::map<std::string,node_entry>);
+        void serializeRecvTable(std::map<std::string,msr2mrp_node_entry>);
         void serializeRadioStats(PktBreakdown);
 
         std::string StateToString(msr2mrpStateDef);
@@ -434,31 +434,31 @@ class msr2mrp: public VirtualRouting {
         int getPongTableSize() const;
         void initPongTableSize();
 
-        std::map<std::string,node_entry> getRoutingTable() {
+        std::map<std::string,msr2mrp_node_entry> getRoutingTable() {
             if(routing_table.empty()) {
                 throw routing_table_empty("[error] Routing table empty at node");
             }
             return routing_table;
         };
-        std::map<std::string,node_entry> getRecvTable() {
+        std::map<std::string,msr2mrp_node_entry> getRecvTable() {
             if(recv_table.empty()) {
                 throw recv_table_empty("[error] Recv table empty at node");
             }
             return recv_table;
         };
-        std::map<std::string,node_entry> getRreqTable() {
+        std::map<std::string,msr2mrp_node_entry> getRreqTable() {
             if(rreq_table.empty()) {
                 throw rreq_table_empty("[error] Rreq table empty at node");
             }
             return rreq_table;
         };
-        std::map<std::string,node_entry> getRinvTable() {
+        std::map<std::string,msr2mrp_node_entry> getRinvTable() {
             if(rinv_table.empty()) {
                 throw rinv_table_empty("[error Rinv table empty at node");
             }
             return rinv_table;
         };
-        std::map<std::string,node_entry> getTrafficTable() {
+        std::map<std::string,msr2mrp_node_entry> getTrafficTable() {
             return traffic_table;
         }
 };
