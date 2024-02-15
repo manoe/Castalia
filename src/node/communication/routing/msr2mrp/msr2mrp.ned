@@ -33,6 +33,9 @@ simple msr2mrp like node.communication.routing.iRouting
 	int    maxNetFrameSize = default (0);	    // bytes
 	int    netDataFrameOverhead = default (10); // bytes
 	int    netBufferSize = default (32);	    // number of messages
+
+    string collector_address = default("0")     // Where to collect log data
+
     double t_l = default (1);                   // Tl timer, default 1 sec
     double t_est = default(2);                  // Test timer, default 2 sec
     double t_meas = default(2);                 // Tmeas timer, default 2 sec
@@ -41,7 +44,6 @@ simple msr2mrp like node.communication.routing.iRouting
     double t_relay = default(0.1);              // relay timer
     double t_start = default (1);               // sink start timer
     double t_restart = default(7200);           // Restart network timer
-    string sink_address = default("0");         // sink's network address
 
     bool   f_rresp_required   = default(false); // Expect RRESP to use route
     bool   f_measure_w_rreq   = default(false); // Measure with subsequent RREQ messages

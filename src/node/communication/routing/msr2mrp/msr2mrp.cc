@@ -34,12 +34,6 @@ void msr2mrp::startup() {
         g_is_master=false;
     }
 
-    if(hasPar("sink_address")) {
-        g_sink_addr.assign(par("sink_address").stringValue());
-    } else {
-        trace()<<"[error] No sink address provisioned";
-    }
-
     fp.t_l               = par("t_l");
     fp.ring_radius       = par("ring_radius");
     fp.t_est             = par("t_est");
@@ -213,12 +207,30 @@ bool msr2mrp::isSecLPathidEmpty() {
 }
 
 
-void msr2mrp::setSinkAddress(const char *p_sink_addr) {
+void msr2mrp::setSinkAddress(std::string p_sink_addr) {
     g_sink_addr.assign(p_sink_addr);
 }
 
 std::string msr2mrp::getSinkAddress() const {
     return g_sink_addr;
+}
+
+std::string msr2mrp::getSinkAddressFromRtTbl() {
+    trace()<<"[info] Entering getSinkAddressFromRtTable()";
+    if(isRoutingTableEmpty()) {
+        throw routing_table_empty("[error] Routing table empty, cannot identify sink");
+    }
+    vector<int> origins;
+    for(auto re: routing_table) {
+        for(auto pe: re.second.pathid) {
+            origins.push_back(pe.origin);
+        }
+    }
+    trace()<<"[info] Sink addresses: "<<pathidToStr(origins);
+    if(!std::all_of(origins.begin(), origins.end(), [&origins](int i) { return i == origins.front(); })) {
+        throw state_not_permitted("[error] Sink entries ambigous");
+    }
+    return std::to_string(origins.front());
 }
 
 double msr2mrp::getTl() {
@@ -390,7 +402,8 @@ void msr2mrp::setState(msr2mrpStateDef state) {
     cTopology *topo = new cTopology("topo");
     topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
     auto *msr2mrp_instance = dynamic_cast<msr2mrp*>
-                (topo->getNode(atoi(getSinkAddress().c_str()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+                /* This should be collector node, or something */
+                (topo->getNode(atoi(par("collector_address").stringValue()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
     auto *res_mgr = dynamic_cast<ResourceManager *>(getParentModule()->getParentModule()->getSubmodule("ResourceManager"));
     msr2mrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state, res_mgr->getSpentEnergy());
     delete topo;
@@ -515,7 +528,7 @@ void msr2mrp::initPongTableSize() {
 }
 
 
-void msr2mrp::sendRinv(int round, std::vector<pathid_entry> pathid, std::string origin) {
+void msr2mrp::sendRinv(int round, std::vector<pathid_entry> pathid) {
     trace()<<"[info] Entering msr2mrp::sendRinv(round = "<<round<<", pathid = "<<pathidToStr(pathid)<<")";
     msr2mrpRinvPacket *rinv_pkt=new msr2mrpRinvPacket("MSR2MRP RINV packet", NETWORK_LAYER_PACKET);
     rinv_pkt->setByteLength(netDataFrameOverhead);
@@ -557,24 +570,26 @@ void msr2mrp::sendRinv(int round, std::string origin) {
     pe.enrgy          = getEnergyValue(); 
     pe.emerg          = getEmergencyValue();
     pe.pdr            = 1.0;
+    pe.origin         = atoi(origin.c_str()); 
     pathid.push_back(pe);
-    sendRinv(round,pathid,origin);
+    sendRinv(round,pathid);
 }
 
 void msr2mrp::sendRinvBasedOnHop() {
     trace()<<"[info] Entering sendRinvBasedOnHop()";
     if(getHop() < fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
-        sendRinv(getRound(),origin);
+        sendRinv(getRound(),getSinkAddress());
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
         // With this the master/sensor node capabilities inside the ring won't matter
-        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0}), origin);
+        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0,atoi(getSinkAddress().c_str())}) );
     } else {
         trace()<<"[info] Node outside mesh ring";
         std::vector<pathid_entry> pathid;
         try {
             if(isMaster()) {
+                throw state_not_permitted(" Master functionality not implemented");
                 trace()<<"[info] Node is master node, selecting all pathids";
                 trace()<<"[info] Master hack, let's consume 1 random number, to keep simulation in-sync: "<<getRNG(0)->intRand(pathid.size());
                 for(auto ne: routing_table) {
@@ -592,6 +607,7 @@ void msr2mrp::sendRinvBasedOnHop() {
                             pe.enrgy  = getEnergyValue(); // select min
                             pe.emerg  = getEmergencyValue(); // select min
                             pe.pdr    = static_cast<double>(rreq_table[ne.first].ack_count)/static_cast<double>(rreq_table[ne.first].pkt_count);
+                            pe.origin = p.origin;
 
                             pathid.push_back(pe);
                         }
@@ -603,6 +619,8 @@ void msr2mrp::sendRinvBasedOnHop() {
                 pe.enrgy = getEnergyValue();
                 pe.emerg = getEmergencyValue();
 
+                trace()<<"[info] Root sink selected: "<<pe.origin;
+                setSinkAddress(std::to_string(pe.origin));
                 // PDR not working yet.
                 pe.pdr    = 0;
 
@@ -613,7 +631,7 @@ void msr2mrp::sendRinvBasedOnHop() {
             trace()<<e.what();
             throw e;
         }
-        sendRinv(getRound(), pathid,origin);
+        sendRinv(getRound(), pathid);
     }
 }
 
@@ -1600,7 +1618,7 @@ void msr2mrp::timerFiredCallback(int index) {
         case msr2mrpTimerDef::T_RESTART: {
             trace()<<"[timer] T_RESTART timer expired";
             setRound(1+getRound());
-            sendRinv(getRound());
+            sendRinv(getRound(),SELF_NETWORK_ADDRESS);
             if(getTimer(msr2mrpTimerDef::T_REPEAT)!=-1) {
                 trace()<<"[info] cancelling T_REPEAT timer";
                 cancelTimer(msr2mrpTimerDef::T_REPEAT);
@@ -1905,6 +1923,9 @@ void msr2mrp::timerFiredCallback(int index) {
                     constructRoutingTable(fp.rresp_req);
                 }
                 setHop(calculateHopFromRoutingTable());
+                if(getHop()<=fp.ring_radius) {
+                    setSinkAddress(getSinkAddressFromRtTbl());
+                }
             } catch (routing_table_empty &e) {
                 trace()<<e.what();
                 trace()<<"[info] Returning to LEARN state";

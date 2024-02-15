@@ -284,13 +284,13 @@ class msr2mrp: public VirtualRouting {
         msr2mrpSecLParDef strToSecLPar(string) const; 
 
         bool isSink() const;
-        void setSinkAddress(const char *);
+        void setSinkAddress(std::string);
         std::string getSinkAddress() const;
+        std::string getSinkAddressFromRtTbl();
         double getTl();
         double getTmeas() const;
         double getTest() const;
         void   handleTSecLTimer();
-
 
         void sendPing(int);
         void sendPong(int);
@@ -299,7 +299,7 @@ class msr2mrp: public VirtualRouting {
         void clearPongTable(int);
 
         void sendRinv(int,std::string);
-        void sendRinv(int,vector<pathid_entry>,std::string);
+        void sendRinv(int,vector<pathid_entry>);
         void sendRinvBasedOnHop();
 
         void setHop(int);
