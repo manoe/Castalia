@@ -515,7 +515,7 @@ void msr2mrp::initPongTableSize() {
 }
 
 
-void msr2mrp::sendRinv(int round, std::vector<pathid_entry> pathid, bool local=false, int local_id=0, int nmas=0) {
+void msr2mrp::sendRinv(int round, std::vector<pathid_entry> pathid, std::string origin) {
     trace()<<"[info] Entering msr2mrp::sendRinv(round = "<<round<<", pathid = "<<pathidToStr(pathid)<<")";
     msr2mrpRinvPacket *rinv_pkt=new msr2mrpRinvPacket("MSR2MRP RINV packet", NETWORK_LAYER_PACKET);
     rinv_pkt->setByteLength(netDataFrameOverhead);
@@ -541,14 +541,11 @@ void msr2mrp::sendRinv(int round, std::vector<pathid_entry> pathid, bool local=f
         rinv_pkt->setHop(getHop());
     }
     rinv_pkt->setInterf(getPongTableSize());
-    rinv_pkt->setNmas(nmas);
-    rinv_pkt->setLocal(local);
-    rinv_pkt->setLocalid(local_id);
     rinv_pkt->setSequenceNumber(currentSequenceNumber++);
     toMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void msr2mrp::sendRinv(int round, bool local=false, int localid=0, int nmas=0) {
+void msr2mrp::sendRinv(int round, std::string origin) {
     trace()<<"[info] Entering msr2mrp::sendRinv(round = "<<round<<")";
     std::vector<pathid_entry> pathid;
     pathid_entry pe;
@@ -561,18 +558,18 @@ void msr2mrp::sendRinv(int round, bool local=false, int localid=0, int nmas=0) {
     pe.emerg          = getEmergencyValue();
     pe.pdr            = 1.0;
     pathid.push_back(pe);
-    sendRinv(round,pathid,local,localid,nmas);
+    sendRinv(round,pathid,origin);
 }
 
-void msr2mrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
+void msr2mrp::sendRinvBasedOnHop() {
     trace()<<"[info] Entering sendRinvBasedOnHop()";
     if(getHop() < fp.ring_radius) {
         trace()<<"[info] Node inside mesh ring";
-        sendRinv(getRound(), local, localid, nmas);
+        sendRinv(getRound(),origin);
     } else if(getHop() == fp.ring_radius) {
         trace()<<"[info] Node at mesh ring border";
         // With this the master/sensor node capabilities inside the ring won't matter
-        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0}), local, nmas);
+        sendRinv(getRound(), std::vector<pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0}), origin);
     } else {
         trace()<<"[info] Node outside mesh ring";
         std::vector<pathid_entry> pathid;
@@ -616,7 +613,7 @@ void msr2mrp::sendRinvBasedOnHop(bool local=false, int localid=0, int nmas=0) {
             trace()<<e.what();
             throw e;
         }
-        sendRinv(getRound(), pathid, local, localid,nmas);
+        sendRinv(getRound(), pathid,origin);
     }
 }
 
@@ -1593,7 +1590,7 @@ void msr2mrp::timerFiredCallback(int index) {
         case msr2mrpTimerDef::T_SINK_START: {
             trace()<<"[timer] T_SINK_START timer expired";
             setRound(1+getRound());
-            sendRinv(getRound());
+            sendRinv(getRound(),SELF_NETWORK_ADDRESS);
             setTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             if(fp.periodic_restart) {
                 setTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
@@ -1778,7 +1775,7 @@ void msr2mrp::timerFiredCallback(int index) {
         }
 
         case msr2mrpTimerDef::T_REPEAT: {
-            sendRinv(getRound());
+            sendRinv(getRound(),SELF_NETWORK_ADDRESS);
             setTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             break;
         }

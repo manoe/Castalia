@@ -159,7 +159,7 @@ struct pathid_entry {
     double enrgy = 0;
     double emerg = 0;
     double pdr   = 0;
-
+    int origin   = 0;
 };
 
 struct node_entry {
@@ -298,9 +298,9 @@ class msr2mrp: public VirtualRouting {
         void clearPongTable();
         void clearPongTable(int);
 
-        void sendRinv(int,bool,int,int);
-        void sendRinv(int,vector<pathid_entry>,bool,int,int);
-        void sendRinvBasedOnHop(bool,int,int);
+        void sendRinv(int,std::string);
+        void sendRinv(int,vector<pathid_entry>,std::string);
+        void sendRinvBasedOnHop();
 
         void setHop(int);
         int  calculateHop(bool);
