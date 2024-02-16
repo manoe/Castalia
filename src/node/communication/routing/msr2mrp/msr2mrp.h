@@ -62,7 +62,8 @@ enum msr2mrpTimerDef {
     T_SEC_L_REPEAT   = 7,
     T_SEC_L_START    = 8,
     T_SEND_PKT       = 9,
-    T_RESTART        = 10
+    T_RESTART        = 10,
+    T_SERIAL         = 11
 };
 
 enum msr2mrpRingDef {
@@ -270,6 +271,8 @@ class msr2mrp: public VirtualRouting {
         ForestFire *ff_app;
 
         int forw_pkt_count;
+
+        SerialTimer stimer;
 
     protected:
         void startup();
