@@ -30,6 +30,27 @@
 #include "node/communication/radio/Radio.h"
 #include "node/application/ForestFire/forest_fire_message_m.h"
 #include "node/application/ForestFire/forest_fire.h"
+#include "node/communication/routing/msr2mrp/stimer.h"
+
+#define SetTimer(a,b) \
+    stimer.setTimer(0,a,b,getTimer(msr2mrpTimerDef::T_SERIAL) == -1?0:getTimer(msr2mrpTimerDef::T_SERIAL));
+#define GetTimer(a) stimer.getTimer(0,a)
+#define CancelTimer(a) stimer.cancelTimer(0,a);
+
+#define updateTimer() \
+    if(stimer.timerChange()) { \
+        trace()<<"[info] Timer change"; \
+        if(legacyGetTimer(msr2mrpTimerDef::T_SERIAL) != -1) { \
+            trace()<<"[info] T_SERIAL was active, canceling"; \
+            legacyCancelTimer(msr2mrpTimerDef::T_SERIAL); \
+        } \
+        legacySetTimer(msr2mrpTimerDef::T_SERIAL, stimer.getTimerValue()); \
+    } \
+
+#define legacySetTimer(a,b) setTimer(a,b)
+#define legacyCancelTimer(a) cancelTimer(a)
+#define legacyGetTimer(a) getTimer(a)
+
 
 ////enum hdmrpRoleDef {
 ////    SINK        = 1;
@@ -61,7 +82,8 @@ enum msr2mrpTimerDef {
     T_SEC_L_REPEAT   = 7,
     T_SEC_L_START    = 8,
     T_SEND_PKT       = 9,
-    T_RESTART        = 10
+    T_RESTART        = 10,
+    T_SERIAL         = 11
 };
 
 enum msr2mrpRingDef {
@@ -269,6 +291,8 @@ class msr2mrp: public VirtualRouting {
         ForestFire *ff_app;
 
         int forw_pkt_count;
+
+        SerialTimer stimer;
 
     protected:
         void startup();

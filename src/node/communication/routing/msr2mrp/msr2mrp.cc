@@ -81,6 +81,8 @@ void msr2mrp::startup() {
     fp.drop_prob         = par("f_drop_prob");
     fp.e2e_cost          = par("f_e2e_cost");
 
+    stimer.setTrace(&trace());
+
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
         setState(msr2mrpStateDef::WORK);
@@ -89,10 +91,10 @@ void msr2mrp::startup() {
         if(isSink()) {
             setHop(0);
             initPongTableSize();
-            setTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
+            SetTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
             setState(msr2mrpStateDef::WORK);
             if(fp.second_learn != msr2mrpSecLParDef::OFF) {
-                setTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
+                SetTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
             }
         } else {
             setHop(std::numeric_limits<int>::max());
@@ -101,6 +103,9 @@ void msr2mrp::startup() {
     }
     setRound(0);
     forw_pkt_count=0;
+
+
+    updateTimer();
 }
 
 void msr2mrp::parseRouting(std::string file) {
@@ -255,10 +260,10 @@ void msr2mrp::handleTSecLTimer() {
     trace()<<"[info] Entering handleTSecLTimer()";
     if(fp.second_learn != msr2mrpSecLParDef::OFF) {
         trace()<<"[info] Second learn feature active";
-        if(getTimer(msr2mrpTimerDef::T_SEC_L) != -1) {
+        if(GetTimer(msr2mrpTimerDef::T_SEC_L) != -1) {
             trace()<<"[info] T_SEC_L timer active, restarting";
-            cancelTimer(msr2mrpTimerDef::T_SEC_L);
-            setTimer(msr2mrpTimerDef::T_SEC_L,fp.t_sec_l);
+            CancelTimer(msr2mrpTimerDef::T_SEC_L);
+            SetTimer(msr2mrpTimerDef::T_SEC_L,fp.t_sec_l);
         }
     }
 }
@@ -1609,9 +1614,9 @@ void msr2mrp::timerFiredCallback(int index) {
             trace()<<"[timer] T_SINK_START timer expired";
             setRound(1+getRound());
             sendRinv(getRound(),SELF_NETWORK_ADDRESS);
-            setTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            SetTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             if(fp.periodic_restart) {
-                setTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
+                SetTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
             }
             break;
         }
@@ -1619,17 +1624,17 @@ void msr2mrp::timerFiredCallback(int index) {
             trace()<<"[timer] T_RESTART timer expired";
             setRound(1+getRound());
             sendRinv(getRound(),SELF_NETWORK_ADDRESS);
-            if(getTimer(msr2mrpTimerDef::T_REPEAT)!=-1) {
+            if(GetTimer(msr2mrpTimerDef::T_REPEAT)!=-1) {
                 trace()<<"[info] cancelling T_REPEAT timer";
-                cancelTimer(msr2mrpTimerDef::T_REPEAT);
+                CancelTimer(msr2mrpTimerDef::T_REPEAT);
             }
-            setTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
-            setTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
+            SetTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            SetTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
             break;
         }
         case msr2mrpTimerDef::T_SEC_L_START: {
             trace()<<"[timer] T_SEC_L_START timer expired, starting T_SEC_L timer";
-            setTimer(msr2mrpTimerDef::T_SEC_L,fp.t_sec_l);
+            SetTimer(msr2mrpTimerDef::T_SEC_L,fp.t_sec_l);
             break;
         }
         case msr2mrpTimerDef::T_SEC_L: {
@@ -1648,13 +1653,13 @@ void msr2mrp::timerFiredCallback(int index) {
                     case msr2mrpSecLParDef::UNICAST: {
                         if(0 == recv_table.size()) {
                             trace()<<"[info] Recv table size condition not met (empty)";
-                            setTimer(msr2mrpTimerDef::T_SEC_L,fp.t_sec_l);
+                            SetTimer(msr2mrpTimerDef::T_SEC_L,fp.t_sec_l);
                             break;
                         }
                         // most probably true...
                         if(!secLPerformed(getRound(), 0)) {
                             sendLreqUnicast(getRound(),0);
-                            setTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                            SetTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
                         }
                         break;
                     }
@@ -1666,7 +1671,7 @@ void msr2mrp::timerFiredCallback(int index) {
             }
             if(msr2mrpStateDef::WORK != getState()) {
                 trace()<<"[info] Node still not in WORK state, starting T_SEC_L timer.";
-                setTimer(msr2mrpTimerDef::T_SEC_L, fp.t_sec_l);
+                SetTimer(msr2mrpTimerDef::T_SEC_L, fp.t_sec_l);
                 break;
             }
 
@@ -1690,7 +1695,7 @@ void msr2mrp::timerFiredCallback(int index) {
                             // most probably true...
                             if(!secLPerformed(getRound(), 0)) {
                                 sendLreqUnicast(getRound(),0);
-                                setTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                                SetTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
                             }
                             break;
                         }
@@ -1715,7 +1720,7 @@ void msr2mrp::timerFiredCallback(int index) {
                             // most probably true...
                             if(!secLPerformed(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS) )) {
                                 sendLreqUnicast(getRound(),resolveNetworkAddress(SELF_NETWORK_ADDRESS));
-                                setTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                                SetTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
                             }
                             break;
                         }
@@ -1762,7 +1767,7 @@ void msr2mrp::timerFiredCallback(int index) {
                                 // most probably true...
                                 if(!secLPerformed(getRound(),getSecLPathid() )) {
                                     sendLreqUnicast(getRound(),getSecLPathid());
-                                    setTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                                    SetTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
                                 }
                                 break;
                             }
@@ -1776,7 +1781,7 @@ void msr2mrp::timerFiredCallback(int index) {
 
                     setState(msr2mrpStateDef::S_ESTABLISH);
                     sendRreqs(); 
-                    setTimer(msr2mrpTimerDef::T_ESTABLISH,getTest());
+                    SetTimer(msr2mrpTimerDef::T_ESTABLISH,getTest());
                     break;
                 }
             } 
@@ -1787,14 +1792,15 @@ void msr2mrp::timerFiredCallback(int index) {
             if(!secLPerformed(getRound(),getSecLPathid()) && g_sec_l_timeout < fp.t_sec_l_timeout-1 ) {
                 sendLreqUnicast(getRound(),getSecLPathid());
                 ++g_sec_l_timeout;
-                setTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                SetTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
             }
             break;
         }
 
         case msr2mrpTimerDef::T_REPEAT: {
+            trace()<<"[timer] T_REPEAT timer expired";
             sendRinv(getRound(),SELF_NETWORK_ADDRESS);
-            setTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            SetTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             break;
         }
         case msr2mrpTimerDef::T_L: {
@@ -1836,7 +1842,7 @@ void msr2mrp::timerFiredCallback(int index) {
                         break;
                     }
                     sendRreqs(); //maybe we could go directly to measure or work in case of hdmrp
-                    setTimer(msr2mrpTimerDef::T_ESTABLISH,getTest());
+                    SetTimer(msr2mrpTimerDef::T_ESTABLISH,getTest());
                     break;
                 }
                 default: {
@@ -1856,7 +1862,7 @@ void msr2mrp::timerFiredCallback(int index) {
             if(fp.measure_w_rreq && (fp.meas_rreq_count > getRreqPktCount()) ) {
                 sendRreqs();
                 trace()<<"[info] measure_w_rreq active, restarting T_ESTABLISH timer";
-                setTimer(msr2mrpTimerDef::T_ESTABLISH,getTest());
+                SetTimer(msr2mrpTimerDef::T_ESTABLISH,getTest());
                 break;
             }
             if(msr2mrpStateDef::S_ESTABLISH == getState()) {
@@ -1882,7 +1888,7 @@ void msr2mrp::timerFiredCallback(int index) {
                         // most probably true...
                         if(!secLPerformed(getRound(),getSecLPathid() )) {
                             sendLreqUnicast(getRound(),getSecLPathid());
-                            setTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
+                            SetTimer(msr2mrpTimerDef::T_SEC_L_REPEAT,fp.t_sec_l_repeat);
                         }
                         break;
                     }
@@ -1901,7 +1907,7 @@ void msr2mrp::timerFiredCallback(int index) {
                     trace()<<"[info] Returning to learning state, staying in round";
                     setState(msr2mrpStateDef::LEARN);
                     //setRound(getRound()-1);
-                    setTimer(msr2mrpTimerDef::T_L,getTl());
+                    SetTimer(msr2mrpTimerDef::T_L,getTl());
                     if(msr2mrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
                         trace()<<"[info] Clearing RINV table";
                         clearRinvTable();
@@ -1930,7 +1936,7 @@ void msr2mrp::timerFiredCallback(int index) {
                 trace()<<e.what();
                 trace()<<"[info] Returning to LEARN state";
                 setState(msr2mrpStateDef::LEARN);
-                setTimer(msr2mrpTimerDef::T_L,getTl());
+                SetTimer(msr2mrpTimerDef::T_L,getTl());
                 break;
                 // return
             }
@@ -1938,7 +1944,7 @@ void msr2mrp::timerFiredCallback(int index) {
             if(fp.interf_ping) {
                 trace()<<"[info] Performing PING based interference measurement";
                 setState(msr2mrpStateDef::MEASURE);
-                setTimer(msr2mrpTimerDef::T_MEASURE,getTmeas());
+                SetTimer(msr2mrpTimerDef::T_MEASURE,getTmeas());
                 if(fp.round_keep_pong) {
                     clearPongTable(getRound());
                 } else {
@@ -1950,7 +1956,7 @@ void msr2mrp::timerFiredCallback(int index) {
                 trace()<<"[info] Establishment done, transitioning to WORK state";
                 if(fp.e2e_qos_pdr > 0) {
                     trace()<<"[info] Starting T_SEND_PKT to schedule pkt sending";
-                    setTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
+                    SetTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
                 }
                 setState(msr2mrpStateDef::WORK);
                 sendRinvBasedOnHop();
@@ -1963,7 +1969,7 @@ void msr2mrp::timerFiredCallback(int index) {
                 trace()<<"[info] Measurement done, transitioning to WORK state";
                 if(fp.e2e_qos_pdr > 0) {
                     trace()<<"[info] Starting T_SEND_PKT to schedule pkt sending";
-                    setTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
+                    SetTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
                 }
 
             setState(msr2mrpStateDef::WORK);
@@ -2006,9 +2012,20 @@ void msr2mrp::timerFiredCallback(int index) {
                 }
             }
             trace()<<"[timer] Re-scheduling T_SEND_PKT";
-            setTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
+            SetTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
             break;
         }
+        case msr2mrpTimerDef::T_SERIAL: {
+            trace()<<"[info] timer T_SERIAL expired";
+            auto timer = stimer.nextTimer();
+            trace()<<"[info] timer - machine: "<<timer.machine<<" index: "<<timer.index<<" time: "<<timer.time;
+            timerFiredCallback(timer.index);
+            if(stimer.timerChange()) {
+                trace()<<"[info] Timer change indicated";
+                legacySetTimer(msr2mrpTimerDef::T_SERIAL, stimer.getTimerValue());
+            }
+            break;
+        } 
 
         default: {
             trace()<<"[error] Unknown timer expired: "<<index;
@@ -2048,6 +2065,7 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             sendData(pkt,next_hop,pathid.pathid);
         }
     }
+    updateTimer();
 }
 
 void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
@@ -2075,15 +2093,15 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                 setHop(std::numeric_limits<int>::max());
                 switch (getState()) {
                     case msr2mrpStateDef::LEARN: {
-                        cancelTimer(msr2mrpTimerDef::T_L);
+                        CancelTimer(msr2mrpTimerDef::T_L);
                         break;
                     }
                     case msr2mrpStateDef::ESTABLISH: {
-                        cancelTimer(msr2mrpTimerDef::T_ESTABLISH);
+                        CancelTimer(msr2mrpTimerDef::T_ESTABLISH);
                         break;
                     }
                     case msr2mrpStateDef::MEASURE: {
-                        cancelTimer(msr2mrpTimerDef::T_MEASURE);
+                        CancelTimer(msr2mrpTimerDef::T_MEASURE);
                         break;
                     }
                 }
@@ -2097,7 +2115,7 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                 // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
                 setSecL(false);
                 setState(msr2mrpStateDef::LEARN);
-                setTimer(msr2mrpTimerDef::T_L,getTl());
+                SetTimer(msr2mrpTimerDef::T_L,getTl());
 
             } else if(rinv_pkt->getRound() == getRound()) {
                 if(true == rinv_pkt->getLocal()) {
@@ -2109,7 +2127,7 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                             trace()<<"[info] New local learn, initiated by "<<rinv_pkt->getLocalid();
                             storeLocalid(rinv_pkt->getLocalid());
                             setState(msr2mrpStateDef::LOCAL_LEARN);
-                            setTimer(msr2mrpTimerDef::T_L, getTl());
+                            SetTimer(msr2mrpTimerDef::T_L, getTl());
                             clearRinvTableLocalFlags();
                             try {
                                 markRinvEntryLocal(std::string(rinv_pkt->getSource()));
@@ -2127,8 +2145,8 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                         } else {
                             trace()<<"[info] Local learn restart due to "<<rinv_pkt->getLocalid();
                             storeLocalid(rinv_pkt->getLocalid());
-                            cancelTimer(msr2mrpTimerDef::T_L);
-                            setTimer(msr2mrpTimerDef::T_L, getTl());
+                            CancelTimer(msr2mrpTimerDef::T_L);
+                            SetTimer(msr2mrpTimerDef::T_L, getTl());
                             try {
                                 markRinvEntryLocal(std::string(rinv_pkt->getSource()));
                             } catch (no_available_entry &e) {
@@ -2229,11 +2247,11 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
             } else {
                 pushSecLPathid(lreq_packet->getPathid());
             }
-            if(getTimer(msr2mrpTimerDef::T_SEC_L)!=-1 || getState()==msr2mrpStateDef::S_ESTABLISH ) {
+            if(GetTimer(msr2mrpTimerDef::T_SEC_L)!=-1 || getState()==msr2mrpStateDef::S_ESTABLISH ) {
                 trace()<<"[info] T_SEC_L timer active or S_ESTABLISH state, no restart";
             } else {
                 trace()<<"[info] Starting T_SEC_L timer";
-                setTimer(msr2mrpTimerDef::T_SEC_L, fp.t_sec_l);
+                SetTimer(msr2mrpTimerDef::T_SEC_L, fp.t_sec_l);
             }
             break;
         }
@@ -2445,6 +2463,7 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
             break;
         }
     }
+    updateTimer();
 }
 
 msr2mrpRingDef msr2mrp::getRingStatus() const {
@@ -2584,7 +2603,6 @@ void msr2mrp::serializeRadioStats(PktBreakdown stats) {
 
 void msr2mrp::finishSpecific() {
     if (isSink() && resolveNetworkAddress(SELF_NETWORK_ADDRESS) == 0) {
-        trace()<<"Cukros faszom";
         cTopology *topo;        // temp variable to access energy spent by other nodes
         topo = new cTopology("topo");
         topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
