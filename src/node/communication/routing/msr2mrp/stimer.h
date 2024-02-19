@@ -23,8 +23,10 @@ class SerialTimer {
     private:
         std::deque<TimerItem> timers;
         bool timer_change;
+        std::ostream *out;
     public:
-        SerialTimer() : timer_change(false) {};
+        void setTrace(std::ostream *trace) { out = trace; };
+        SerialTimer() : timer_change(false) { timers.clear(); };
         void setTimer(int machine, int index, simtime_t time, simtime_t offset);
         simtime_t getTimer(int machine, int index);
         void cancelTimer(int machine, int index);
