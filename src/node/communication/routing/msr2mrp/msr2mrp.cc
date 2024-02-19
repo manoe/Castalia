@@ -1798,6 +1798,7 @@ void msr2mrp::timerFiredCallback(int index) {
         }
 
         case msr2mrpTimerDef::T_REPEAT: {
+            trace()<<"[timer] T_REPEAT timer expired";
             sendRinv(getRound(),SELF_NETWORK_ADDRESS);
             SetTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
             break;

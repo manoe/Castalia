@@ -61,6 +61,7 @@ void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t off
         }
         sum += it->time;
     }
+    item.time -= sum;
     timers.push_back(item);
 }
 
