@@ -81,7 +81,7 @@ void msr2mrp::startup() {
     fp.drop_prob         = par("f_drop_prob");
     fp.e2e_cost          = par("f_e2e_cost");
 
-    stimer.setTrace(&trace());
+    stimer = new SerialTimer(trace());
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -2017,12 +2017,12 @@ void msr2mrp::timerFiredCallback(int index) {
         }
         case msr2mrpTimerDef::T_SERIAL: {
             trace()<<"[info] timer T_SERIAL expired";
-            auto timer = stimer.nextTimer();
+            auto timer = stimer->nextTimer();
             trace()<<"[info] timer - machine: "<<timer.machine<<" index: "<<timer.index<<" time: "<<timer.time;
             timerFiredCallback(timer.index);
-            if(stimer.timerChange()) {
+            if(stimer->timerChange()) {
                 trace()<<"[info] Timer change indicated";
-                legacySetTimer(msr2mrpTimerDef::T_SERIAL, stimer.getTimerValue());
+                legacySetTimer(msr2mrpTimerDef::T_SERIAL, stimer->getTimerValue());
             }
             break;
         } 
@@ -2815,6 +2815,7 @@ void msr2mrp::finishSpecific() {
 
         delete(topo);
     }
+    delete stimer;
     return;
 }
 
