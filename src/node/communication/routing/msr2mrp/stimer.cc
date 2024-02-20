@@ -12,7 +12,7 @@
 
 /* time, timer value, offset, the elapsed time of the common timer */
 void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t offset) {
-    *out<<"[stimer] setTimer(machine="<<machine<<", index="<<index<<", time="<<time<<", offset="<<offset<<")";
+    out<<"[stimer] setTimer(machine="<<machine<<", index="<<index<<", time="<<time<<", offset="<<offset<<")";
     TimerItem item;
     item.machine = machine;
     item.index   = index;
@@ -21,7 +21,7 @@ void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t off
     /* sunny day */
     if(timers.size() == 0) {
         timer_change = true;
-        *out<<"[stimer] No timer present, this is the first one.";
+        out<<"[stimer] No timer present, this is the first one.";
         timers.push_front(item);
         return;
     }
@@ -35,7 +35,7 @@ void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t off
     
     /* update first timer */
     auto first = timers.begin();
-    *out<<"[stimer] first item - machine: "<<first->machine<<" index: "<<first->index<<" time: "<<first->time;
+    out<<"[stimer] first item - machine: "<<first->machine<<" index: "<<first->index<<" time: "<<first->time;
     if(first->time < offset) {
         throw std::out_of_range("Offset greater than first timer, non removed timer?");
     } else {
@@ -43,7 +43,7 @@ void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t off
     }
 
     if(first->time > item.time) {
-        *out<<"[stimer] New timer expires earlier than actual. Refresh needed."; 
+        out<<"[stimer] New timer expires earlier than actual. Refresh needed."; 
         timer_change = true;
         first->time -= item.time;
         timers.push_front(item);
@@ -78,7 +78,7 @@ simtime_t SerialTimer::getTimer(int machine, int index) {
 }
 
 void SerialTimer::cancelTimer(int machine, int index) {
-    *out<<"[stimer] cancelTimer(machine="<<machine<<", index="<<index<<")";
+    out<<"[stimer] cancelTimer(machine="<<machine<<", index="<<index<<")";
     simtime_t offset = 0;
     for(auto it = timers.begin() ; it != timers.end() ; ) {
         if(it->machine == machine && it->index == index) {
@@ -102,7 +102,7 @@ bool SerialTimer::timerChange() {
 }
 
 TimerItem SerialTimer::nextTimer() {
-    *out<<"[stimer] nextTimer()";
+    out<<"[stimer] nextTimer()";
     if(0 == timers.size()) {
         throw std::out_of_range("No timer available");
     }
@@ -117,12 +117,12 @@ TimerItem SerialTimer::nextTimer() {
 }
 
 simtime_t SerialTimer::getTimerValue() {
-    *out<<"[stimer] getTimerValue()";
+    out<<"[stimer] getTimerValue()";
     if(0 == timers.size()) {
         throw std::out_of_range("No timer available");
     }
     timer_change = false;
     auto item = timers.front();
-    *out<<"[simer] timer - machine: "<<item.machine<<" index: "<<item.index<<" item.time: "<<item.time; 
+    out<<"[simer] timer - machine: "<<item.machine<<" index: "<<item.index<<" item.time: "<<item.time; 
     return item.time;
 }
