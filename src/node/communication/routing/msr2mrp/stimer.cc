@@ -12,6 +12,7 @@
 
 /* time, timer value, offset, the elapsed time of the common timer */
 void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t offset) {
+    out.flush();
     out<<"[stimer] setTimer(machine="<<machine<<", index="<<index<<", time="<<time<<", offset="<<offset<<")";
     TimerItem item;
     item.machine = machine;

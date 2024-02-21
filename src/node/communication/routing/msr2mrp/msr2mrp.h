@@ -294,6 +294,8 @@ class msr2mrp: public VirtualRouting {
 
         SerialTimer *stimer;
 
+        msr2mrp *nw_layer;
+
     protected:
         void startup();
         void parseRouting(std::string);
@@ -484,7 +486,13 @@ class msr2mrp: public VirtualRouting {
         };
         std::map<std::string,msr2mrp_node_entry> getTrafficTable() {
             return traffic_table;
-        }
+        };
+
+
+        void extToMacLayer(cMessage *msg) { toMacLayer(msg); };
+        void extToApplicationLayer(cMessage *msg) {toApplicationLayer(msg); };
+        void extToMacLayer(cPacket *msg, int addr) { toMacLayer(msg,addr); };
+        std::ostream & extTrace() { return trace(); };
 };
 
 #endif // _MSR2MRP_H_

@@ -81,7 +81,9 @@ void msr2mrp::startup() {
     fp.drop_prob         = par("f_drop_prob");
     fp.e2e_cost          = par("f_e2e_cost");
 
+
     stimer = new SerialTimer(trace());
+    nw_layer = this;
 
     if(fp.static_routing) {
         parseRouting(par("f_routing_file").stringValue());
@@ -481,7 +483,7 @@ void msr2mrp::sendPing(int round) {
     ping_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     ping_pkt->setRound(round);
     ping_pkt->setSequenceNumber(currentSequenceNumber++);
-    toMacLayer(ping_pkt, BROADCAST_MAC_ADDRESS);
+    nw_layer->extToMacLayer(ping_pkt, BROADCAST_MAC_ADDRESS);
 }
 
 void msr2mrp::sendPong(int round) {
