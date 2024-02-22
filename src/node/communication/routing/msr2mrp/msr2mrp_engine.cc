@@ -9,142 +9,93 @@
 
 #include "node/communication/routing/msr2mrp/msr2mrp_engine.h"
 
-Define_Module(msr2mrp);
-
-void msr2mrp::startup() {
-    cModule *appModule = getParentModule()->getParentModule()->getSubmodule("Application");
-    if(appModule->hasPar("isSink")) {
-        g_is_sink=appModule->par("isSink");
-    } else {
-        g_is_sink=false;
-    }
-
-    if(0==strcmp(appModule->getClassName(),"ForestFire")) {
-        extTrace()<<"[info] ForestFire app present";
-        ff_app = check_and_cast<ForestFire *>(appModule);
-    } else {
-        extTrace()<<"[info] ForestFire app not present";
-        ff_app = NULL;
-    }
-
-
-    if(appModule->hasPar("isMaster")) {
-        g_is_master=appModule->par("isMaster");
-    } else {
-        g_is_master=false;
-    }
-
-    fp.t_l               = par("t_l");
-    fp.ring_radius       = par("ring_radius");
-    fp.t_est             = par("t_est");
-    fp.t_meas            = par("t_meas");
-    fp.rresp_req         = par("f_rresp_required");
-    fp.rst_learn         = par("f_restart_learning");
-    fp.replay_rinv       = par("f_replay_rinv");
-    fp.cost_func         = strToCostFunc(par("f_cost_function").stringValue());
-    fp.cost_func_epsilon = par("f_cost_func_epsilon");
-    fp.cost_func_iota    = par("f_cost_func_iota");
-    fp.cost_func_pi      = par("f_cost_func_pi");
-    fp.cost_func_phi     = par("f_cost_func_phi");
-    fp.cost_func_mu      = par("f_cost_func_mu");
-    fp.cost_func_eta     = par("f_cost_func_eta");
-    fp.cf_after_rresp    = par("f_cf_after_rresp");
-    fp.random_t_l        = par("f_random_t_l");
-    fp.random_t_l_sigma  = par("f_random_t_l_sigma");
-    fp.rinv_tbl_admin    = strToRinvTblAdmin(par("f_rinv_table_admin").stringValue());
-    fp.interf_ping       = par("f_interf_ping");
-    fp.round_keep_pong   = par("f_round_keep_pong");
-    fp.rand_ring_hop     = par("f_rand_ring_hop");
-    fp.static_routing    = par("f_static_routing");
-    fp.measure_w_rreq    = par("f_measure_w_rreq");
-    fp.meas_rreq_count   = par("f_meas_rreq_count");
-    fp.calc_max_hop      = par("f_calc_max_hop");
-    fp.qos_pdr           = par("f_qos_pdr");
-    fp.rt_recalc_warn    = par("f_rt_recalc_warn");
-    fp.reroute_pkt       = par("f_reroute_pkt");
-    fp.second_learn      = strToSecLPar(par("f_second_learn").stringValue());
-    fp.t_sec_l           = par("f_t_sec_l");
-    fp.t_sec_l_repeat    = par("f_t_sec_l_repeat");
-    fp.t_sec_l_timeout   = par("f_t_sec_l_timeout");
-    fp.t_sec_l_start     = par("f_t_sec_l_start");
-    fp.t_restart         = par("t_restart");
-    fp.periodic_restart  = par("f_periodic_restart");
-    fp.detect_link_fail  = par("f_detect_link_fail");
-    fp.rt_fallb_wo_qos   = par("f_rt_fallb_wo_qos");
-    fp.send_pfail_rwarn  = par("f_send_pfail_rwarn");
-    fp.fail_count        = par("f_fail_count");
-    fp.path_sel          = par("f_path_sel");
-    fp.e2e_qos_pdr       = par("f_e2e_qos_pdr");
-    fp.t_send_pkt        = par("f_t_send_pkt");
-    fp.rep_m_pdr         = par("f_rep_m_pdr");
-    fp.drop_1st_rt_c     = par("f_drop_1st_rt_c");
-    fp.drop_prob         = par("f_drop_prob");
-    fp.e2e_cost          = par("f_e2e_cost");
-
-
-    stimer = new SerialTimer(extTrace());
-    nw_layer = this;
-
-    if(fp.static_routing) {
-        parseRouting(par("f_routing_file").stringValue());
-        setState(msr2mrpStateDef::WORK);
-        setHop(0); // probably wrong
-    } else {
-        if(isSink()) {
-            setHop(0);
-            initPongTableSize();
-            SetTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
-            setState(msr2mrpStateDef::WORK);
-            if(fp.second_learn != msr2mrpSecLParDef::OFF) {
-                SetTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
+msr2mrp_engine::msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, std::string sink_addr, std::string self_addr, msr2mrp_feat_par fp, int netDataFrameOverhead) :
+            nw_layer(nw_layer),
+            g_sink_addr(sink_addr),
+            selfAddress(self_addr),
+            g_hop(std::numeric_limits<int>::max()),
+            g_round(0),
+            g_state(msr2mrpStateDef::UNDEF),
+            g_is_sink(is_sink),
+            g_is_master(is_master),
+            netDataFrameOverhead(netDataFrameOverhead),
+            currentSequenceNumber(0),
+            fp(fp) {
+                extTrace()<<"[info] MSR2MRP Engine starting with sink "<<getSinkAddress();
+            if(isSink()) {
+                extTrace()<<"[info] Node is a sink.";
+                setHop(0);
+                initPongTableSize();
+                SetTimer(msr2mrpTimerDef::T_SINK_START,fp.t_start);
+                setState(msr2mrpStateDef::WORK);
+                if(fp.second_learn != msr2mrpSecLParDef::OFF) {
+                    SetTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
+                }
+            } else {
+                setHop(std::numeric_limits<int>::max());
+                setState(msr2mrpStateDef::INIT);
             }
-        } else {
-            setHop(std::numeric_limits<int>::max());
-            setState(msr2mrpStateDef::INIT);
-        }
-    }
-    setRound(0);
-    forw_pkt_count=0;
+            setRound(0);
 
+            // this should be node level?
+            forw_pkt_count=0;
+    // move out
+    //    updateTimer();
+                  
+        };
 
-    updateTimer();
+std::ostream & msr2mrp_engine::extTrace() { return nw_layer->extTrace(); };
+
+void msr2mrp_engine::SetTimer(int index, simtime_t time) {
+    extTrace()<<"[timer] SetTimer(index="<<index<<",time="<<time<<")";
+    nw_layer->extSetTimer(stoi(getSinkAddress()),index,time);
 }
 
-void msr2mrp::parseRouting(std::string file) {
-    YAML::Node nodes;
-
-    try {
-        nodes = YAML::LoadFile(file);
-    }
-    catch (std::exception &e) {
-        extTrace()<<e.what();
-        throw e;
-    }
-    if(!nodes.IsSequence()) {
-        throw std::runtime_error("[error] Routing file - format error - node sequence missing");
-    }
-    for(auto i = 0 ; i < nodes.size() ; ++i) {
-        if(0 == std::strcmp(nodes[i]["node"].as<std::string>().c_str(), SELF_NETWORK_ADDRESS)) {
-            if(!nodes[i]["routes"].IsSequence()) {
-                throw std::runtime_error("[error] Routing file - format error - route sequence missing");
-            }
-            for(auto j = 0 ; j < nodes[i]["routes"].size() ; ++j) {
-                extTrace()<<"[info] "<<nodes[i]["routes"][j]["node"].as<std::string>()<<" node via pathid "<<nodes[i]["routes"][j]["pathid"].as<int>();
-                addRoute(nodes[i]["routes"][j]["node"].as<std::string>(), nodes[i]["routes"][j]["pathid"].as<int>());
-            }
-        } 
-    }
+simtime_t msr2mrp_engine::GetTimer(int index) {
+    extTrace()<<"[timer] GetTimer(index="<<index<<")";
+    return nw_layer->extGetTimer(stoi(getSinkAddress()),index);
 }
 
-bool msr2mrp::isSink() const {
+void msr2mrp_engine::CancelTimer(int index) {
+    extTrace()<<"[timer] CancelTimer(index="<<index<<")";
+    nw_layer->extCancelTimer(stoi(getSinkAddress()),index);
+}
+
+cRNG* msr2mrp_engine::getRNG(int index) {
+    extTrace()<<"[info] getRNG(index="<<index<<")";
+    return nw_layer->extGetRNG(index);
+}
+
+
+int msr2mrp_engine::resolveNetworkAddress(const char *netAddr)
+{
+        if (!netAddr[0] || netAddr[0] < '0' || netAddr[0] > '9')
+                return BROADCAST_MAC_ADDRESS;
+        return atoi(netAddr);
+}
+
+
+cPacket* msr2mrp_engine::decapsulatePacket(cPacket * pkt)
+{
+        RoutingPacket *netPkt = check_and_cast <RoutingPacket*>(pkt);
+        ApplicationPacket *appPkt = check_and_cast <ApplicationPacket*>(netPkt->decapsulate());
+
+        appPkt->getAppNetInfoExchange().RSSI = netPkt->getNetMacInfoExchange().RSSI;
+        appPkt->getAppNetInfoExchange().LQI = netPkt->getNetMacInfoExchange().LQI;
+        appPkt->getAppNetInfoExchange().source = netPkt->getSource();
+        return appPkt;
+}
+
+
+bool msr2mrp_engine::isSink() const {
     return g_is_sink;
 }
 
-bool msr2mrp::isMaster() const {
+bool msr2mrp_engine::isMaster() const {
     return g_is_master;
 }
 
-bool msr2mrp::getSecL() {
+bool msr2mrp_engine::getSecL() {
     extTrace()<<"[info] Entering getSecL()";
     for(auto ne: routing_table) {
         for(auto p: ne.second.pathid) {
@@ -156,7 +107,7 @@ bool msr2mrp::getSecL() {
     return false;
 }
 
-bool msr2mrp::getSecL(int pathid) {
+bool msr2mrp_engine::getSecL(int pathid) {
     extTrace()<<"[info] Entering getSecL(pathid="<<pathid<<")";
     for(auto ne: routing_table) {
         for(auto p: ne.second.pathid) {
@@ -169,7 +120,7 @@ bool msr2mrp::getSecL(int pathid) {
 }
 
 
-void msr2mrp::setSecL(bool flag) {
+void msr2mrp_engine::setSecL(bool flag) {
     extTrace()<<"[info] Entering setSecL(flag="<<flag<<")";
     if(false==flag) {
         for(auto &&i: routing_table) {
@@ -182,7 +133,7 @@ void msr2mrp::setSecL(bool flag) {
     }
 }
 
-void msr2mrp::setSecL(int pathid, bool flag) {
+void msr2mrp_engine::setSecL(int pathid, bool flag) {
     extTrace()<<"[info] Entering setSecL(pathid="<<pathid<<", flag="<<flag<<")";
     for(auto &&ne: routing_table) {
         for(auto &&p: ne.second.pathid) {
@@ -193,36 +144,36 @@ void msr2mrp::setSecL(int pathid, bool flag) {
     }
 }
 
-void msr2mrp::pushSecLPathid(int pathid) {
+void msr2mrp_engine::pushSecLPathid(int pathid) {
     extTrace()<<"[info] Entering pushSecLPathid(pathid="<<pathid<<")";
     g_sec_l_pathid.push(pathid);
 }
 
-int  msr2mrp::popSecLPathid() {
+int  msr2mrp_engine::popSecLPathid() {
    extTrace()<<"[info] Entering popSecLPathid()";
    auto ret_val=g_sec_l_pathid.front();
    g_sec_l_pathid.pop();
    return ret_val;
 }
 
-int  msr2mrp::getSecLPathid() {
+int  msr2mrp_engine::getSecLPathid() {
     return g_sec_l_pathid.front();
 
 }
-bool msr2mrp::isSecLPathidEmpty() {
+bool msr2mrp_engine::isSecLPathidEmpty() {
     return g_sec_l_pathid.empty();
 }
 
 
-void msr2mrp::setSinkAddress(std::string p_sink_addr) {
+void msr2mrp_engine::setSinkAddress(std::string p_sink_addr) {
     g_sink_addr.assign(p_sink_addr);
 }
 
-std::string msr2mrp::getSinkAddress() const {
+std::string msr2mrp_engine::getSinkAddress() const {
     return g_sink_addr;
 }
 
-std::string msr2mrp::getSinkAddressFromRtTbl() {
+std::string msr2mrp_engine::getSinkAddressFromRtTbl() {
     extTrace()<<"[info] Entering getSinkAddressFromRtTable()";
     if(isRoutingTableEmpty()) {
         throw routing_table_empty("[error] Routing table empty, cannot identify sink");
@@ -240,7 +191,7 @@ std::string msr2mrp::getSinkAddressFromRtTbl() {
     return std::to_string(origins.front());
 }
 
-double msr2mrp::getTl() {
+double msr2mrp_engine::getTl() {
     double t_l=fp.t_l;
     if(fp.random_t_l) {
         t_l=omnetpp::normal(getRNG(0),fp.t_l,fp.random_t_l_sigma);
@@ -250,15 +201,15 @@ double msr2mrp::getTl() {
 }
 
 
-double msr2mrp::getTmeas() const {
+double msr2mrp_engine::getTmeas() const {
     return fp.t_meas;
 }
 
-double msr2mrp::getTest() const {
+double msr2mrp_engine::getTest() const {
     return fp.t_est;
 }
 
-void msr2mrp::handleTSecLTimer() {
+void msr2mrp_engine::handleTSecLTimer() {
     extTrace()<<"[info] Entering handleTSecLTimer()";
     if(fp.second_learn != msr2mrpSecLParDef::OFF) {
         extTrace()<<"[info] Second learn feature active";
@@ -271,7 +222,7 @@ void msr2mrp::handleTSecLTimer() {
 }
 
 
-msr2mrpCostFuncDef msr2mrp::strToCostFunc(string str) const {
+msr2mrpCostFuncDef msr2mrp_engine::strToCostFunc(string str) const {
     if("hop" == str) {
         return msr2mrpCostFuncDef::HOP;
     } else if("hop_and_interf" == str) {
@@ -303,7 +254,7 @@ msr2mrpCostFuncDef msr2mrp::strToCostFunc(string str) const {
     return msr2mrpCostFuncDef::NOT_DEFINED; 
 }
 
-msr2mrpRinvTblAdminDef msr2mrp::strToRinvTblAdmin(string str) const {
+msr2mrpRinvTblAdminDef msr2mrp_engine::strToRinvTblAdmin(string str) const {
     if("erase_on_learn" == str) {
         return msr2mrpRinvTblAdminDef::ERASE_ON_LEARN;
     } else if("erase_on_round" == str) {
@@ -315,7 +266,7 @@ msr2mrpRinvTblAdminDef msr2mrp::strToRinvTblAdmin(string str) const {
     return msr2mrpRinvTblAdminDef::UNDEF_ADMIN;
 }
 
-msr2mrpSecLParDef msr2mrp::strToSecLPar(std::string str) const {
+msr2mrpSecLParDef msr2mrp_engine::strToSecLPar(std::string str) const {
     if("off" == str) {
         return msr2mrpSecLParDef::OFF;
     } else if("broadcast" == str) {
@@ -328,18 +279,18 @@ msr2mrpSecLParDef msr2mrp::strToSecLPar(std::string str) const {
 }
 
 
-void msr2mrp::setHop(int hop) {
-    extTrace()<<"[info] Entering msr2mrp::setHop(hop="<<hop<<")";  
+void msr2mrp_engine::setHop(int hop) {
+    extTrace()<<"[info] Entering msr2mrp_engine::setHop(hop="<<hop<<")";  
     extTrace()<<"[info] Update hop "<<g_hop<<" to "<<hop;
     g_hop=hop;
 }
 
-int msr2mrp::getHop() const {
+int msr2mrp_engine::getHop() const {
     return g_hop;
 }
 
-int msr2mrp::getHop(int pathid) {
-    extTrace()<<"[info] Entering msr2mrp::getHop(pathid="<<pathid<<")";
+int msr2mrp_engine::getHop(int pathid) {
+    extTrace()<<"[info] Entering msr2mrp_engine::getHop(pathid="<<pathid<<")";
     int hop=getHop();
     bool fail=true;
     for(auto ne: routing_table) {
@@ -357,8 +308,8 @@ int msr2mrp::getHop(int pathid) {
     return hop;
 }
 
-int msr2mrp::calculateHop(bool max_hop=false) {
-    extTrace()<<"[info] Entering msr2mrp::calculateHop(max_hop="<<max_hop<<")";
+int msr2mrp_engine::calculateHop(bool max_hop=false) {
+    extTrace()<<"[info] Entering msr2mrp_engine::calculateHop(max_hop="<<max_hop<<")";
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
@@ -384,8 +335,8 @@ int msr2mrp::calculateHop(bool max_hop=false) {
     return hop+1;
 }
 
-int msr2mrp::calculateHopFromRoutingTable() {
-    extTrace()<<"[info] Entering msr2mrp::calculateHopFromRoutingTable()";
+int msr2mrp_engine::calculateHopFromRoutingTable() {
+    extTrace()<<"[info] Entering msr2mrp_engine::calculateHopFromRoutingTable()";
     int hop=std::numeric_limits<int>::max();
     for(auto i: routing_table) {
         if(i.second.hop < hop) {
@@ -395,45 +346,21 @@ int msr2mrp::calculateHopFromRoutingTable() {
     return hop+1;
 }
 
-void msr2mrp::setRound(int round) {
+void msr2mrp_engine::setRound(int round) {
     extTrace()<<"[info] Changing round "<<g_round<<" to "<<round;
     g_round=round;
 }
 
-int msr2mrp::getRound() const {
+int msr2mrp_engine::getRound() const {
     return g_round;
 }
 
-void msr2mrp::setState(msr2mrpStateDef state) {
+void msr2mrp_engine::setState(msr2mrpStateDef state) {
     extTrace()<<"[info] State change from "<<stateToStr(g_state)<<" to "<<stateToStr(state);
-    cTopology *topo = new cTopology("topo");
-    topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
-    auto *msr2mrp_instance = dynamic_cast<msr2mrp*>
-                /* This should be collector node, or something */
-                (topo->getNode(atoi(par("collector_address").stringValue()))->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
-    auto *res_mgr = dynamic_cast<ResourceManager *>(getParentModule()->getParentModule()->getSubmodule("ResourceManager"));
-    msr2mrp_instance->writeState(atoi(SELF_NETWORK_ADDRESS), simTime().dbl(), state, res_mgr->getSpentEnergy());
-    delete topo;
-
     g_state=state;
 }
 
-void msr2mrp::writeState(int node, double timestamp, msr2mrpStateDef state, double energy) {
-    int numNodes = getParentModule()->getParentModule()->getParentModule()->par("numNodes");
-    cTopology *topo;
-    topo = new cTopology("topo");
-    topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
-    double nrg=0.0;
-    for (int i = 0; i < numNodes; i++) {
-        auto *rm = dynamic_cast<ResourceManager*>
-                        (topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
-        nrg+=rm->getSpentEnergy();
-    }
-    delete topo;
-    state_chng_log.push_back({node,timestamp,state,energy,nrg});
-}
-
-string msr2mrp::stateToStr(msr2mrpStateDef state) const {
+string msr2mrp_engine::stateToStr(msr2mrpStateDef state) const {
     switch (state) {
         case msr2mrpStateDef::UNDEF: {
             return "UNDEF";
@@ -467,15 +394,15 @@ string msr2mrp::stateToStr(msr2mrpStateDef state) const {
 
 }
 
-msr2mrpStateDef msr2mrp::getState() const {
-    if(disabled) {
+msr2mrpStateDef msr2mrp_engine::getState() const {
+    if(nw_layer->getState() == msr2mrpStateDef::DEAD) {
         return msr2mrpStateDef::DEAD;
     }
     return g_state;
 }
 
-void msr2mrp::sendPing(int round) {
-    extTrace()<<"[info] Entering msr2mrp::sendPing(round = "<<round<<")";
+void msr2mrp_engine::sendPing(int round) {
+    extTrace()<<"[info] Entering msr2mrp_engine::sendPing(round = "<<round<<")";
     msr2mrpPingPacket *ping_pkt=new msr2mrpPingPacket("MSR2MRP PING packet", NETWORK_LAYER_PACKET);
     ping_pkt->setByteLength(netDataFrameOverhead);
     ping_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::PING_PACKET);
@@ -486,8 +413,8 @@ void msr2mrp::sendPing(int round) {
     nw_layer->extToMacLayer(ping_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void msr2mrp::sendPong(int round) {
-    extTrace()<<"[info] Entering msr2mrp::sendPong(round = "<<round<<")";
+void msr2mrp_engine::sendPong(int round) {
+    extTrace()<<"[info] Entering msr2mrp_engine::sendPong(round = "<<round<<")";
     msr2mrpPongPacket *pong_pkt=new msr2mrpPongPacket("MSR2MRP PONG packet", NETWORK_LAYER_PACKET);
     pong_pkt->setByteLength(netDataFrameOverhead);
     pong_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::PONG_PACKET);
@@ -499,17 +426,17 @@ void msr2mrp::sendPong(int round) {
 
 }
 
-void msr2mrp::storePong(msr2mrpPongPacket *pong_pkt) {
-    extTrace()<<"[info] Entering msr2mrp::storePong(pong_pkt.source="<<pong_pkt->getSource()<<")";
+void msr2mrp_engine::storePong(msr2mrpPongPacket *pong_pkt) {
+    extTrace()<<"[info] Entering msr2mrp_engine::storePong(pong_pkt.source="<<pong_pkt->getSource()<<")";
     pong_table.insert({pong_pkt->getSource(),{pong_pkt->getSource(),std::vector<msr2mrp_pathid_entry>(1,{0,0}),0,false,0,0,false,pong_pkt->getRound()}});
 }
 
-void msr2mrp::clearPongTable() {
+void msr2mrp_engine::clearPongTable() {
     pong_table.clear();
 }
 
-void msr2mrp::clearPongTable(int round) {
-    extTrace()<<"[info] Entering msr2mrp::clearPongTable(round="<<round<<")";
+void msr2mrp_engine::clearPongTable(int round) {
+    extTrace()<<"[info] Entering msr2mrp_engine::clearPongTable(round="<<round<<")";
     if(pong_table.empty()) {
         return;
     }
@@ -523,11 +450,11 @@ void msr2mrp::clearPongTable(int round) {
     }
 }
 
-int msr2mrp::getPongTableSize() const {
+int msr2mrp_engine::getPongTableSize() const {
     return pong_table.size();
 }
 
-void msr2mrp::initPongTableSize() {
+void msr2mrp_engine::initPongTableSize() {
     extTrace()<<"Entering setPongTableSize()";
     msr2mrp_node_entry ne;
     ne.nw_address=SELF_NETWORK_ADDRESS;
@@ -535,8 +462,8 @@ void msr2mrp::initPongTableSize() {
 }
 
 
-void msr2mrp::sendRinv(int round, std::vector<msr2mrp_pathid_entry> pathid) {
-    extTrace()<<"[info] Entering msr2mrp::sendRinv(round = "<<round<<", pathid = "<<pathidToStr(pathid)<<")";
+void msr2mrp_engine::sendRinv(int round, std::vector<msr2mrp_pathid_entry> pathid) {
+    extTrace()<<"[info] Entering msr2mrp_engine::sendRinv(round = "<<round<<", pathid = "<<pathidToStr(pathid)<<")";
     msr2mrpRinvPacket *rinv_pkt=new msr2mrpRinvPacket("MSR2MRP RINV packet", NETWORK_LAYER_PACKET);
     rinv_pkt->setByteLength(netDataFrameOverhead);
     rinv_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::RINV_PACKET);
@@ -565,8 +492,8 @@ void msr2mrp::sendRinv(int round, std::vector<msr2mrp_pathid_entry> pathid) {
     nw_layer->extToMacLayer(rinv_pkt, BROADCAST_MAC_ADDRESS);
 }
 
-void msr2mrp::sendRinv(int round, std::string origin) {
-    extTrace()<<"[info] Entering msr2mrp::sendRinv(round = "<<round<<")";
+void msr2mrp_engine::sendRinv(int round, std::string origin) {
+    extTrace()<<"[info] Entering msr2mrp_engine::sendRinv(round = "<<round<<")";
     std::vector<msr2mrp_pathid_entry> pathid;
     msr2mrp_pathid_entry pe;
     pe.pathid         = 0;
@@ -582,7 +509,7 @@ void msr2mrp::sendRinv(int round, std::string origin) {
     sendRinv(round,pathid);
 }
 
-void msr2mrp::sendRinvBasedOnHop() {
+void msr2mrp_engine::sendRinvBasedOnHop() {
     extTrace()<<"[info] Entering sendRinvBasedOnHop()";
     if(getHop() < fp.ring_radius) {
         extTrace()<<"[info] Node inside mesh ring";
@@ -643,12 +570,12 @@ void msr2mrp::sendRinvBasedOnHop() {
 }
 
 
-void msr2mrp::clearRinvTable() {
+void msr2mrp_engine::clearRinvTable() {
     extTrace()<<"[info] RINV table erased";
     rinv_table.clear();
 }
 
-void msr2mrp::addToRinvTable(msr2mrpRinvPacket *rinv_pkt) {
+void msr2mrp_engine::addToRinvTable(msr2mrpRinvPacket *rinv_pkt) {
     extTrace()<<"[info] Add entry to RINV table - source: "<<rinv_pkt->getSource()<<" pathid size: "<<rinv_pkt->getPathidArraySize()<<" hop: "<<rinv_pkt->getHop()<<" interf: "<<rinv_pkt->getInterf();
     msr2mrp_node_entry ne;
     ne.nw_address = std::string(rinv_pkt->getSource());
@@ -691,24 +618,24 @@ void msr2mrp::addToRinvTable(msr2mrpRinvPacket *rinv_pkt) {
     }
 }
 
-int msr2mrp::getRinvTableSize() const {
+int msr2mrp_engine::getRinvTableSize() const {
     return rinv_table.size();
 }
 
-void msr2mrp::clearRinvTableLocalFlags() {
+void msr2mrp_engine::clearRinvTableLocalFlags() {
     extTrace()<<"[info] entering clearRinvTableLocalFlags()";
     for(auto i=rinv_table.begin() ; i != rinv_table.end() ; ++i) {
         i->second.local=false;
     }
 }
 
-void msr2mrp::removeRinvEntry(std::string ne) {
+void msr2mrp_engine::removeRinvEntry(std::string ne) {
     extTrace()<<"[info] Entering removeRinvEntry(ne="<<ne<<")";
     rinv_table.erase(ne);
 }
 
 
-void msr2mrp::markRinvEntryLocal(std::string id) {
+void msr2mrp_engine::markRinvEntryLocal(std::string id) {
     extTrace()<<"[info] Entering markRinvEntryLocal("<<id<<")";
     if(rinv_table.find(id) == rinv_table.end()) {
         throw no_available_entry("[error] No entry available in RINV table");
@@ -716,7 +643,7 @@ void msr2mrp::markRinvEntryLocal(std::string id) {
     rinv_table[id].local = true;
 }
 
-void msr2mrp::markRinvEntryFail(std::string id) {
+void msr2mrp_engine::markRinvEntryFail(std::string id) {
     extTrace()<<"[info] Entering markRinvEntryLocal(id="<<id<<")";
     if(!checkRinvEntry(id)) {
         throw no_available_entry("[error] No entry available in RINV table");
@@ -724,12 +651,12 @@ void msr2mrp::markRinvEntryFail(std::string id) {
     rinv_table[id].fail=true; 
 }
 
-void msr2mrp::clearRreqTable() {
+void msr2mrp_engine::clearRreqTable() {
     extTrace()<<"[info] RREQ table erased";
     rreq_table.clear();
 }
 
-void msr2mrp::saveRreqTable() {
+void msr2mrp_engine::saveRreqTable() {
     extTrace()<<"[info] Entering saveRreqTable()";
     backup_rreq_table=rreq_table;
     for(auto ne: rreq_table) {
@@ -737,13 +664,13 @@ void msr2mrp::saveRreqTable() {
     }
 }
 
-void msr2mrp::retrieveRreqTable() {
+void msr2mrp_engine::retrieveRreqTable() {
     extTrace()<<"[info] Entering retrieveRreqTable()";
     rreq_table=backup_rreq_table;
 }
 
 // Merge pathid array...
-void msr2mrp::retrieveAndMergeRreqTable() {
+void msr2mrp_engine::retrieveAndMergeRreqTable() {
     extTrace()<<"[info] Entering retrieveAndMergeRreqTable()";
     for(auto ne: backup_rreq_table) {
         if(rreq_table.find(ne.first) != rreq_table.end()) {
@@ -756,7 +683,7 @@ void msr2mrp::retrieveAndMergeRreqTable() {
     }
 }
 
-void msr2mrp::mergePathids(std::vector<msr2mrp_pathid_entry> &p1, std::vector<msr2mrp_pathid_entry> &p2) {
+void msr2mrp_engine::mergePathids(std::vector<msr2mrp_pathid_entry> &p1, std::vector<msr2mrp_pathid_entry> &p2) {
     extTrace()<<"[info] Entering mergePathids(p1="<<pathidToStr(p1)<<", p2="<<pathidToStr(p2)<<")";
     for(auto pe: p1) {
         for(auto pe2: p2) {
@@ -769,11 +696,11 @@ void msr2mrp::mergePathids(std::vector<msr2mrp_pathid_entry> &p1, std::vector<ms
     p1.insert( p1.end(), p2.begin(), p2.end() );
 }
 
-bool msr2mrp::isRreqTableEmpty() const {
+bool msr2mrp_engine::isRreqTableEmpty() const {
     return rreq_table.empty();
 }
 
-double msr2mrp::calculateCostFunction(msr2mrp_node_entry ne) {
+double msr2mrp_engine::calculateCostFunction(msr2mrp_node_entry ne) {
     double ret_val;
 
     // FIXME
@@ -851,8 +778,8 @@ double msr2mrp::calculateCostFunction(msr2mrp_node_entry ne) {
 }
 
 
-void msr2mrp::constructRreqTable() {
-    extTrace()<<"[info] Entering msr2mrp::constructRreqTable()";
+void msr2mrp_engine::constructRreqTable() {
+    extTrace()<<"[info] Entering msr2mrp_engine::constructRreqTable()";
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
     }
@@ -932,7 +859,7 @@ void msr2mrp::constructRreqTable() {
     //            }
 }
 
-void msr2mrp::constructRreqTable(std::vector<int> path_filter) {
+void msr2mrp_engine::constructRreqTable(std::vector<int> path_filter) {
     extTrace()<<"[info] Entering constructRreqTable(path_filter="<<pathidToStr(path_filter)<<")";
     if(rinv_table.empty()) {
         throw rinv_table_empty("[error] RINV table empty");
@@ -983,7 +910,7 @@ void msr2mrp::constructRreqTable(std::vector<int> path_filter) {
 }
 
 
-bool msr2mrp::rreqEntryExists(const char *addr, int pathid) {
+bool msr2mrp_engine::rreqEntryExists(const char *addr, int pathid) {
     if(rreq_table.find(string(addr)) != rreq_table.end()) {
         for(auto p: rreq_table[string(addr)].pathid) {
             if(p.pathid==pathid) {
@@ -994,15 +921,15 @@ bool msr2mrp::rreqEntryExists(const char *addr, int pathid) {
     return false;
 }
 
-bool msr2mrp::rreqEntryExists(std::string ne) {
+bool msr2mrp_engine::rreqEntryExists(std::string ne) {
     if(rreq_table.find(ne) != rreq_table.end()) {
         return true;
     }
     return false;
 }
 
-void msr2mrp::updateRreqTableWithRresp(const char *addr, int pathid) {
-    extTrace()<<"[info] Entering msr2mrp::updateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
+void msr2mrp_engine::updateRreqTableWithRresp(const char *addr, int pathid) {
+    extTrace()<<"[info] Entering msr2mrp_engine::updateRreqTableWithRresp(addr="<<addr<<", pathid="<<pathid;
     if(rreqEntryExists(addr,pathid)) {
         extTrace()<<"[info] RRESP received flag set to true";
         rreq_table[string(addr)].rresp=true;
@@ -1013,7 +940,7 @@ void msr2mrp::updateRreqTableWithRresp(const char *addr, int pathid) {
 }
 
 
-int  msr2mrp::getRreqPktCount() {
+int  msr2mrp_engine::getRreqPktCount() {
     if(rreq_table.empty()) {
         throw std::length_error("[error] RREQ table empty");
     }
@@ -1022,7 +949,7 @@ int  msr2mrp::getRreqPktCount() {
 }
 
 
-bool msr2mrp::rrespReceived() const {
+bool msr2mrp_engine::rrespReceived() const {
     if(std::any_of(rreq_table.begin(), rreq_table.end(),[](std::pair<std::string,msr2mrp_node_entry> ne){return ne.second.rresp; } )) {
         return true;
     }
@@ -1030,8 +957,8 @@ bool msr2mrp::rrespReceived() const {
 }
 
 
-void msr2mrp::updateRreqEntryWithEmergency(const char *addr, double emerg, double enrgy) {
-    extTrace()<<"Entering msr2mrp::updateRreqEntryWithEmergency(addr="<<addr<<", emerg="<<emerg<<", enrgy="<<enrgy<<")";
+void msr2mrp_engine::updateRreqEntryWithEmergency(const char *addr, double emerg, double enrgy) {
+    extTrace()<<"Entering msr2mrp_engine::updateRreqEntryWithEmergency(addr="<<addr<<", emerg="<<emerg<<", enrgy="<<enrgy<<")";
     if(rreq_table.find(string(addr)) == rreq_table.end()) {
         throw no_available_entry("[error] Entry not present in routing table"); 
     }
@@ -1046,7 +973,7 @@ void msr2mrp::updateRreqEntryWithEmergency(const char *addr, double emerg, doubl
 }
 
 
-void msr2mrp::removeRreqEntry(std::string ne, bool try_backup=false) {
+void msr2mrp_engine::removeRreqEntry(std::string ne, bool try_backup=false) {
     extTrace()<<"[info] Entering removeRreqEntry(ne="<<ne<<")";
     if(rreq_table.find(ne) != rreq_table.end()) {
         rreq_table.erase(ne);
@@ -1062,8 +989,8 @@ void msr2mrp::removeRreqEntry(std::string ne, bool try_backup=false) {
     throw no_available_entry("[error] Entry not available in RREQ table"); 
 }
 
-void msr2mrp::sendRreqs(int count) {
-    extTrace()<<"[info] Entering msr2mrp::sendRreqs(count="<<count<<")";
+void msr2mrp_engine::sendRreqs(int count) {
+    extTrace()<<"[info] Entering msr2mrp_engine::sendRreqs(count="<<count<<")";
 
     if(rreq_table.empty()) {
         throw std::length_error("[error] RREQ table empty");
@@ -1085,12 +1012,12 @@ void msr2mrp::sendRreqs(int count) {
     }
 }
 
-void msr2mrp::sendRreqs() {
-    extTrace()<<"[info] Entering msr2mrp::sendRreqs()";
+void msr2mrp_engine::sendRreqs() {
+    extTrace()<<"[info] Entering msr2mrp_engine::sendRreqs()";
     sendRreqs(1);
 }
 
-void msr2mrp::sendRresp(const char *dest, int round, int pathid) {
+void msr2mrp_engine::sendRresp(const char *dest, int round, int pathid) {
     extTrace()<<"[info] Sending RRESP to "<<dest<<" with round "<<round<<" and pathid "<<pathid;
     msr2mrpRrespPacket* rresp_pkt=new msr2mrpRrespPacket("MSR2MRP RRESP packet",NETWORK_LAYER_PACKET);
     rresp_pkt->setByteLength(netDataFrameOverhead);
@@ -1104,12 +1031,12 @@ void msr2mrp::sendRresp(const char *dest, int round, int pathid) {
 }
 
 
-void msr2mrp::sendLreqBroadcast(int round, int pathid) {
+void msr2mrp_engine::sendLreqBroadcast(int round, int pathid) {
     extTrace()<<"[info] Entering sendLReqBroadcast(round="<<round<<", pathid="<<pathid<<")";
     sendLreq(BROADCAST_NETWORK_ADDRESS,round,pathid);
 }
 
-void msr2mrp::sendLreq(const char *nw_address, int round, int pathid) {
+void msr2mrp_engine::sendLreq(const char *nw_address, int round, int pathid) {
     extTrace()<<"[info] Entering sendLReq(nw_address="<<nw_address<<", round="<<round<<", pathid="<<pathid<<")";
     msr2mrpLreqPacket *lreq_pkt=new msr2mrpLreqPacket("MSR2MRP LREQ packet",NETWORK_LAYER_PACKET);
     lreq_pkt->setByteLength(netDataFrameOverhead);
@@ -1123,7 +1050,7 @@ void msr2mrp::sendLreq(const char *nw_address, int round, int pathid) {
     nw_layer->extToMacLayer(lreq_pkt, resolveNetworkAddress(nw_address));
 }
 
-void msr2mrp::sendLreqUnicast(int round, int pathid) {
+void msr2mrp_engine::sendLreqUnicast(int round, int pathid) {
     extTrace()<<"[info] Entering sendLReqUnicast(round="<<round<<", pathid="<<pathid<<")";
     for(auto ne: recv_table) {
         // pathid 0 means we are inside the ring
@@ -1139,7 +1066,7 @@ void msr2mrp::sendLreqUnicast(int round, int pathid) {
     }
 }
 
-void msr2mrp::sendLresp(const char *nw_address, int round, int pathid) {
+void msr2mrp_engine::sendLresp(const char *nw_address, int round, int pathid) {
     extTrace()<<"[info] Entering sendLResp(nw_address="<<nw_address<<", round="<<round<<", pathid="<<pathid<<")";
     msr2mrpLrespPacket *lresp_pkt=new msr2mrpLrespPacket("MSR2MRP LRESP packet",NETWORK_LAYER_PACKET);
     lresp_pkt->setByteLength(netDataFrameOverhead);
@@ -1153,7 +1080,7 @@ void msr2mrp::sendLresp(const char *nw_address, int round, int pathid) {
     nw_layer->extToMacLayer(lresp_pkt, resolveNetworkAddress(nw_address));
 }
 
-void msr2mrp::sendData(cPacket *pkt, std::string dest, int pathid) {
+void msr2mrp_engine::sendData(cPacket *pkt, std::string dest, int pathid) {
     extTrace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
     msr2mrpDataPacket *data_pkt=new msr2mrpDataPacket("MSR2MRP DATA packet",NETWORK_LAYER_PACKET);
     data_pkt->setByteLength(netDataFrameOverhead);
@@ -1168,7 +1095,7 @@ void msr2mrp::sendData(cPacket *pkt, std::string dest, int pathid) {
     nw_layer->extToMacLayer(data_pkt, resolveNetworkAddress(dest.c_str()));
 }
 
-void msr2mrp::schedulePkt(cPacket *pkt, std::string dest, int pathid) {
+void msr2mrp_engine::schedulePkt(cPacket *pkt, std::string dest, int pathid) {
     extTrace()<<"[info] Entering schedulePkt(pkt, dest="<<dest<<", pathid="<<pathid<<")";
     msr2mrpDataPacket *data_pkt=new msr2mrpDataPacket("MSR2MRP DATA packet",NETWORK_LAYER_PACKET);
     data_pkt->setByteLength(netDataFrameOverhead);
@@ -1184,12 +1111,12 @@ void msr2mrp::schedulePkt(cPacket *pkt, std::string dest, int pathid) {
     pkt_list.push_back(data_pkt);
 }
 
-void msr2mrp::forwardData(msr2mrpDataPacket *data_pkt, std::string dest, bool reroute=false) {
+void msr2mrp_engine::forwardData(msr2mrpDataPacket *data_pkt, std::string dest, bool reroute=false) {
     extTrace()<<"[info] Entering forwardData(dest="<<dest<<")";
     forwardData(data_pkt, dest, data_pkt->getPathid(),reroute);
 }
 
-void msr2mrp::forwardData(msr2mrpDataPacket *data_pkt, std::string dest, int pathid, bool reroute) {
+void msr2mrp_engine::forwardData(msr2mrpDataPacket *data_pkt, std::string dest, int pathid, bool reroute) {
     extTrace()<<"[info] Entering forwardData(dest="<<dest<<", pathid="<<pathid<<", reroute="<<reroute<<")";
     data_pkt->setSource(SELF_NETWORK_ADDRESS);
     data_pkt->setDestination(dest.c_str());
@@ -1202,13 +1129,13 @@ void msr2mrp::forwardData(msr2mrpDataPacket *data_pkt, std::string dest, int pat
     ++forw_pkt_count;
 }
 
-void msr2mrp::clearRoutingTable() {
+void msr2mrp_engine::clearRoutingTable() {
     extTrace()<<"[info] Routing table erased";
     routing_table.clear();
 }
 
-void msr2mrp::addRoute(std::string next_hop, int pathid) {
-    extTrace()<<"[info] Entering msr2mrp::addRoute(next_hop="<<next_hop<<", pathid="<<pathid<<")";
+void msr2mrp_engine::addRoute(std::string next_hop, int pathid) {
+    extTrace()<<"[info] Entering msr2mrp_engine::addRoute(next_hop="<<next_hop<<", pathid="<<pathid<<")";
     if(routing_table.find(next_hop) == routing_table.end()) {
         routing_table[next_hop]={next_hop,std::vector<msr2mrp_pathid_entry>(1,{pathid,0}) };
     } else {
@@ -1216,11 +1143,11 @@ void msr2mrp::addRoute(std::string next_hop, int pathid) {
     }
 }
 
-bool msr2mrp::isRoutingTableEmpty() const {
+bool msr2mrp_engine::isRoutingTableEmpty() const {
     return routing_table.empty();
 }
 
-void msr2mrp::constructRoutingTableFromRinvTable() {
+void msr2mrp_engine::constructRoutingTableFromRinvTable() {
     extTrace()<<"[info] Entering constructRoutingTableFromRinvTable()";
     std::map<std::string,msr2mrp_node_entry> filt_table;
     for(auto ne: rinv_table) {
@@ -1232,14 +1159,14 @@ void msr2mrp::constructRoutingTableFromRinvTable() {
     //    for(auto 
 }
 
-void msr2mrp::removeRoute(std::string ne) {
+void msr2mrp_engine::removeRoute(std::string ne) {
     extTrace()<<"[info] Entering removeRoute(ne="<<ne<<")";
     routing_table.erase(ne);
 }
 
 
-void msr2mrp::constructRoutingTable(bool rresp_req) {
-    extTrace()<<"[info] Entering msr2mrp::constructRoutingTable(rresp_req="<<rresp_req<<")";
+void msr2mrp_engine::constructRoutingTable(bool rresp_req) {
+    extTrace()<<"[info] Entering msr2mrp_engine::constructRoutingTable(rresp_req="<<rresp_req<<")";
     for(auto ne: rreq_table) {
         if(ne.second.rresp || !rresp_req) {
             extTrace()<<"[info] Adding node "<<ne.second.nw_address<<" with pathid "<<pathidToStr(ne.second.pathid);
@@ -1251,8 +1178,8 @@ void msr2mrp::constructRoutingTable(bool rresp_req) {
     }
 }
 
-void msr2mrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, bool update=false) {
-    extTrace()<<"[info] Entering msr2mrp::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<", pdr="<<pdr<<")";
+void msr2mrp_engine::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0, bool update=false) {
+    extTrace()<<"[info] Entering msr2mrp_engine::constructRoutingTable(rresp_req="<<rresp_req<<", app_cf="<<app_cf<<", pdr="<<pdr<<")";
     if(!app_cf) {
         constructRoutingTable(rresp_req);
         return;
@@ -1371,8 +1298,8 @@ void msr2mrp::constructRoutingTable(bool rresp_req, bool app_cf, double pdr=0.0,
     }
 }
 
-msr2mrp_pathid_entry msr2mrp::selectPathid(bool replay) {
-    extTrace()<<"[info] Entering msr2mrp::selectPathid(replay="<<replay<<")";
+msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool replay) {
+    extTrace()<<"[info] Entering msr2mrp_engine::selectPathid(replay="<<replay<<")";
     if(!replay) {
         g_pathid=selectPathid();
     }
@@ -1380,11 +1307,11 @@ msr2mrp_pathid_entry msr2mrp::selectPathid(bool replay) {
 }
 
 
-std::vector<int> msr2mrp::selectAllPathid() {
+std::vector<int> msr2mrp_engine::selectAllPathid() {
     return selectAllPathid(fp.path_sel);
 }
 
-std::vector<int> msr2mrp::selectAllPathid(int path_sel) {
+std::vector<int> msr2mrp_engine::selectAllPathid(int path_sel) {
     extTrace()<<"[info] Entering selectAllPathid()";
      if(routing_table.empty()) {
         throw routing_table_empty("[error] Routing table empty");
@@ -1420,8 +1347,8 @@ std::vector<int> msr2mrp::selectAllPathid(int path_sel) {
     return pathid;
 }
 
-msr2mrp_pathid_entry msr2mrp::selectPathid() {
-    extTrace()<<"[info] Entering msr2mrp::selectPathid()";
+msr2mrp_pathid_entry msr2mrp_engine::selectPathid() {
+    extTrace()<<"[info] Entering msr2mrp_engine::selectPathid()";
     if(routing_table.empty()) {
         throw routing_table_empty("[error] Routing table empty");
     }
@@ -1462,7 +1389,7 @@ msr2mrp_pathid_entry msr2mrp::selectPathid() {
     return *it;
 }
 
-std::string msr2mrp::pathidToStr(vector<msr2mrp_pathid_entry> pathid) {
+std::string msr2mrp_engine::pathidToStr(vector<msr2mrp_pathid_entry> pathid) {
     std::string str;
     for(auto i: pathid) {
         str.append(std::to_string(i.pathid));
@@ -1471,7 +1398,7 @@ std::string msr2mrp::pathidToStr(vector<msr2mrp_pathid_entry> pathid) {
     return str;
 }
 
-std::string msr2mrp::pathidToStr(vector<int> pathid) {
+std::string msr2mrp_engine::pathidToStr(vector<int> pathid) {
     std::string str;
     for(auto i: pathid) {
         str.append(std::to_string(i));
@@ -1480,7 +1407,7 @@ std::string msr2mrp::pathidToStr(vector<int> pathid) {
     return str;
 }
 
-std::string msr2mrp::getNextHop(int pathid) {
+std::string msr2mrp_engine::getNextHop(int pathid) {
     extTrace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
     msr2mrp_node_entry next_hop;
     bool found=false;
@@ -1500,7 +1427,7 @@ std::string msr2mrp::getNextHop(int pathid) {
     return next_hop.nw_address;
 }
 
-std::string msr2mrp::getNextHop(int pathid, bool random_node) {
+std::string msr2mrp_engine::getNextHop(int pathid, bool random_node) {
     extTrace()<<"[info] Entering getNextHop(pathid="<<pathid<<", random_node="<<random_node<<")";
     std::string next_hop;
     if(random_node) {
@@ -1524,7 +1451,7 @@ std::string msr2mrp::getNextHop(int pathid, bool random_node) {
     return next_hop;
 }
 
-void msr2mrp::incPktCountInRoutingTable(std::string next_hop) {
+void msr2mrp_engine::incPktCountInRoutingTable(std::string next_hop) {
     extTrace()<<"[info] Entering incPktCountInRoutingTable(next_hop="<<next_hop<<")";
     if(routing_table.find(next_hop) == routing_table.end()) {
         throw no_available_entry("[error] No available entry to update Pkt count"); 
@@ -1533,7 +1460,7 @@ void msr2mrp::incPktCountInRoutingTable(std::string next_hop) {
     routing_table[next_hop].pkt_count++;
 }
 
-bool msr2mrp::checkPathid(int pathid) {
+bool msr2mrp_engine::checkPathid(int pathid) {
     extTrace()<<"[info] Entering checkPathid(pathid="<<pathid<<")";
     for(auto ne: routing_table) {
         for(auto p: ne.second.pathid) {
@@ -1547,7 +1474,7 @@ bool msr2mrp::checkPathid(int pathid) {
     return false;
 }
 
-bool msr2mrp::checkRoute(std::string ne) {
+bool msr2mrp_engine::checkRoute(std::string ne) {
     extTrace()<<"Entering checkRoute(ne="<<ne<<")";
     if(routing_table.find(ne)!=routing_table.end()) {
         return true;
@@ -1556,8 +1483,8 @@ bool msr2mrp::checkRoute(std::string ne) {
 }
 
 
-int msr2mrp::calculateRepeat(const char *dest) {
-    extTrace()<<"[info] Entering msr2mrp::calculateRepeat(dest="<<dest<<")";
+int msr2mrp_engine::calculateRepeat(const char *dest) {
+    extTrace()<<"[info] Entering msr2mrp_engine::calculateRepeat(dest="<<dest<<")";
 
     auto entry_it = routing_table.find(std::string(dest));
 
@@ -1582,7 +1509,7 @@ int msr2mrp::calculateRepeat(const char *dest) {
 }
 
 
-void msr2mrp::incPktCountInRecvTable(std::string entry, int pathid, int round) {
+void msr2mrp_engine::incPktCountInRecvTable(std::string entry, int pathid, int round) {
     extTrace()<<"[info] Entering incPktCountInRecvTable("<<entry<<")";
     if(recv_table.find(entry) == recv_table.end()) {
         recv_table[entry] = {entry,std::vector<msr2mrp_pathid_entry>(1,{pathid,0}),0,false,0,0,false,round,1};
@@ -1600,7 +1527,7 @@ void msr2mrp::incPktCountInRecvTable(std::string entry, int pathid, int round) {
     }
 }
 
-void msr2mrp::updateRinvTableFromRreqTable() {
+void msr2mrp_engine::updateRinvTableFromRreqTable() {
     extTrace()<<"[info] Entering updateRinvTableFromRreqTable()";
     for(auto ne: rreq_table) {
         if(rinv_table.find(ne.first) != rinv_table.end()) {
@@ -1610,13 +1537,13 @@ void msr2mrp::updateRinvTableFromRreqTable() {
     }
 }
 
-void msr2mrp::timerFiredCallback(int index) {
+void msr2mrp_engine::timerFiredCallback(int index) {
     switch (index) {
         case msr2mrpTimerDef::T_SINK_START: {
             extTrace()<<"[timer] T_SINK_START timer expired";
             setRound(1+getRound());
             sendRinv(getRound(),SELF_NETWORK_ADDRESS);
-            SetTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            SetTimer(msr2mrpTimerDef::T_REPEAT,fp.t_start*10.0);
             if(fp.periodic_restart) {
                 SetTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
             }
@@ -1630,7 +1557,7 @@ void msr2mrp::timerFiredCallback(int index) {
                 extTrace()<<"[info] cancelling T_REPEAT timer";
                 CancelTimer(msr2mrpTimerDef::T_REPEAT);
             }
-            SetTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            SetTimer(msr2mrpTimerDef::T_REPEAT,fp.t_start*10.0);
             SetTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
             break;
         }
@@ -1802,7 +1729,7 @@ void msr2mrp::timerFiredCallback(int index) {
         case msr2mrpTimerDef::T_REPEAT: {
             extTrace()<<"[timer] T_REPEAT timer expired";
             sendRinv(getRound(),SELF_NETWORK_ADDRESS);
-            SetTimer(msr2mrpTimerDef::T_REPEAT,par("t_start").doubleValue()*10.0);
+            SetTimer(msr2mrpTimerDef::T_REPEAT,fp.t_start*10.0);
             break;
         }
         case msr2mrpTimerDef::T_L: {
@@ -2017,17 +1944,6 @@ void msr2mrp::timerFiredCallback(int index) {
             SetTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
             break;
         }
-        case msr2mrpTimerDef::T_SERIAL: {
-            extTrace()<<"[info] timer T_SERIAL expired";
-            auto timer = stimer->nextTimer();
-            extTrace()<<"[info] timer - machine: "<<timer.machine<<" index: "<<timer.index<<" time: "<<timer.time;
-            timerFiredCallback(timer.index);
-            if(stimer->timerChange()) {
-                extTrace()<<"[info] Timer change indicated";
-                legacySetTimer(msr2mrpTimerDef::T_SERIAL, stimer->getTimerValue());
-            }
-            break;
-        } 
 
         default: {
             extTrace()<<"[error] Unknown timer expired: "<<index;
@@ -2036,7 +1952,7 @@ void msr2mrp::timerFiredCallback(int index) {
     }
 }
 
-void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
+void msr2mrp_engine::fromApplicationLayer(cPacket * pkt, const char *destination) {
     if(0==std::strcmp(destination,BROADCAST_NETWORK_ADDRESS)) {
         extTrace()<<"[info] Broadcast packet";
         sendData(pkt,std::string(destination),0);
@@ -2067,10 +1983,9 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             sendData(pkt,next_hop,pathid.pathid);
         }
     }
-    updateTimer();
 }
 
-void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
+void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
     msr2mrpPacket *net_pkt=dynamic_cast<msr2mrpPacket *>(pkt);
     if(!net_pkt) {
         extTrace()<<"[error] Dynamic cast of packet failed";
@@ -2465,10 +2380,9 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
             break;
         }
     }
-    updateTimer();
 }
 
-msr2mrpRingDef msr2mrp::getRingStatus() const {
+msr2mrpRingDef msr2mrp_engine::getRingStatus() const {
     if(0 == getHop()) {
         return msr2mrpRingDef::CENTRAL;
     } else if(fp.ring_radius > getHop()) {
@@ -2479,7 +2393,7 @@ msr2mrpRingDef msr2mrp::getRingStatus() const {
     return msr2mrpRingDef::EXTERNAL;
 }
 
-std::string msr2mrp::ringToStr(msr2mrpRingDef pos) const {
+std::string msr2mrp_engine::ringToStr(msr2mrpRingDef pos) const {
     switch (pos) {
         case msr2mrpRingDef::CENTRAL: {
             return string("central");
@@ -2497,10 +2411,10 @@ std::string msr2mrp::ringToStr(msr2mrpRingDef pos) const {
     return string("unkown");
 }
 
-void msr2mrp::serializeRoutingTable() {
+void msr2mrp_engine::serializeRoutingTable() {
     serializeRoutingTable(routing_table);
 }
-void msr2mrp::serializeRoutingTable(std::map<std::string,msr2mrp_node_entry> table) {
+void msr2mrp_engine::serializeRoutingTable(std::map<std::string,msr2mrp_node_entry> table) {
     y_out<<YAML::BeginSeq;
     for(auto i : table) {
         y_out<<YAML::BeginMap;
@@ -2544,11 +2458,11 @@ void msr2mrp::serializeRoutingTable(std::map<std::string,msr2mrp_node_entry> tab
     y_out<<YAML::EndSeq;
 }
 
-void msr2mrp::serializeRecvTable() {
+void msr2mrp_engine::serializeRecvTable() {
     serializeRecvTable(recv_table);
 }
 
-void msr2mrp::serializeRecvTable(std::map<std::string,msr2mrp_node_entry> table) {
+void msr2mrp_engine::serializeRecvTable(std::map<std::string,msr2mrp_node_entry> table) {
     y_out<<YAML::BeginSeq;
     for(auto i : table) {
         y_out<<YAML::BeginMap;
@@ -2579,7 +2493,7 @@ void msr2mrp::serializeRecvTable(std::map<std::string,msr2mrp_node_entry> table)
 
 }
 
-void msr2mrp::serializeRadioStats(PktBreakdown stats) {
+void msr2mrp_engine::serializeRadioStats(PktBreakdown stats) {
     y_out<<YAML::BeginMap;
     y_out<<YAML::Key<<"TX_pkt";
     y_out<<YAML::Value<<stats.transmissions;
@@ -2603,7 +2517,7 @@ void msr2mrp::serializeRadioStats(PktBreakdown stats) {
 }
 
 
-void msr2mrp::finishSpecific() {
+void msr2mrp_engine::finishSpecific() {
     if (isSink() && resolveNetworkAddress(SELF_NETWORK_ADDRESS) == 0) {
         cTopology *topo;        // temp variable to access energy spent by other nodes
         topo = new cTopology("topo");
@@ -2821,55 +2735,55 @@ void msr2mrp::finishSpecific() {
     return;
 }
 
-void msr2mrp::handleMacControlMessage(cMessage *msg) {
-    extTrace()<<"[info] Entering handleMacControlMessage()";
-    /* Something we should do about buffer overflow */
-    MacControlMessage *mac_ctrl_msg=check_and_cast<MacControlMessage *>(msg);
-    if(MacControlMessage_type::MAC_BUFFER_FULL == mac_ctrl_msg->getMacControlMessageKind()) {
-        extTrace()<<"[error] MAC buffer full";
-        return;
-    }
-    TMacControlMessage *mac_msg=check_and_cast<TMacControlMessage *>(msg);
-    if(!mac_msg) {
-        extTrace()<<"[error] Not TMacControlMessage";
-        throw cRuntimeError("[error] Message not a TMacControlMessage");
-    }
-    extTrace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
-    std::string nw_address = std::to_string(mac_msg->getDestination());
-    if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
-//        if(rreq_table.find(nw_address) != rreq_table.end() && (msr2mrpStateDef::ESTABLISH == getState() || msr2mrpStateDef::S_ESTABLISH == getState() ) ){
-//            rreq_table[nw_address].ack_count++;
+//void msr2mrp_engine::handleMacControlMessage(cMessage *msg) {
+//    extTrace()<<"[info] Entering handleMacControlMessage()";
+//    /* Something we should do about buffer overflow */
+//    MacControlMessage *mac_ctrl_msg=check_and_cast<MacControlMessage *>(msg);
+//    if(MacControlMessage_type::MAC_BUFFER_FULL == mac_ctrl_msg->getMacControlMessageKind()) {
+//        extTrace()<<"[error] MAC buffer full";
+//        return;
+//    }
+//    TMacControlMessage *mac_msg=check_and_cast<TMacControlMessage *>(msg);
+//    if(!mac_msg) {
+//        extTrace()<<"[error] Not TMacControlMessage";
+//        throw cRuntimeError("[error] Message not a TMacControlMessage");
+//    }
+//    extTrace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
+//    std::string nw_address = std::to_string(mac_msg->getDestination());
+//    if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
+////        if(rreq_table.find(nw_address) != rreq_table.end() && (msr2mrpStateDef::ESTABLISH == getState() || msr2mrpStateDef::S_ESTABLISH == getState() ) ){
+////            rreq_table[nw_address].ack_count++;
+////        }
+//        if(routing_table.find(nw_address) != routing_table.end()) {
+//            routing_table[nw_address].ack_count++;
+//            if(fp.detect_link_fail) {
+//                extTrace()<<"[info] Resetting fail_count";
+//                routing_table[nw_address].fail_count = 0;
+//            }
 //        }
-        if(routing_table.find(nw_address) != routing_table.end()) {
-            routing_table[nw_address].ack_count++;
-            if(fp.detect_link_fail) {
-                extTrace()<<"[info] Resetting fail_count";
-                routing_table[nw_address].fail_count = 0;
-            }
-        }
-    }
-    if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
-        if(routing_table.find(nw_address) != routing_table.end()) {
-            routing_table[nw_address].fail_count++;
-            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getHop() > 2 && getState() == msr2mrpStateDef::WORK) { // Ugly :-( - do not check for secL
-                extTrace()<<"[info] Link "<<nw_address<<" failed, removing";
-                auto p=routing_table[nw_address].pathid;
-                removeRoute(nw_address);
-                removeRreqEntry(nw_address);
-                try {
-                    markRinvEntryFail(nw_address);
-                } catch ( no_available_entry &e) {
-                    extTrace()<<"[error] "<<e.what();
-                }
+//    }
+//    if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
+//        if(routing_table.find(nw_address) != routing_table.end()) {
+//            routing_table[nw_address].fail_count++;
+//            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getHop() > 2 && getState() == msr2mrpStateDef::WORK) { // Ugly :-( - do not check for secL
+//                extTrace()<<"[info] Link "<<nw_address<<" failed, removing";
+//                auto p=routing_table[nw_address].pathid;
+//                removeRoute(nw_address);
+//                removeRreqEntry(nw_address);
+//                try {
+//                    markRinvEntryFail(nw_address);
+//                } catch ( no_available_entry &e) {
+//                    extTrace()<<"[error] "<<e.what();
+//                }
+//
+//                handleLinkFailure(p[0].pathid);
+//            }
+//        }
+//    }
+//    delete msg;
+//}
 
-                handleLinkFailure(p[0].pathid);
-            }
-        }
-    }
-    delete msg;
-}
-
-bool msr2mrp::secLPerformed(int round, int pathid) {
+bool msr2mrp_engine::secLPerformed(int round, int pathid) {
     extTrace()<<"[info] Entering secLPerformed(round="<<round<<", pathid="<<pathid<<")";
     bool performed=true;
     for(auto ne: recv_table) {
@@ -2887,25 +2801,25 @@ bool msr2mrp::secLPerformed(int round, int pathid) {
 
 
 
-void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
-    extTrace()<<"[info] Entering handleNetworkControlCommand()";
-    EmergencyMessage *app_msg=check_and_cast<EmergencyMessage *>(msg);
-    if(!msg) {
-        extTrace()<<"[error] Unknown Network Control Command Message";
-    }
-    if(MsgType::EMERGENCY == app_msg->getEvent()) {
-        extTrace()<<"[info] Application in Emergency state, start local re-learn";
-        sendRwarn();
-    }
-}
+//void msr2mrp_engine::handleNetworkControlCommand(cMessage *msg) {
+//    extTrace()<<"[info] Entering handleNetworkControlCommand()";
+//    EmergencyMessage *app_msg=check_and_cast<EmergencyMessage *>(msg);
+//    if(!msg) {
+//        extTrace()<<"[error] Unknown Network Control Command Message";
+//    }
+//    if(MsgType::EMERGENCY == app_msg->getEvent()) {
+//        extTrace()<<"[info] Application in Emergency state, start local re-learn";
+//        sendRwarn();
+//    }
+//}
 
 
-void msr2mrp::sendRwarn() {
+void msr2mrp_engine::sendRwarn() {
     extTrace()<<"[info] Entering sendRwarn()";
     sendRwarn(msr2mrpWarnDef::EMERGENCY_EVENT,selectPathid(true).pathid);
 }
 
-void msr2mrp::sendRwarn(msr2mrpWarnDef cause, int pathid) {
+void msr2mrp_engine::sendRwarn(msr2mrpWarnDef cause, int pathid) {
     extTrace()<<"[info] Entering sendRwarn(cause="<<cause<<", pathid="<<pathid<<")";
     msr2mrpRwarnPacket *warn_pkt=new msr2mrpRwarnPacket("MSR2MRP RWARN packet", NETWORK_LAYER_PACKET);
     warn_pkt->setByteLength(netDataFrameOverhead);
@@ -2924,7 +2838,7 @@ void msr2mrp::sendRwarn(msr2mrpWarnDef cause, int pathid) {
 }
 
 
-void msr2mrp::incPktCountInTrafficTable(std::string node, int pathid, int reroute) {
+void msr2mrp_engine::incPktCountInTrafficTable(std::string node, int pathid, int reroute) {
     if(traffic_table.find(node) == traffic_table.end()) {
         traffic_table[node].nw_address=node;
         traffic_table[node].pkt_count=1;
@@ -2945,7 +2859,7 @@ void msr2mrp::incPktCountInTrafficTable(std::string node, int pathid, int rerout
     }
 }
 
-void msr2mrp::handleLinkFailure(int p) {
+void msr2mrp_engine::handleLinkFailure(int p) {
     extTrace()<<"[info] Entering handleLinkFailure(p="<<p<<")";
     try {
         if(fp.rt_fallb_wo_qos) {
@@ -2962,21 +2876,5 @@ void msr2mrp::handleLinkFailure(int p) {
     }
 }
 
-double msr2mrp::nw_layer->getEnergyValue() {
-    if(ff_app==NULL) {
-        return 1.0;
-    }
-    auto ret_val=ff_app->nw_layer->getEnergyValue();
-    extTrace()<<"[info] Energy Value: "<<ret_val;
-    return ret_val;
-}
 
-double msr2mrp::nw_layer->getEmergencyValue() {
-    if(ff_app==NULL) {
-        return 1.0;
-    }
-    auto ret_val=ff_app->nw_layer->getEmergencyValue();
-    extTrace()<<"[info] Emergency value: "<<ret_val;
-    return ret_val;
-}
 
