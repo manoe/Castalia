@@ -47,6 +47,7 @@ struct msr2mrpPathDef {
 packet msr2mrpPacket extends RoutingPacket {
     int msr2mrpPacketKind enum (msr2mrpPacketDef); // 1 byte
     string origin;
+    string sink;
 }
 
 packet msr2mrpRinvPacket extends msr2mrpPacket {

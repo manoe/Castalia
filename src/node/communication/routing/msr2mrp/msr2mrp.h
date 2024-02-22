@@ -439,8 +439,6 @@ class msr2mrp: public VirtualRouting {
 
         void incPktCountInTrafficTable(std::string, int, int);
 
-        double getEnergyValue();
-        double getEmergencyValue();
     public:
         msr2mrp() : g_hop(std::numeric_limits<int>::max()),
                   g_round(0),
@@ -487,6 +485,9 @@ class msr2mrp: public VirtualRouting {
         std::map<std::string,msr2mrp_node_entry> getTrafficTable() {
             return traffic_table;
         };
+
+        double getEnergyValue();
+        double getEmergencyValue();
 
 
         void extToMacLayer(cMessage *msg) { toMacLayer(msg); };
