@@ -2089,6 +2089,7 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         vector<std::string> ev;
         for(auto ee: engine_table) {
             if(msr2mrpStateDef::WORK == ee.second->getState() || msr2mrpStateDef::S_ESTABLISH == ee.second->getState() ) {
+                trace()<<"[info] Adding engine "<<ee.first;
                 ev.push_back(ee.first);
             }
         }

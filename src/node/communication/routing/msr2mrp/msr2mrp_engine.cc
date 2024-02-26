@@ -556,9 +556,6 @@ void msr2mrp_engine::sendRinvBasedOnHop() {
                 pe.enrgy = nw_layer->getEnergyValue();
                 pe.emerg = nw_layer->getEmergencyValue();
 
-                extTrace()<<"[info] Root sink selected: "<<pe.origin;
-                setSinkAddress(std::to_string(pe.origin));
-                // PDR not working yet.
                 pe.pdr    = 0;
 
 
@@ -1867,9 +1864,6 @@ void msr2mrp_engine::timerFiredCallback(int index) {
                     constructRoutingTable(fp.rresp_req);
                 }
                 setHop(calculateHopFromRoutingTable());
-                if(getHop()<=fp.ring_radius) {
-                    setSinkAddress(getSinkAddressFromRtTbl());
-                }
             } catch (routing_table_empty &e) {
                 extTrace()<<e.what();
                 extTrace()<<"[info] Returning to LEARN state";
@@ -1963,6 +1957,8 @@ void msr2mrp_engine::timerFiredCallback(int index) {
 
 void msr2mrp_engine::fromApplicationLayer(cPacket * pkt, const char *destination) {
         // Shouldn't we buffer?
+        extTrace()<<"[info] fromApplicationLayer()";
+        extTrace()<<"[info] Sink address: "<<getSinkAddress();
         if(isRoutingTableEmpty()) {
             extTrace()<<"[error] Routing table empty, can't route packet";
             return;
