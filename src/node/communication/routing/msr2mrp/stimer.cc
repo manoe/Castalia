@@ -11,9 +11,12 @@
 #include "stimer.h"
 
 /* time, timer value, offset, the elapsed time of the common timer */
-void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t offset) {
-    out.flush();
-    out<<"[stimer] setTimer(machine="<<machine<<", index="<<index<<", time="<<time<<", offset="<<offset<<")";
+void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t current_time) {
+    out<<"[stimer] setTimer(machine="<<machine<<", index="<<index<<", time="<<time<<", current_time="<<current_time<<")";
+    simtime_t offset = current_time - last_timestamp;
+    out<<"[stimer]: last_timestamp: "<<last_timestamp<<", offset="<<offset;
+    last_timestamp = current_time;
+    dumpTimers();
     TimerItem item;
     item.machine = machine;
     item.index   = index;
@@ -26,6 +29,7 @@ void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t off
         timers.push_front(item);
         return;
     }
+    out.flush();
 
     /* check for duplacte */
     for(auto &&ti : timers) {
@@ -48,6 +52,7 @@ void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t off
         timer_change = true;
         first->time -= item.time;
         timers.push_front(item);
+        dumpTimers();
         return;
     }
 
@@ -58,31 +63,55 @@ void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t off
             timers.insert(it,item);
             // it csokkentes?
             it->time -= item.time;
+            out<<"[stimer] Timer inserted.";
+            dumpTimers();
             return;
         }
         sum += it->time;
     }
+
+    out<<"FASZOM5";
+
     item.time -= sum;
     timers.push_back(item);
+    out<<"[stimer] Timer pushed back.";
+    dumpTimers();
 }
 
 
-simtime_t SerialTimer::getTimer(int machine, int index) {
+simtime_t SerialTimer::getTimer(int machine, int index, simtime_t current_time) {
+    out<<"[stimer] getTimer(machine="<<machine<<", index="<<index<<", current_time="<<current_time<<")";
+    dumpTimers();
+    simtime_t offset = current_time - last_timestamp;
+    out<<"[stimer]: last_timestamp: "<<last_timestamp<<", offset="<<offset;
+    last_timestamp = current_time;
+
     simtime_t sum;
     for(auto ti : timers) {
         sum += ti.time;
         if(ti.machine == machine && ti.index == index) {
-            return sum;
+            return sum-offset;
         }
     }
     return -1;
 }
 
-void SerialTimer::cancelTimer(int machine, int index) {
-    out<<"[stimer] cancelTimer(machine="<<machine<<", index="<<index<<")";
+void SerialTimer::cancelTimer(int machine, int index, simtime_t current_time) {
+    out<<"[stimer] cancelTimer(machine="<<machine<<", index="<<index<<", current_time="<<current_time<<")";
+    dumpTimers();
     simtime_t offset = 0;
+    offset = current_time - last_timestamp;
+    out<<"[stimer]: last_timestamp: "<<last_timestamp<<", offset="<<offset;
+    last_timestamp = current_time;
+
+    if(timers.begin()->time < offset) {
+        throw runtime_error("[error] Timer not removed?");
+    }
+    timers.begin()->time -= offset;
+
     for(auto it = timers.begin() ; it != timers.end() ; ) {
         if(it->machine == machine && it->index == index) {
+            out<<"[stimer] Timer found";
             offset += it->time;
             if(it == timers.begin() && timers.size() > 1) {
                 timer_change = true;
@@ -95,6 +124,7 @@ void SerialTimer::cancelTimer(int machine, int index) {
             ++it;
         }
     }
+    dumpTimers();
 }
 
 bool SerialTimer::timerChange() {
@@ -102,8 +132,16 @@ bool SerialTimer::timerChange() {
     return timer_change;
 }
 
-TimerItem SerialTimer::nextTimer() {
+TimerItem SerialTimer::nextTimer(simtime_t current_time) {
     out<<"[stimer] nextTimer()";
+    dumpTimers();
+
+    simtime_t offset = 0;
+    offset = current_time - last_timestamp;
+    out<<"[stimer]: last_timestamp: "<<last_timestamp<<", offset="<<offset;
+    last_timestamp = current_time;
+
+
     if(0 == timers.size()) {
         throw std::out_of_range("No timer available");
     }
@@ -124,6 +162,14 @@ simtime_t SerialTimer::getTimerValue() {
     }
     timer_change = false;
     auto item = timers.front();
-    out<<"[simer] timer - machine: "<<item.machine<<" index: "<<item.index<<" item.time: "<<item.time; 
+    out<<"[stimer] timer - machine: "<<item.machine<<" index: "<<item.index<<" item.time: "<<item.time; 
     return item.time;
 }
+
+void SerialTimer::dumpTimers() {
+    out<<"[stimer] dumpTimers()";
+    for(auto ti: timers) {
+        out<<"[stimer] machine: "<<ti.machine<<" index: "<<ti.index<<" time: "<<ti.time<<std::endl;
+    }
+}
+

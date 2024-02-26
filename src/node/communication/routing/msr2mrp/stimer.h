@@ -24,14 +24,17 @@ class SerialTimer {
         std::deque<TimerItem> timers;
         bool timer_change;
         std::ostream &out;
+        simtime_t last_timestamp;
+    protected:
+        void dumpTimers();
     public:
         SerialTimer() = delete;
-        SerialTimer(std::ostream &out) : out(out), timer_change(false) { timers.clear(); };
-        void setTimer(int machine, int index, simtime_t time, simtime_t offset);
-        simtime_t getTimer(int machine, int index);
-        void cancelTimer(int machine, int index);
+        SerialTimer(std::ostream &out, simtime_t current_time) : out(out), timer_change(false), last_timestamp(current_time) { timers.clear(); };
+        void setTimer(int machine, int index, simtime_t time, simtime_t current_timer);
+        simtime_t getTimer(int machine, int index, simtime_t current_time);
+        void cancelTimer(int machine, int index, simtime_t current_time);
         bool timerChange();
-        TimerItem nextTimer();
+        TimerItem nextTimer(simtime_t current_time);
         simtime_t getTimerValue();
 };
 

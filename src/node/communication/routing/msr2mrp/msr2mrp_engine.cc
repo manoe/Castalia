@@ -405,6 +405,7 @@ void msr2mrp_engine::sendPing(int round) {
     extTrace()<<"[info] Entering msr2mrp_engine::sendPing(round = "<<round<<")";
     msr2mrpPingPacket *ping_pkt=new msr2mrpPingPacket("MSR2MRP PING packet", NETWORK_LAYER_PACKET);
     ping_pkt->setByteLength(netDataFrameOverhead);
+    ping_pkt->setSink(getSinkAddress().c_str());
     ping_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::PING_PACKET);
     ping_pkt->setSource(SELF_NETWORK_ADDRESS);
     ping_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
@@ -417,6 +418,7 @@ void msr2mrp_engine::sendPong(int round) {
     extTrace()<<"[info] Entering msr2mrp_engine::sendPong(round = "<<round<<")";
     msr2mrpPongPacket *pong_pkt=new msr2mrpPongPacket("MSR2MRP PONG packet", NETWORK_LAYER_PACKET);
     pong_pkt->setByteLength(netDataFrameOverhead);
+    pong_pkt->setSink(getSinkAddress().c_str());
     pong_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::PONG_PACKET);
     pong_pkt->setSource(SELF_NETWORK_ADDRESS);
     pong_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
@@ -468,6 +470,7 @@ void msr2mrp_engine::sendRinv(int round, std::vector<msr2mrp_pathid_entry> pathi
     rinv_pkt->setByteLength(netDataFrameOverhead);
     rinv_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::RINV_PACKET);
     rinv_pkt->setSource(SELF_NETWORK_ADDRESS);
+    rinv_pkt->setSink(getSinkAddress().c_str());
     rinv_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
     rinv_pkt->setRound(round);
     rinv_pkt->setPathidArraySize(pathid.size());
@@ -998,6 +1001,7 @@ void msr2mrp_engine::sendRreqs(int count) {
     for(auto &&ne: rreq_table) {
         for(int i = 0 ; i < count ; ++i) {
             msr2mrpRreqPacket* rreq_pkt=new msr2mrpRreqPacket("MSR2MRP RREQ packet",NETWORK_LAYER_PACKET);
+            rreq_pkt->setSink(getSinkAddress().c_str());
             rreq_pkt->setByteLength(netDataFrameOverhead);
             rreq_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::RREQ_PACKET);
             rreq_pkt->setSource(SELF_NETWORK_ADDRESS);
@@ -1021,6 +1025,7 @@ void msr2mrp_engine::sendRresp(const char *dest, int round, int pathid) {
     extTrace()<<"[info] Sending RRESP to "<<dest<<" with round "<<round<<" and pathid "<<pathid;
     msr2mrpRrespPacket* rresp_pkt=new msr2mrpRrespPacket("MSR2MRP RRESP packet",NETWORK_LAYER_PACKET);
     rresp_pkt->setByteLength(netDataFrameOverhead);
+    rresp_pkt->setSink(getSinkAddress().c_str());
     rresp_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::RRESP_PACKET);
     rresp_pkt->setSource(SELF_NETWORK_ADDRESS);
     rresp_pkt->setDestination(dest);
@@ -1040,6 +1045,7 @@ void msr2mrp_engine::sendLreq(const char *nw_address, int round, int pathid) {
     extTrace()<<"[info] Entering sendLReq(nw_address="<<nw_address<<", round="<<round<<", pathid="<<pathid<<")";
     msr2mrpLreqPacket *lreq_pkt=new msr2mrpLreqPacket("MSR2MRP LREQ packet",NETWORK_LAYER_PACKET);
     lreq_pkt->setByteLength(netDataFrameOverhead);
+    lreq_pkt->setSink(getSinkAddress().c_str());
     lreq_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::LREQ_PACKET);
     lreq_pkt->setSource(SELF_NETWORK_ADDRESS);
     lreq_pkt->setDestination(nw_address);
@@ -1070,6 +1076,7 @@ void msr2mrp_engine::sendLresp(const char *nw_address, int round, int pathid) {
     extTrace()<<"[info] Entering sendLResp(nw_address="<<nw_address<<", round="<<round<<", pathid="<<pathid<<")";
     msr2mrpLrespPacket *lresp_pkt=new msr2mrpLrespPacket("MSR2MRP LRESP packet",NETWORK_LAYER_PACKET);
     lresp_pkt->setByteLength(netDataFrameOverhead);
+    lresp_pkt->setSink(getSinkAddress().c_str());
     lresp_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::LRESP_PACKET);
     lresp_pkt->setSource(SELF_NETWORK_ADDRESS);
     lresp_pkt->setDestination(nw_address);
@@ -1084,6 +1091,7 @@ void msr2mrp_engine::sendData(cPacket *pkt, std::string dest, int pathid) {
     extTrace()<<"[info] Sending DATA to "<<dest<<" via pathid "<<pathid;
     msr2mrpDataPacket *data_pkt=new msr2mrpDataPacket("MSR2MRP DATA packet",NETWORK_LAYER_PACKET);
     data_pkt->setByteLength(netDataFrameOverhead);
+    data_pkt->setSink(getSinkAddress().c_str());
     data_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::DATA_PACKET);
     data_pkt->setSource(SELF_NETWORK_ADDRESS);
     data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
@@ -1099,6 +1107,7 @@ void msr2mrp_engine::schedulePkt(cPacket *pkt, std::string dest, int pathid) {
     extTrace()<<"[info] Entering schedulePkt(pkt, dest="<<dest<<", pathid="<<pathid<<")";
     msr2mrpDataPacket *data_pkt=new msr2mrpDataPacket("MSR2MRP DATA packet",NETWORK_LAYER_PACKET);
     data_pkt->setByteLength(netDataFrameOverhead);
+    data_pkt->setSink(getSinkAddress().c_str());
     data_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::DATA_PACKET);
     data_pkt->setSource(SELF_NETWORK_ADDRESS);
     data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
@@ -1953,13 +1962,6 @@ void msr2mrp_engine::timerFiredCallback(int index) {
 }
 
 void msr2mrp_engine::fromApplicationLayer(cPacket * pkt, const char *destination) {
-    if(0==std::strcmp(destination,BROADCAST_NETWORK_ADDRESS)) {
-        extTrace()<<"[info] Broadcast packet";
-        sendData(pkt,std::string(destination),0);
-    } else if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
-        extTrace()<<"[error] Packet's destination not sink: "<<destination;
-        return;
-    } else {
         // Shouldn't we buffer?
         if(isRoutingTableEmpty()) {
             extTrace()<<"[error] Routing table empty, can't route packet";
@@ -1982,7 +1984,6 @@ void msr2mrp_engine::fromApplicationLayer(cPacket * pkt, const char *destination
         else {
             sendData(pkt,next_hop,pathid.pathid);
         }
-    }
 }
 
 void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
@@ -2823,6 +2824,7 @@ void msr2mrp_engine::sendRwarn(msr2mrpWarnDef cause, int pathid) {
     extTrace()<<"[info] Entering sendRwarn(cause="<<cause<<", pathid="<<pathid<<")";
     msr2mrpRwarnPacket *warn_pkt=new msr2mrpRwarnPacket("MSR2MRP RWARN packet", NETWORK_LAYER_PACKET);
     warn_pkt->setByteLength(netDataFrameOverhead);
+    warn_pkt->setSink(getSinkAddress().c_str());
     warn_pkt->setCause(cause);
     warn_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::RWARN_PACKET);
     warn_pkt->setSource(SELF_NETWORK_ADDRESS);

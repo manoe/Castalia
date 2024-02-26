@@ -27,7 +27,6 @@ void msr2mrp::startup() {
         ff_app = NULL;
     }
 
-
     if(appModule->hasPar("isMaster")) {
         g_is_master=appModule->par("isMaster");
     } else {
@@ -83,26 +82,28 @@ void msr2mrp::startup() {
     fp.t_start           = par("t_start");
 
 
-    stimer = new SerialTimer(extTrace());
+    stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
 
-    if(fp.static_routing) {
-        parseRouting(par("f_routing_file").stringValue());
+    if(isSink()) {
+        trace()<<"[info] Sink start.";
+        engine_table[SELF_NETWORK_ADDRESS]=new msr2mrp_engine(this,
+                                                              isSink(),
+                                                              isMaster(),
+                                                              SELF_NETWORK_ADDRESS,
+                                                              SELF_NETWORK_ADDRESS,
+                                                              fp,
+                                                              netDataFrameOverhead);
+        updateTimer();
+        setHop(0);
+        initPongTableSize();
+//        setTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
         setState(msr2mrpStateDef::WORK);
-        setHop(0); // probably wrong
+//        if(fp.second_learn != msr2mrpSecLParDef::OFF) {
+//            setTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
     } else {
-        if(isSink()) {
-            setHop(0);
-            initPongTableSize();
-            setTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
-            setState(msr2mrpStateDef::WORK);
-            if(fp.second_learn != msr2mrpSecLParDef::OFF) {
-                setTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
-            }
-        } else {
-            setHop(std::numeric_limits<int>::max());
-            setState(msr2mrpStateDef::INIT);
-        }
+        setHop(std::numeric_limits<int>::max());
+        setState(msr2mrpStateDef::INIT);
     }
     setRound(0);
     forw_pkt_count=0;
@@ -117,20 +118,22 @@ void msr2mrp::startup() {
 
 void msr2mrp::extSetTimer(int machine, int index, simtime_t time) {
     trace()<<"[timer] extSetTimer(machine="<<machine<<", index="<<index<<", time="<<time<<")";
-    stimer->setTimer(machine,index,time,getTimer(msr2mrpTimerDef::T_SERIAL) == -1?0:getTimer(msr2mrpTimerDef::T_SERIAL));
+    trace()<<"[info] offset: "<<getTimer(msr2mrpTimerDef::T_SERIAL)<<" time: "<<getClock();
+    stimer->setTimer(machine,index,time,getClock());
 }
 
 simtime_t msr2mrp::extGetTimer(int machine, int index) {
     trace()<<"[timer] extGetTimer(machine="<<machine<<", index="<<index<<")";
-    return stimer->getTimer(machine,index);
+    return stimer->getTimer(machine,index,getClock());
 }
 
 void msr2mrp::extCancelTimer(int machine, int index) {
     trace()<<"[timer] extCancelTimer(machine="<<machine<<", index="<<index<<")";
-    stimer->cancelTimer(machine,index);
+    stimer->cancelTimer(machine,index,getClock());
 }
 
 void msr2mrp::updateTimer() {
+    trace()<<"[timer] updateTimer()";
     if(stimer->timerChange()) {
         trace()<<"[info] Timer change";
         if(getTimer(msr2mrpTimerDef::T_SERIAL) != -1) {
@@ -2055,13 +2058,15 @@ void msr2mrp::timerFiredCallback(int index) {
         }
         case msr2mrpTimerDef::T_SERIAL: {
             extTrace()<<"[info] timer T_SERIAL expired";
-            auto timer = stimer->nextTimer();
+            auto timer = stimer->nextTimer(getClock());
             extTrace()<<"[info] timer - machine: "<<timer.machine<<" index: "<<timer.index<<" time: "<<timer.time;
-            timerFiredCallback(timer.index);
-            if(stimer->timerChange()) {
-                extTrace()<<"[info] Timer change indicated";
-                setTimer(msr2mrpTimerDef::T_SERIAL, stimer->getTimerValue());
+            if(engine_table.find(std::to_string(timer.machine)) != engine_table.end()) {
+                trace()<<"[info] Engine found: "<<timer.machine;
+                engine_table[std::to_string(timer.machine)]->timerFiredCallback(timer.index);
+                updateTimer();
             }
+            
+
             break;
         } 
 
@@ -2076,34 +2081,29 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     if(0==std::strcmp(destination,BROADCAST_NETWORK_ADDRESS)) {
         extTrace()<<"[info] Broadcast packet";
         sendData(pkt,std::string(destination),0);
-    } else if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
-        extTrace()<<"[error] Packet's destination not sink: "<<destination;
-        return;
     } else {
-        // Shouldn't we buffer?
-        if(isRoutingTableEmpty()) {
-            extTrace()<<"[error] Routing table empty, can't route packet";
+        if(0 == engine_table.size()) {
+            trace()<<"[error] No routing engine present";
+            return;
+        }
+        vector<std::string> ev;
+        for(auto ee: engine_table) {
+            if(msr2mrpStateDef::WORK == ee.second->getState() || msr2mrpStateDef::S_ESTABLISH == ee.second->getState() ) {
+                ev.push_back(ee.first);
+            }
+        }
+        if(0 == ev.size()) {
+            trace()<<"[error] Routing engines not ready";
             return;
         }
 
-        auto pathid=selectPathid();
-        std::string next_hop;
+        trace()<<"[info] Engine vector size: "<<ev.size();
 
-        if(msr2mrpRingDef::EXTERNAL==getRingStatus()) {
-            next_hop=getNextHop(pathid.pathid);
-        } else {
-            next_hop=getNextHop(pathid.pathid,fp.rand_ring_hop);
-        }
+        engine_table[ev[getRNG(0)->intRand(ev.size())]]->fromApplicationLayer(pkt,destination);
 
-        incPktCountInRoutingTable(next_hop);
-        if(fp.e2e_qos_pdr > 0.0) {
-            schedulePkt(pkt, next_hop, pathid.pathid);
-        }
-        else {
-            sendData(pkt,next_hop,pathid.pathid);
-        }
+        updateTimer();
+
     }
-    updateTimer();
 }
 
 void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
@@ -2112,197 +2112,47 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
         extTrace()<<"[error] Dynamic cast of packet failed";
     }
 
-    extTrace()<<"[info] Packet received from: NW "<<net_pkt->getSource()<<" MAC: "<<srcMacAddress;
+    extTrace()<<"[info] Packet received from: NW "<<net_pkt->getSource()<<" MAC: "<<srcMacAddress<<" Sink: "<<net_pkt->getSink();
+
+    if(engine_table.find(net_pkt->getSink()) != engine_table.end()) {
+        trace()<<"[info] Engine found: "<<net_pkt->getSink();
+        engine_table[net_pkt->getSink()]->fromMacLayer(pkt,srcMacAddress,rssi,lqi);
+        updateTimer();
+        return;
+    }
+    if(isSink()) {
+        trace()<<"[info] Node is sink, discarding any other sink related packet.";
+        return;
+    }
 
     switch (net_pkt->getMsr2mrpPacketKind()) {
         case msr2mrpPacketDef::RINV_PACKET: {
-            extTrace()<<"[info] RINV_PACKET received";
-            auto rinv_pkt=dynamic_cast<msr2mrpRinvPacket *>(pkt);
-
-            handleTSecLTimer();
-
-            if(isSink()) {
-                extTrace()<<"[info] RINV_PACKET discarded by Sink";
-                break;
-            }
-
-            if(rinv_pkt->getRound() > getRound()) {
-                setRound(rinv_pkt->getRound());
-                setHop(std::numeric_limits<int>::max());
-                switch (getState()) {
-                    case msr2mrpStateDef::LEARN: {
-                        cancelTimer(msr2mrpTimerDef::T_L);
-                        break;
-                    }
-                    case msr2mrpStateDef::ESTABLISH: {
-                        cancelTimer(msr2mrpTimerDef::T_ESTABLISH);
-                        break;
-                    }
-                    case msr2mrpStateDef::MEASURE: {
-                        cancelTimer(msr2mrpTimerDef::T_MEASURE);
-                        break;
-                    }
-                }
-                if(msr2mrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin || msr2mrpRinvTblAdminDef::ERASE_ON_ROUND==fp.rinv_tbl_admin) {
-                    clearRinvTable();
-                }
-
-                addToRinvTable(rinv_pkt);
-
-                extTrace()<<"[info] Start LEARNING process"; 
-                // What if it is in ESTABLISH state? What if new round? how to handle RINV table?
-                setSecL(false);
-                setState(msr2mrpStateDef::LEARN);
-                setTimer(msr2mrpTimerDef::T_L,getTl());
-
-            } else if(rinv_pkt->getRound() == getRound()) {
-                if(true == rinv_pkt->getLocal()) {
-                    // HOP!!!!!
-                    if(msr2mrpStateDef::WORK == getState()) {
-                        if(checkLocalid(rinv_pkt->getLocalid())) {
-                            extTrace()<<"[info] Local learn initiated by "<<rinv_pkt->getLocalid()<<" already executed, exiting";
-                        } else {
-                            extTrace()<<"[info] New local learn, initiated by "<<rinv_pkt->getLocalid();
-                            storeLocalid(rinv_pkt->getLocalid());
-                            setState(msr2mrpStateDef::LOCAL_LEARN);
-                            setTimer(msr2mrpTimerDef::T_L, getTl());
-                            clearRinvTableLocalFlags();
-                            try {
-                                markRinvEntryLocal(std::string(rinv_pkt->getSource()));
-                            } catch (no_available_entry &e) {
-                                extTrace()<<e.what();
-                                // maybe create?
-                                break;
-                            }
-                        }
-                        break;
-                    } else if(msr2mrpStateDef::LOCAL_LEARN == getState()) {
-                        if(checkLocalid(rinv_pkt->getLocalid())) {
-                            extTrace()<<"[info] Local learn initiated by "<<rinv_pkt->getLocalid()<<" already executed, LOCAL_LEARN not restarting, exiting";
-                            break; // this should be moved out
-                        } else {
-                            extTrace()<<"[info] Local learn restart due to "<<rinv_pkt->getLocalid();
-                            storeLocalid(rinv_pkt->getLocalid());
-                            cancelTimer(msr2mrpTimerDef::T_L);
-                            setTimer(msr2mrpTimerDef::T_L, getTl());
-                            try {
-                                markRinvEntryLocal(std::string(rinv_pkt->getSource()));
-                            } catch (no_available_entry &e) {
-                                extTrace()<<e.what();
-                                // maybe create?
-                                break;
-                            }
-                            break;
-                        }
-                    }
-                } else if(msr2mrpStateDef::LEARN != getState() && msr2mrpRinvTblAdminDef::ERASE_ON_LEARN==fp.rinv_tbl_admin) {
-                        extTrace()<<"[info] RINV packet discarded by node, not in learning state anymore";
-                        break;
-                    }
-                addToRinvTable(rinv_pkt);
-            } else {
-                extTrace()<<"[info] RINV_PACKET with round "<<rinv_pkt->getRound()<<" discarded by node with round "<<getRound();
-            }
-
+            extTrace()<<"[info] RINV_PACKET received, creating engine";
+            engine_table[net_pkt->getSink()]=new msr2mrp_engine(this,
+                                                              isSink(),
+                                                              isMaster(),
+                                                              net_pkt->getSink(),
+                                                              SELF_NETWORK_ADDRESS,
+                                                              fp,
+                                                              netDataFrameOverhead);
+            engine_table[net_pkt->getSink()]->fromMacLayer(pkt, srcMacAddress, rssi, lqi);
+            updateTimer();
             break;
         }
         case msr2mrpPacketDef::RREQ_PACKET: {
-            extTrace()<<"[info] RREQ_PACKET received";
-            auto rreq_pkt=dynamic_cast<msr2mrpRreqPacket *>(pkt);
-            if(rreq_pkt->getRound() != getRound()) {
-                extTrace()<<"[error] RREQ_PACKET's round: "<<rreq_pkt->getRound()<<" does not equal local round: "<<getRound();
-                break;
-            }
-
-            handleTSecLTimer();
-
-            if(getHop()<fp.ring_radius) {
-                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
-            } else if(getHop()==fp.ring_radius) {
-                if(resolveNetworkAddress(SELF_NETWORK_ADDRESS)!=rreq_pkt->getPathid()) {
-                    extTrace()<<"[error] RREQ packet's pathid "<<rreq_pkt->getPathid()<<" does not match node's network address: "<<SELF_NETWORK_ADDRESS;
-                    break;
-                }
-                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
-            } else {
-                sendRresp(rreq_pkt->getSource(),getRound(),rreq_pkt->getPathid());
-            }
+            extTrace()<<"[info] RREQ_PACKET received, unknown, discarding";
             break;
         }
         case msr2mrpPacketDef::RRESP_PACKET: {
-            extTrace()<<"[info] RRESP_PACKET received";
-            auto rresp_pkt=dynamic_cast<msr2mrpRrespPacket *>(pkt);
-            if(rreqEntryExists(rresp_pkt->getSource(),rresp_pkt->getPathid())) {
-                updateRreqTableWithRresp(rresp_pkt->getSource(),rresp_pkt->getPathid());
-            } else {
-                extTrace()<<"[error] No entry in RREQ table with address "<<rresp_pkt->getSource()<<" and pathid: "<<rresp_pkt->getPathid();
-                break;
-            }
+            extTrace()<<"[info] RRESP_PACKET received, unknown, discarding";
             break;
         }
         case msr2mrpPacketDef::LREQ_PACKET: {
-            extTrace()<<"[info] LREQ_PACKET received";
-            if(isSink()) {
-                extTrace()<<"[info] Node is sink, discarding LREQ_PACKET";
-                break;
-            }
-            auto lreq_packet=dynamic_cast<msr2mrpLreqPacket *>(pkt);
-
-            if(lreq_packet->getRound() != getRound()) {
-                extTrace()<<"LREQ_PACKET out of round. Packet round: "<<lreq_packet->getRound()<<" own round: "<<getRound();
-                break;
-            }
-
-            if(getSecL(lreq_packet->getPathid())) {
-                extTrace()<<"[info] Second learn already performed";
-                if(0==std::strcmp(lreq_packet->getDestination(),SELF_NETWORK_ADDRESS)) {
-                    sendLresp(lreq_packet->getSource(),getRound(),lreq_packet->getPathid());
-                }
-                break;
-            }
-
-            // This is not a real issue, isn't it?
-            if(lreq_packet->getHop() >= getHop()) {
-                extTrace()<<"[info] LREQ_PACKET hop is higher than local hop. Packet hop: "<<lreq_packet->getRound()<<" own hop: "<<getHop();
-                //                break;
-            }
-
-//            if(msr2mrpRingDef::EXTERNAL == getRingStatus()) {
-                // Most probably always true
-                if(!checkPathid(lreq_packet->getPathid())) {
-                    extTrace()<<"[info] LREQ_PACKET indicates unknown pathid, discarding.";
-                    break;
-                }
-//            }
-
-            if(0==std::strcmp(lreq_packet->getDestination(),SELF_NETWORK_ADDRESS)) {
-                sendLresp(lreq_packet->getSource(),getRound(),lreq_packet->getPathid());
-            }
-
-            setSecL(lreq_packet->getPathid(),true);
-            if(getRingStatus() == msr2mrpRingDef::BORDER) {
-                pushSecLPathid(resolveNetworkAddress(SELF_NETWORK_ADDRESS));
-            } else {
-                pushSecLPathid(lreq_packet->getPathid());
-            }
-            if(getTimer(msr2mrpTimerDef::T_SEC_L)!=-1 || getState()==msr2mrpStateDef::S_ESTABLISH ) {
-                extTrace()<<"[info] T_SEC_L timer active or S_ESTABLISH state, no restart";
-            } else {
-                extTrace()<<"[info] Starting T_SEC_L timer";
-                setTimer(msr2mrpTimerDef::T_SEC_L, fp.t_sec_l);
-            }
+            extTrace()<<"[info] LREQ_PACKET received, unknown, discarding";
             break;
         }
         case msr2mrpPacketDef::LRESP_PACKET: {
-            extTrace()<<"[info] LRESP_PACKET received";
-            auto lresp_packet=dynamic_cast<msr2mrpLrespPacket *>(pkt);
-            if(recv_table.find(std::string(lresp_packet->getSource())) != recv_table.end()) {
-                extTrace()<<"[info] Entry "<<lresp_packet->getSource()<<" exists";
-                if(recv_table[std::string(lresp_packet->getSource())].round == lresp_packet->getRound()) { // && recv_table[std::string(lresp_packet->getSource())].pathid.end() != std::find(recv_table[std::string(lresp_packet->getSource())].pathid.begin(), recv_table[std::string(lresp_packet->getSource())].pathid.end() ,lresp_packet->getPathid())) {
-                    extTrace()<<"[info] Entry has valid round";
-                    recv_table[std::string(lresp_packet->getSource())].secl=true;
-                }
-            }
+            extTrace()<<"[info] LRESP_PACKET received, unknown, discarding";
             break;
         }
         case msr2mrpPacketDef::RWARN_PACKET: {
@@ -2501,7 +2351,6 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
             break;
         }
     }
-    updateTimer();
 }
 
 msr2mrpRingDef msr2mrp::getRingStatus() const {

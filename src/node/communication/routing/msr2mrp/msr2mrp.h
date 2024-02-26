@@ -480,8 +480,8 @@ class msr2mrp: public VirtualRouting {
         int forw_pkt_count;
 
         SerialTimer *stimer;
-
         msr2mrp *nw_layer;
+        std::map<std::string,msr2mrp_engine*> engine_table;
 
     protected:
         void startup();

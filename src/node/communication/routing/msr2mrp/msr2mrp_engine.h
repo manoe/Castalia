@@ -21,6 +21,8 @@
 #include <cerrno>
 #include <list>
 
+class msr2mrp_engine;
+
 #include "node/communication/routing/msr2mrp/msr2mrp.h"
 #include "node/communication/routing/VirtualRouting.h"
 #include "node/communication/routing/msr2mrp/msr2mrp_m.h"
@@ -84,10 +86,7 @@ class msr2mrp_engine {
 
     protected:
         void startup();
-        void fromApplicationLayer(cPacket *, const char *);
-        void fromMacLayer(cPacket *, int, double, double);
         void handleNetworkControlCommand(cMessage *);
-        void timerFiredCallback(int);
         void finishSpecific();
 
         msr2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
@@ -228,7 +227,10 @@ class msr2mrp_engine {
 
     public:
         msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, std::string sink_addr, std::string self_addr, msr2mrp_feat_par fp, int netDataFrameOverhead);
-       
+
+        void timerFiredCallback(int);
+        void fromMacLayer(cPacket *, int, double, double);
+        void fromApplicationLayer(cPacket *, const char *);
 
         msr2mrpRingDef getRingStatus() const;
         msr2mrpStateDef getState() const;
