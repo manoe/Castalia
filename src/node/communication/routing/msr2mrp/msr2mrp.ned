@@ -104,6 +104,7 @@ simple msr2mrp like node.communication.routing.iRouting
     double f_drop_prob        = default(0.1);   // Drop probability
     bool   f_e2e_cost         = default(false); // Use end-to-end values for pdr, energy and emergency
     bool   f_periodic_restart = default(false); // Restart network periodically
+    bool   f_single_network   = default(false); // Nodes should belong only to a single (sub)network
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
