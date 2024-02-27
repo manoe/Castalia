@@ -2498,6 +2498,7 @@ void msr2mrp::finishSpecific() {
         cTopology *topo;        // temp variable to access energy spent by other nodes
         topo = new cTopology("topo");
         topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+        y_out<<YAML::BeginSeq;
 
         for (int i = 0; i < topo->getNumNodes(); ++i) {
             msr2mrp *msr2mrp_instance = dynamic_cast<msr2mrp*>
@@ -2514,6 +2515,7 @@ void msr2mrp::finishSpecific() {
             y_out<<YAML::Value;
             y_out<<YAML::BeginSeq;
             for(auto it=engine_table.begin() ; it != engine_table.end() ; ++it) {
+                y_out<<YAML::BeginMap;
                 y_out<<YAML::Key<<"engine";
                 y_out<<YAML::Value<<it->first;
                 try {
@@ -2562,6 +2564,7 @@ void msr2mrp::finishSpecific() {
                 y_out<<YAML::Value<<it->second->getHop();
                 y_out<<YAML::Key<<"master";
                 y_out<<YAML::Value<<it->second->isMaster();
+                y_out<<YAML::EndMap;
             }
             y_out<<YAML::EndSeq;
 
