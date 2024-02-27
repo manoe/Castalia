@@ -232,6 +232,7 @@ struct msr2mrp_feat_par {
     double drop_prob;
     bool   e2e_cost;
     double t_start;
+    bool   single_network;
 };
 
 class msr2mrp;
@@ -672,6 +673,8 @@ class msr2mrp: public VirtualRouting {
         std::map<std::string,msr2mrp_node_entry> getTrafficTable() {
             return traffic_table;
         };
+
+        std::map<std::string,msr2mrp_engine*> getEngineTable() {return engine_table;};
 
         double getEnergyValue();
         double getEmergencyValue();

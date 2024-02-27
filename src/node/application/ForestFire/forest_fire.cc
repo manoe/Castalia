@@ -370,7 +370,9 @@ void ForestFire::finishSpecific()
         y_out<<YAML::Key<<"seed";
         auto env_mod=getEnvir();
         auto conf_mod=env_mod->getConfig();
-        y_out<<YAML::Value<<conf_mod->getConfigValue("seed-set");      
+        y_out<<YAML::Value<<conf_mod->getConfigValue("seed-set");
+        y_out<<YAML::Key<<"protocol";
+        y_out<<YAML::Value<<getParentModule()->getSubmodule("Communication")->par("RoutingProtocolName").stringValue();
         y_out<<YAML::Key<<"pdr";
         y_out<<YAML::BeginSeq;
 

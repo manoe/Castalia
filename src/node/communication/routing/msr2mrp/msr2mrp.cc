@@ -80,7 +80,7 @@ void msr2mrp::startup() {
     fp.drop_prob         = par("f_drop_prob");
     fp.e2e_cost          = par("f_e2e_cost");
     fp.t_start           = par("t_start");
-
+    fp.single_network    = par("f_single_network");
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
@@ -2128,6 +2128,10 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
 
     switch (net_pkt->getMsr2mrpPacketKind()) {
         case msr2mrpPacketDef::RINV_PACKET: {
+            if(engine_table.size() > 0 && engine_table.find(net_pkt->getSink()) == engine_table.end() && fp.single_network) {
+                trace()<<"[info] Node already assigned to sink "<<engine_table.begin()->first;
+                return;
+            }
             extTrace()<<"[info] RINV_PACKET received, creating engine";
             engine_table[net_pkt->getSink()]=new msr2mrp_engine(this,
                                                               isSink(),
@@ -2490,126 +2494,83 @@ void msr2mrp::serializeRadioStats(PktBreakdown stats) {
 
 
 void msr2mrp::finishSpecific() {
-    if (isSink() && resolveNetworkAddress(SELF_NETWORK_ADDRESS) == 0) {
+    if (resolveNetworkAddress(SELF_NETWORK_ADDRESS) == 0) {
         cTopology *topo;        // temp variable to access energy spent by other nodes
         topo = new cTopology("topo");
         topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
-
-        set<int> paths;
-        auto sink_pos=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"))->getLocation();
-
         y_out<<YAML::BeginSeq;
-        y_out<<YAML::BeginMap;
-        y_out<<YAML::Key<<"node";
-        y_out<<YAML::Value<<"0";
-        y_out<<YAML::Key<<"recv_table";
-        y_out<<YAML::Value;
-        serializeRecvTable();
-        y_out<<YAML::Key<<"state";
-        y_out<<YAML::Value;
-        y_out<<stateToStr(getState());
 
-
-        auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(0)->getModule()->getSubmodule("MobilityManager"));
-
-        auto radio=dynamic_cast<Radio *>(topo->getNode(0)->getModule()->getSubmodule("Communication")->getSubmodule("Radio"));
-
-        auto loc=mob_mgr->getLocation();
-        y_out<<YAML::Key<<"x";
-        y_out<<YAML::Value;
-        y_out<<loc.x;
-        y_out<<YAML::Key<<"y";
-        y_out<<YAML::Value;
-        y_out<<loc.y;
-        y_out<<YAML::Key<<"role";
-        y_out<<YAML::Value;
-        y_out<<ringToStr(getRingStatus());
-        y_out<<YAML::Key<<"master";
-        y_out<<YAML::Value<<isMaster();
-        y_out<<YAML::Key<<"pong_table";
-        y_out<<YAML::Value<<getPongTableSize();
-        y_out<<YAML::Key<<"radio";
-        y_out<<YAML::Value;
-        serializeRadioStats(radio->getStats());
-            y_out<<YAML::Key<<"traffic_table";
-            y_out<<YAML::Value;
-            y_out<<YAML::BeginSeq;
-            for(auto ne: getTrafficTable()) {
-                y_out<<YAML::BeginMap;
-                y_out<<YAML::Key<<"node";
-                y_out<<YAML::Value<<ne.first;
-                y_out<<YAML::Key<<"pkt";
-                y_out<<YAML::Value<<ne.second.pkt_count;
-                y_out<<YAML::Key<<"pathid";
-                y_out<<YAML::Value;
-                y_out<<YAML::BeginSeq;
-                for(auto p: ne.second.pathid) {
-                    y_out<<YAML::BeginMap;
-                    y_out<<YAML::Key<<"pathid";
-                    y_out<<YAML::Value<<p.pathid;
-                    y_out<<YAML::EndMap;
-                }
-                y_out<<YAML::EndSeq;
-                y_out<<YAML::Key<<"reroute_count";
-                y_out<<YAML::Value<<ne.second.reroute_count;
-                y_out<<YAML::EndMap;
-            }
-            y_out<<YAML::EndSeq;
-            y_out<<YAML::Key<<"forw_data_pkt_count";
-            y_out<<YAML::Value<<"0";
-            y_out<<YAML::Key<<"hop";
-            y_out<<YAML::Value<<"0";
-
-        y_out<<YAML::EndMap;
-
-        for (int i = 1; i < topo->getNumNodes(); ++i) {
+        for (int i = 0; i < topo->getNumNodes(); ++i) {
             msr2mrp *msr2mrp_instance = dynamic_cast<msr2mrp*>
                 (topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
             auto mob_mgr=dynamic_cast<VirtualMobilityManager *>(topo->getNode(i)->getModule()->getSubmodule("MobilityManager"));
+            auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
 
             y_out<<YAML::BeginMap;
             y_out<<YAML::Key<<"node";
             y_out<<YAML::Value<<i;
-            try {
-                auto table=msr2mrp_instance->getRecvTable();
-                y_out<<YAML::Key<<"recv_table";
+            auto engine_table=msr2mrp_instance->getEngineTable();
+
+            y_out<<YAML::Key<<"engines";
+            y_out<<YAML::Value;
+            y_out<<YAML::BeginSeq;
+            for(auto it=engine_table.begin() ; it != engine_table.end() ; ++it) {
+                y_out<<YAML::BeginMap;
+                y_out<<YAML::Key<<"engine";
+                y_out<<YAML::Value<<it->first;
+                try {
+                    auto table=it->second->getRecvTable();
+                    y_out<<YAML::Key<<"recv_table";
+                    y_out<<YAML::Value;
+                    serializeRecvTable(table);
+                } catch (exception &e) {
+                    extTrace()<<"[error] No recv table: "<<e.what();
+                }
+                try {
+                    auto table=it->second->getRoutingTable();
+                    y_out<<YAML::Key<<"routing_table";
+                    y_out<<YAML::Value;
+                    serializeRoutingTable(table);
+                } catch (exception &e) {
+                    extTrace()<<"[error] No routing table: "<<e.what();
+                }
+                try {
+                    auto table=it->second->getRreqTable();
+                    y_out<<YAML::Key<<"rreq_table";
+                    y_out<<YAML::Value;
+                    serializeRoutingTable(table);
+                } catch (exception &e) {
+                    extTrace()<<"[error] No rreq table: "<<e.what();
+                }
+                try {
+                    auto table=it->second->getRinvTable();
+                    y_out<<YAML::Key<<"rinv_table";
+                    y_out<<YAML::Value;
+                    serializeRoutingTable(table);
+                } catch (exception &e) {
+                    extTrace()<<"[error] No rinv table: "<<e.what();
+                }
+                y_out<<YAML::Key<<"round";
+                y_out<<YAML::Value<<it->second->getRound();
+                y_out<<YAML::Key<<"second_learn";
+                y_out<<YAML::Value<<it->second->getSecL();
+                y_out<<YAML::Key;
+                y_out<<"role";
                 y_out<<YAML::Value;
-                serializeRecvTable(table);
-            } catch (exception &e) {
-                extTrace()<<"[error] No recv table: "<<e.what();
+                y_out<<(res_mgr->isDead()?"dead":ringToStr(it->second->getRingStatus()));
+                y_out<<YAML::Key<<"state";
+                y_out<<YAML::Value<<(res_mgr->isDead()?"DEAD":stateToStr(it->second->getState()));
+                y_out<<YAML::Key<<"hop";
+                y_out<<YAML::Value<<it->second->getHop();
+                y_out<<YAML::Key<<"master";
+                y_out<<YAML::Value<<it->second->isMaster();
+                y_out<<YAML::EndMap;
             }
-            try {
-                auto table=msr2mrp_instance->getRoutingTable();
-                y_out<<YAML::Key<<"routing_table";
-                y_out<<YAML::Value;
-                serializeRoutingTable(table);
-            } catch (exception &e) {
-                extTrace()<<"[error] No routing table: "<<e.what();
-            }
-            try {
-                auto table=msr2mrp_instance->getRreqTable();
-                y_out<<YAML::Key<<"rreq_table";
-                y_out<<YAML::Value;
-                serializeRoutingTable(table);
-            } catch (exception &e) {
-                extTrace()<<"[error] No rreq table: "<<e.what();
-            }
-            try {
-                auto table=msr2mrp_instance->getRinvTable();
-                y_out<<YAML::Key<<"rinv_table";
-                y_out<<YAML::Value;
-                serializeRoutingTable(table);
-            } catch (exception &e) {
-                extTrace()<<"[error] No rinv table: "<<e.what();
-            }
-            auto res_mgr=dynamic_cast<ResourceManager *>(topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
+            y_out<<YAML::EndSeq;
+
 
             y_out<<YAML::Key<<"state";
             y_out<<YAML::Value<<(res_mgr->isDead()?"DEAD":stateToStr(msr2mrp_instance->getState()));
-            y_out<<YAML::Key<<"round";
-            y_out<<YAML::Value<<msr2mrp_instance->getRound();
-            y_out<<YAML::Key<<"second_learn";
-            y_out<<YAML::Value<<msr2mrp_instance->getSecL();
 
             auto radio=dynamic_cast<Radio *>(topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Radio"));
             y_out<<YAML::Key<<"radio";
@@ -2624,24 +2585,10 @@ void msr2mrp::finishSpecific() {
             y_out<<loc.x;
             y_out<<YAML::Key<<"y";
             y_out<<loc.y;
-            y_out<<YAML::Key;
-            y_out<<"role";
-            y_out<<YAML::Value;
-            y_out<<(res_mgr->isDead()?"dead":ringToStr(msr2mrp_instance->getRingStatus()));
             y_out<<YAML::Key<<"remaining_energy";
             y_out<<YAML::Value<<res_mgr->getRemainingEnergy();
             y_out<<YAML::Key<<"spent_energy";
             y_out<<YAML::Value<<res_mgr->getSpentEnergy();
-            y_out<<YAML::Key<<"pong_table";
-            y_out<<YAML::Value<<msr2mrp_instance->getPongTableSize();
-            y_out<<YAML::Key;
-            y_out<<"hop";
-            y_out<<YAML::Value;
-            y_out<<msr2mrp_instance->getHop();
-            y_out<<YAML::Key;
-            y_out<<"master";
-            y_out<<YAML::Value;
-            y_out<<msr2mrp_instance->isMaster();
             y_out<<YAML::Key<<"traffic_table";
             y_out<<YAML::Value;
             y_out<<YAML::BeginSeq;
