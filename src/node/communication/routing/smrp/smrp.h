@@ -150,7 +150,7 @@ class smrp: public VirtualRouting {
 
         sm_node_entry getNthTargetValueEntry(int, std::vector<std::string>);
         sm_node_entry getNthTargetValueEntry(int, std::vector<std::string>, bool);
-        sm_node_entry findSecondaryPath(std::string, std::vector<std::string>);
+        sm_node_entry findPath(std::string, std::vector<std::string>);
 
         int numOfAvailPaths(std::string);
         void initRouting();

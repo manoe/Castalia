@@ -290,6 +290,7 @@ void smrp::initRouting() {
     trace()<<"[info] Clearing routing table, construct primary path";
     routing_table.clear();
     addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+
     setTimer(smrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
     if(isSinkNextHop()) {
         trace()<<"[info] No secondary path needed, as sink is the neighbor";
@@ -558,7 +559,7 @@ bool smrp::queryStarted(std::string ne) {
 bool smrp::queryCompleted(std::string ne) {
     trace()<<"[info] Entering queryCompleted(ne="<<ne<<")";
     for(auto re: routing_table) {
-        if(re.nw_address==ne && re.status==smrpPathStatus::UNDER_QUERY && re.prio>1 && re.query_timestamp+fp.query < getClock().dbl()) {
+        if(re.nw_address==ne && re.status==smrpPathStatus::UNDER_QUERY && re.query_timestamp+fp.query < getClock().dbl()) {
             trace()<<"[info] Query completed";
             return true;
         }
@@ -660,7 +661,7 @@ bool smrp::checkPath(std::string ne) {
     trace()<<"[info] Entering checkPath(ne="<<ne<<")";
     for(auto entry: routing_table) {
         if(entry.nw_address == ne) {
-            trace()<<"[info] Entry found";
+            trace()<<"[info] Entry found with state "<<pathStatusToStr(entry.status);
             return true;
         }
     }
@@ -765,8 +766,8 @@ sm_routing_entry smrp::getPath(std::string ne) {
     return rv[0];
 }
 
-sm_node_entry smrp::findSecondaryPath(std::string ne, std::vector<std::string> ne_lst) {
-    trace()<<"[info] Entering findSecondaryPath(ne="<<ne<<")";
+sm_node_entry smrp::findPath(std::string ne, std::vector<std::string> ne_lst) {
+    trace()<<"[info] Entering findPath(ne="<<ne<<")";
     std::vector<sm_node_entry> nv;
     for(auto entry: field_table) {
         for(auto pe: entry.second.pe) {
@@ -780,7 +781,13 @@ sm_node_entry smrp::findSecondaryPath(std::string ne, std::vector<std::string> n
                 }
                 if(!found) {
                     trace()<<"[info] Entry matches: "<<entry.second.nw_address;
-                    nv.push_back(entry.second);
+                    for(auto it2 = entry.second.hop.begin() ; it2 != entry.second.hop.end() ; ++it2) {
+                        trace()<<"[info] Adding with sink: "<<it2->first<<" hop: "<<it2->second;
+                        auto ne = entry.second;
+                        ne.hop.clear();
+                        ne.hop.insert({it2->first, it2->second});
+                        nv.push_back(ne);
+                    }
                 }
             }
         }
@@ -1045,66 +1052,34 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
 
             auto pri=data_pkt->getPri();
 
-            if(pri==1) {
-                if(checkRoutingEntry(data_pkt->getOrigin(), pri)) {
-                    forwardData(data_pkt->dup());
-                } else {
-                    if(isSinkNextHop()) {
-                        trace()<<"[info] Adding sink as next hop";
-                        addRoutingEntry(std::string(data_pkt->getOrigin()), getSinkFieldTableEntry(), pri);
-                    } else {
-                        try {
-                            addRoutingEntry(std::string(data_pkt->getOrigin()),getNthTargetValueEntry(1, {data_pkt->getSource()}),1);
-                        } catch (std::string &e) {
-                            trace()<<e;
-                            break;
-                        }
-                    }
-                    forwardData(data_pkt->dup());
-                }
+            if(checkRoutingEntry(data_pkt->getOrigin(), pri)) {
+                trace()<<"[info] Path with priority "<<pri<<" exists.";
+                forwardData(data_pkt->dup());
                 break;
             }
-            
-            if(pri==2) {
-                trace()<<"[info] Secondary path";
-                if(checkRoutingEntry(data_pkt->getOrigin(), pri)) {
-                    trace()<<"[info] Secondary path exists";
-                    forwardData(data_pkt->dup());
-                } else {
-                    trace()<<"[info] Secondary path not available";
-                    if(isSinkNextHop()) {
-                        trace()<<"[info] Adding sink as next hop";
-                        addRoutingEntry(std::string(data_pkt->getOrigin()), getSinkFieldTableEntry(), pri);
-                    } else {
-                        trace()<<"[info] Check query status";
-                        if(queryCompleted(data_pkt->getOrigin())) {
-                            trace()<<"[info] Query completed";
-                            sm_node_entry ne;
-                            try {
-                                ne=findSecondaryPath(data_pkt->getOrigin(),{data_pkt->getSource() } );
-                            } catch (std::string &e) {
-                                trace()<<"[error] "<<e;
-                                removeRoutingEntry(data_pkt->getOrigin(), data_pkt->getPri());
-                                sendRetreat(data_pkt);
-                                break;
-                            }
-                            updateRoutingEntry(data_pkt->getOrigin(),ne,pri,smrpPathStatus::AVAILABLE);
-                            forwardData(data_pkt->dup());
-                        } else if(queryStarted(data_pkt->getOrigin())) {
-                            trace()<<"[info] Query ongoing, dropping packet.";
-                            break;
-                        } else {
-                            trace()<<"[info] No secondary path available.";
-                            sm_node_entry ne;
-                            addRoutingEntry(data_pkt->getOrigin(), ne, pri, smrpPathStatus::UNDER_QUERY,getClock().dbl());
-                            sendQuery(data_pkt->getOrigin());
-                            break;
-                        }
-                    }
+            trace()<<"[info] No path present with priority "<<pri<<".";
+            trace()<<"[info] Check query status";
+            if(queryCompleted(data_pkt->getOrigin())) {
+                trace()<<"[info] Query completed";
+                sm_node_entry ne;
+                try {
+                    ne=findPath(data_pkt->getOrigin(),{data_pkt->getSource() } );
+                } catch (std::string &e) {
+                    trace()<<"[error] "<<e;
+                    removeRoutingEntry(data_pkt->getOrigin(), data_pkt->getPri());
+                    sendRetreat(data_pkt);
+                    break;
                 }
-            }
-            if(pri>2) {
-                trace()<<"[info] Not implemented";
+                updateRoutingEntry(data_pkt->getOrigin(),ne,pri,smrpPathStatus::AVAILABLE);
+                forwardData(data_pkt->dup());
+            } else if(queryStarted(data_pkt->getOrigin())) {
+                trace()<<"[info] Query ongoing, dropping packet.";
+                break;
+            } else {
+                trace()<<"[info] No secondary path available.";
+                sm_node_entry ne;
+                addRoutingEntry(data_pkt->getOrigin(), ne, pri, smrpPathStatus::UNDER_QUERY,getClock().dbl());
+                sendQuery(data_pkt->getOrigin());
                 break;
             }
             break;
