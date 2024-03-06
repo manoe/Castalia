@@ -47,6 +47,7 @@ void smrp::startup() {
     fp.gamma            = par("p_gamma");
     fp.n_lim            = par("p_n_lim");
     fp.periodic_restart = par("p_periodic_restart");
+    fp.a_paths          = par("p_a_paths");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 
@@ -495,12 +496,14 @@ double smrp::targetFunction(sm_node_entry a) {
 }
 
 
-int smrp::numOfAvailPaths(std::string ne) {
+int smrp::numOfAvailPaths(std::string ne, bool only_available=true) {
     trace()<<"[info] Entering numOfAvailPaths(ne="<<ne<<")";
     int ret_val=0;
     for(auto re: routing_table) {
-        if(ne == re.nw_address && re.status==smrpPathStatus::AVAILABLE) {
+        if(ne == re.nw_address) {
+           if(!only_available || re.status==smrpPathStatus::AVAILABLE) {
             ++ret_val;
+           }
         }
     }
     trace()<<"[info] Number of available paths: "<<ret_val;
@@ -915,6 +918,10 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==0) {
                 trace()<<"[error] No route available";
                 break;
+            }
+            else if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths) < fp.pnum) {
+                trace()<<"[info] Path number not met.";
+
             }
             sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
             break;
