@@ -2570,7 +2570,9 @@ void msr2mrp::finishSpecific() {
 
 
             y_out<<YAML::Key<<"state";
-            y_out<<YAML::Value<<(res_mgr->isDead()?"DEAD":stateToStr(msr2mrp_instance->getState()));
+            y_out<<YAML::Value<<(res_mgr->isDead()?"DEAD":"ALIVE");
+            y_out<<YAML::Key<<"master";
+            y_out<<YAML::Value<<msr2mrp_instance->isMaster();
 
             auto radio=dynamic_cast<Radio *>(topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Radio"));
             y_out<<YAML::Key<<"radio";
