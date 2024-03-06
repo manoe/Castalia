@@ -169,7 +169,6 @@ class smrp: public VirtualRouting {
         sm_routing_entry getPath(std::string);
         sm_routing_entry getPath(std::string, int);
         bool checkPath(std::string);
-        bool isSinkNextHop();
         bool checkNextHop(std::string, int);
 
         void sendQuery(std::string);

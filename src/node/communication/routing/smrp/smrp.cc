@@ -663,17 +663,6 @@ bool smrp::checkPath(std::string ne) {
     return false;
 }
 
-bool smrp::isSinkNextHop() {
-    trace()<<"[info] Entering isSinkNextHop()";
-    for(auto ne: routing_table) {
-        if(ne.next_hop==getSinkAddress()) {
-            trace()<<"[info] Sink is next hop.";
-            return true;
-        }
-    }
-    trace()<<"[info] Sink in routing table not present.";
-    return false;
-}
 
 bool smrp::checkNextHop(std::string ne, int prio) {
     trace()<<"[info] checkNextHop(ne="<<ne<<", prio="<<prio<<")";
@@ -921,6 +910,34 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             }
             else if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths) < fp.pnum) {
                 trace()<<"[info] Path number not met.";
+                auto pri=numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths)+1;
+                trace()<<"[info] Establishing path with priority "<<pri;
+                if(checkRoutingEntry(SELF_NETWORK_ADDRESS, pri)) {
+                    trace()<<"[error] Path with priority "<<pri<<" exists.";
+                    break;
+                }
+                trace()<<"[info] No path present with priority "<<pri<<".";
+                trace()<<"[info] Check query status";
+                if(queryCompleted(SELF_NETWORK_ADDRESS)) {
+                    trace()<<"[info] Query completed";
+                    sm_node_entry ne;
+                    try {
+                        ne=findPath(SELF_NETWORK_ADDRESS,{SELF_NETWORK_ADDRESS});
+                    } catch (std::string &e) {
+                        trace()<<"[error] "<<e;
+                        trace()<<"[error] How do we got here?";
+                        removeRoutingEntry(SELF_NETWORK_ADDRESS, pri);
+                        break;
+                    }
+                    updateRoutingEntry(SELF_NETWORK_ADDRESS,ne,pri,smrpPathStatus::AVAILABLE);
+                } else if(queryStarted(SELF_NETWORK_ADDRESS)) {
+                    trace()<<"[info] Query ongoing.";
+                } else {
+                    trace()<<"[info] No path with priority "<<pri<<" available.";
+                    sm_node_entry ne;
+                    addRoutingEntry(SELF_NETWORK_ADDRESS, ne, pri, smrpPathStatus::UNDER_QUERY,getClock().dbl());
+                    sendQuery(SELF_NETWORK_ADDRESS);
+                }
 
             }
             sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
@@ -1071,7 +1088,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 trace()<<"[info] Query ongoing, dropping packet.";
                 break;
             } else {
-                trace()<<"[info] No secondary path available.";
+                trace()<<"[info] No path with priority "<<pri<<" available.";
                 sm_node_entry ne;
                 addRoutingEntry(data_pkt->getOrigin(), ne, pri, smrpPathStatus::UNDER_QUERY,getClock().dbl());
                 sendQuery(data_pkt->getOrigin());
