@@ -288,19 +288,10 @@ bool smrp::checkFieldEntry(std::string ne) {
 void smrp::initRouting() {
     trace()<<"[info] Entering initRouting()";
     trace()<<"[info] Clearing routing table, construct primary path";
-    routing_table.clear();
+    initRoutingTable();
     addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
 
     setTimer(smrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
-    if(isSinkNextHop()) {
-        trace()<<"[info] No secondary path needed, as sink is the neighbor";
-        return;
-    }
-    try {
-        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
-    } catch (std::string &s) {
-        trace()<<"[error] "<<s;
-    }
 }
 
 void smrp::initRoutingTable() {
@@ -814,6 +805,7 @@ void smrp::updateFieldTableWithQA(smrpQueryAckPacket *query_ack_pkt) {
                 return;
             }
         }
+        trace()<<"[info] QURY_ACK record does not exists";
         field_table[query_ack_pkt->getSource()].pe.push_back({query_ack_pkt->getOrigin(),status });
     } else {
         trace()<<"[warn] Query responder does not exists in field_table";
@@ -907,10 +899,6 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         sendData(std::string(destination),pkt);
         return;
             
-    }
-    if(0!=std::strcmp(destination,getSinkAddress().c_str())) {
-        trace()<<"[error] Packet's destination not sink: "<<destination;
-        return;
     }
 
     switch (getState()) {
