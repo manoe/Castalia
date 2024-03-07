@@ -300,6 +300,28 @@ void smrp::initRoutingTable() {
     routing_table.clear();
 }
 
+int smrp::calcNextPriFromRtTable(std::string ne, bool a_paths) {
+    trace()<<"[info] Entering calcNextPriFromRtTable(ne="<<ne<<", a_paths="<<a_paths<<")";
+    if(routing_table.empty()) {
+        trace()<<"[info] Routing table empty.";
+        return 0;
+    }
+    vector<int> pv;
+    for(auto re: routing_table) {
+        if(smrpPathStatus::AVAILABLE == re.status || !a_paths) {
+            pv.push_back(re.prio);
+        }
+    }
+    for(int i=1; i <= 5 ; ++i) {
+        if(std::find(pv.begin(),pv.end(),i) == pv.end()) {
+            trace()<<"[info] Priority "<<i<<" missing, comes next.";
+            return i;
+        }
+    }
+    throw std::string("Max prio met");
+}
+
+
 void smrp::cleanRouting(std::string ne) {
     trace()<<"[info] Entering cleanRouting(ne="<<ne<<")";
     trace()<<"[info] Assess change impact: ";
@@ -890,7 +912,6 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         trace()<<"[info] Broadcast network address";
         sendData(std::string(destination),pkt);
         return;
-            
     }
 
     switch (getState()) {
@@ -910,7 +931,7 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             }
             else if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths) < fp.pnum) {
                 trace()<<"[info] Path number not met.";
-                auto pri=numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths)+1;
+                auto pri=calcNextPriFromRtTable(SELF_NETWORK_ADDRESS,fp.a_paths)+1;
                 trace()<<"[info] Establishing path with priority "<<pri;
                 if(checkRoutingEntry(SELF_NETWORK_ADDRESS, pri)) {
                     trace()<<"[error] Path with priority "<<pri<<" exists.";
