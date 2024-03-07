@@ -100,6 +100,7 @@ struct sm_feat_par {
     double gamma;
     double n_lim;
     bool   periodic_restart;
+    bool   a_paths;
 };
 
 class smrp: public VirtualRouting {
@@ -150,9 +151,9 @@ class smrp: public VirtualRouting {
 
         sm_node_entry getNthTargetValueEntry(int, std::vector<std::string>);
         sm_node_entry getNthTargetValueEntry(int, std::vector<std::string>, bool);
-        sm_node_entry findSecondaryPath(std::string, std::vector<std::string>);
+        sm_node_entry findPath(std::string, std::vector<std::string>);
 
-        int numOfAvailPaths(std::string);
+        int numOfAvailPaths(std::string,bool);
         void initRouting();
         void initRoutingTable();
         void cleanRouting(std::string);
@@ -168,8 +169,9 @@ class smrp: public VirtualRouting {
         sm_routing_entry getPath(std::string);
         sm_routing_entry getPath(std::string, int);
         bool checkPath(std::string);
-        bool isSinkNextHop();
+        bool checkNextHop(std::string ne);
         bool checkNextHop(std::string, int);
+        int calcNextPriFromRtTable(std::string,bool);
 
         void sendQuery(std::string);
         void sendQueryAck(std::string, std::string, bool);
