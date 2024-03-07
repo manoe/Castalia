@@ -308,7 +308,7 @@ int smrp::calcNextPriFromRtTable(std::string ne, bool a_paths) {
     }
     vector<int> pv;
     for(auto re: routing_table) {
-        if(smrpPathStatus::AVAILABLE == re.status || !a_paths) {
+        if(re.nw_address == ne && (smrpPathStatus::AVAILABLE == re.status || !a_paths)) {
             pv.push_back(re.prio);
         }
     }
@@ -931,7 +931,7 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             }
             else if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths) < fp.pnum) {
                 trace()<<"[info] Path number not met.";
-                auto pri=calcNextPriFromRtTable(SELF_NETWORK_ADDRESS,fp.a_paths)+1;
+                auto pri=calcNextPriFromRtTable(SELF_NETWORK_ADDRESS,fp.a_paths);
                 trace()<<"[info] Establishing path with priority "<<pri;
                 if(checkRoutingEntry(SELF_NETWORK_ADDRESS, pri)) {
                     trace()<<"[error] Path with priority "<<pri<<" exists.";
@@ -944,6 +944,7 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                     sm_node_entry ne;
                     try {
                         ne=findPath(SELF_NETWORK_ADDRESS,{SELF_NETWORK_ADDRESS});
+                        updateFieldTableWithPE(ne.nw_address,SELF_NETWORK_ADDRESS,smrpPathStatus::USED);
                     } catch (std::string &e) {
                         trace()<<"[error] "<<e;
                         trace()<<"[error] How do we got here?";
