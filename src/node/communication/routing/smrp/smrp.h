@@ -169,6 +169,7 @@ class smrp: public VirtualRouting {
         sm_routing_entry getPath(std::string);
         sm_routing_entry getPath(std::string, int);
         bool checkPath(std::string);
+        bool checkNextHop(std::string ne);
         bool checkNextHop(std::string, int);
         int calcNextPriFromRtTable(std::string,bool);
 

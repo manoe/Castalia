@@ -324,27 +324,7 @@ int smrp::calcNextPriFromRtTable(std::string ne, bool a_paths) {
 
 void smrp::cleanRouting(std::string ne) {
     trace()<<"[info] Entering cleanRouting(ne="<<ne<<")";
-    trace()<<"[info] Assess change impact: ";
-    if(checkNextHop(ne,1)) {
-        trace()<<"[info] Entry is primary path for node";
-        removeRoutingEntry(ne, 1, true);
-        try {
-            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
-        } catch (std::string &e) {
-            trace()<<e;
-        }
-    } else if(checkNextHop(ne,2)) {
-        trace()<<"[info] Entry is secondary path for node";
-        removeRoutingEntry(ne, 2, true);
-        try {
-            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
-        } catch (std::string &s) {
-            trace()<<"[error] "<<s;
-        }
-    } else {
-        trace()<<"[info] Entry does not affect node";
-        removeRoutingEntry(ne,1,true);
-    }
+    removeRoutingEntry(ne,1,true);
 }
 
 void smrp::logRouting() {
@@ -685,6 +665,16 @@ bool smrp::checkPath(std::string ne) {
     return false;
 }
 
+
+bool smrp::checkNextHop(std::string ne) {
+    trace()<<"[info] checkNextHop(ne="<<ne<<")";
+    for(auto re: routing_table) {
+        if(re.next_hop==ne) {
+            return true;
+        }
+    }
+    return false;
+}
 
 bool smrp::checkNextHop(std::string ne, int prio) {
     trace()<<"[info] checkNextHop(ne="<<ne<<", prio="<<prio<<")";
@@ -1098,6 +1088,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 sm_node_entry ne;
                 try {
                     ne=findPath(data_pkt->getOrigin(),{data_pkt->getSource() } );
+                    updateFieldTableWithPE(ne.nw_address,data_pkt->getOrigin(),smrpPathStatus::USED);
                 } catch (std::string &e) {
                     trace()<<"[error] "<<e;
                     removeRoutingEntry(data_pkt->getOrigin(), data_pkt->getPri());
@@ -1134,11 +1125,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                     sm_node_entry ne;
                     updateFieldTableWithPE(retreat_pkt->getSource(), retreat_pkt->getOrigin(), smrpPathStatus::DEAD);
                     removeRoutingEntry(SELF_NETWORK_ADDRESS, retreat_pkt->getPri());
-                    try {
-                        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}, true),2);
-                    } catch (std::string &e) {
-                        trace()<<"[error] Giving up secondary path: "<<e;
-                    }
+                    // this is going to cause an inifity loop
                 } else {
                     trace()<<"[info] Node is interim";
                     sm_node_entry ne;
@@ -1159,26 +1146,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                     trace()<<"[info] ENERGY_ALARM received, removing node";
                     logRouting();
                     logField();
-                    if(checkNextHop(smrp_pkt->getSource(),1)) {
-                        trace()<<"[info] Node is primary path for this node";
-                        removeEntries(alarm_pkt->getSource());
-                        try {
-                            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
-                        } catch (std::string &e) {
-                            trace()<<e;
-                        }
-                    } else if(checkNextHop(smrp_pkt->getSource(),2)) {
-                        trace()<<"[info] Node is secondary path for this node";
-                        removeEntries(alarm_pkt->getSource());
-                        try {
-                            addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(2, {}),2);
-                        } catch (std::string &s) {
-                            trace()<<"[error] "<<s;
-                        }
-                    } else {
-                        trace()<<"[info] Node is not primary or secondary at least for this node";
-                        removeEntries(alarm_pkt->getSource());
-                    }
+                    removeEntries(alarm_pkt->getSource());
                     break;
                 }
                 case smrpAlarmDef::ENVIRONMENT_ALARM: {
