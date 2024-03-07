@@ -95,6 +95,15 @@ map<int,int> ForestFire::getEventRecv() {
     return eventRecv;
 }
 
+map<int,set<int>> ForestFire::getReportPacketsSeen() {
+    return reportPacketsSeen;
+}
+
+map<int,set<int>> ForestFire::getEventPacketsSeen() {
+    return eventPacketsSeen;
+}
+
+
 
 void ForestFire::sendEvent() {
     ForestFirePacket *newPkt = new ForestFirePacket("ForestFire event packet", APPLICATION_PACKET);
@@ -135,13 +144,21 @@ void ForestFire::sendEmergencyBroadcast() {
 }
 
 
-bool ForestFire::isPacketSeen(int source, int sn) {
-    if(packetsSeen.find(source) == packetsSeen.end()) {
-        packetsSeen[source].insert(sn);
+bool ForestFire::isPacketSeen(int source, int sn, std::string name) {
+    map<int,set<int>>* ptr = nullptr;
+    if(name.compare(REPORT_PACKET_NAME)==0) {
+        ptr=&reportPacketsSeen;
+    } else if(name.compare(REPORT_PACKET_NAME)==0) {
+        ptr=&eventPacketsSeen;
+    } else {
+        throw std::string("Unknown packet name");
+    }
+    if(ptr->find(source) ==ptr->end()) {
+        ptr->at(source).insert(sn);
         return false;
     }
-    if(packetsSeen[source].find(sn) == packetsSeen[source].end()) {
-        packetsSeen[source].insert(sn);
+    if(ptr->at(source).find(sn) == ptr->at(source).end()) {
+        ptr->at(source).insert(sn);
         return false;
     }
     return true;
@@ -203,7 +220,7 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
             sendEvent();
         }
     }
-    if(!isPacketSeen(atoi(source),rcvPacket->getSequenceNumber() )) {
+    if(!isPacketSeen(atoi(source),rcvPacket->getSequenceNumber(),rcvPacket->getName() )) {
         if (packetName.compare(REPORT_PACKET_NAME) == 0) {
             collectOutput("Report packet","Received");
             reportRecv[atoi(source)]++;
@@ -358,6 +375,10 @@ void ForestFire::serializeEnergy() {
 
 }
 
+map<int,int> ForestFire::summarizeSentPkts(std::vector<map<int,set<int>>>) {
+
+}
+
 void ForestFire::finishSpecific()
 {
     declareOutput("Event reception rate");
@@ -381,12 +402,17 @@ void ForestFire::finishSpecific()
         topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
         std::vector<map<int,int>> report_recvs;
         std::vector<map<int,int>> event_recvs;
+        std::vector<map<int,set<int>>> report_pkts;
+        std::vector<map<int,set<int>>> event_pkts;
+
         for (int i = 0 ; i < numNodes ; i++) {
             ForestFire *appModule = dynamic_cast<ForestFire*>
                 (topo->getNode(i)->getModule()->getSubmodule("Application"));
             if (appModule && ( appModule->hasPar("isSink") ? appModule->par("isSink") : false)) {
                 report_recvs.push_back(appModule->getReportRecv());
                 event_recvs.push_back(appModule->getEventRecv());
+                report_pkts.push_back(appModule->getReportPacketsSeen());
+                event_pkts.push_back(appModule->getEventPacketsSeen());
             }
         }
         for (int i = 0; i < numNodes; i++) {
@@ -395,7 +421,7 @@ void ForestFire::finishSpecific()
             y_out<<YAML::Value<<i;
             ForestFire *appModule = dynamic_cast<ForestFire*>
                 (topo->getNode(i)->getModule()->getSubmodule("Application"));
-            if (appModule ) {
+            if (appModule) {
                 int reportSent = appModule->getReportSent();
                 int eventSent  = appModule->getEventSent();
                 if (reportSent > 0 ) { // this node sent us some packets

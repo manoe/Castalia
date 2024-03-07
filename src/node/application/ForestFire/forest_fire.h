@@ -78,7 +78,8 @@ class ForestFire : public VirtualApplication {
 	string reportDestination;
     bool report_timer_offset;
 
-    map<int,set<int>> packetsSeen;
+    map<int,set<int>> reportPacketsSeen;
+    map<int,set<int>> eventPacketsSeen;
     map<int,int> reportRecv;
     map<int,int> eventRecv;
     YAML::Emitter yp_out;
@@ -96,16 +97,18 @@ class ForestFire : public VirtualApplication {
     void sendEvent();
     void sendReport();
     void sendEmergencyBroadcast();
-    bool isPacketSeen(int source, int sn);
+    bool isPacketSeen(int source, int sn, std::string name);
     void alertRouting();
     double getAverageSpentEnergy();
     void serializeEnergy();
+    map<int,int> summarizeSentPkts(std::vector<map<int,set<int>>>);
  public:
     int getReportSent();
     int getEventSent();
     map<int,int> getReportRecv();
     map<int,int> getEventRecv();
-
+    map<int,set<int>> getReportPacketsSeen();
+    map<int,set<int>> getEventPacketsSeen();
     double getEnergyValue();
     double getEmergencyValue();
 };
