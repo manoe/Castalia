@@ -290,7 +290,9 @@ void smrp::initRouting() {
     trace()<<"[info] Entering initRouting()";
     trace()<<"[info] Clearing routing table, construct primary path";
     initRoutingTable();
-    addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+    auto ne=getNthTargetValueEntry(1, {});
+    addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),ne,1);
+    updateFieldTableWithPE(ne.nw_address,SELF_NETWORK_ADDRESS,smrpPathStatus::USED);
 
     setTimer(smrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
 }
@@ -346,7 +348,7 @@ void smrp::addRoutingEntry(std::string nw_address, sm_node_entry ne, int prio) {
 }
 
 void smrp::addRoutingEntry(std::string nw_address, sm_node_entry ne, int prio, smrpPathStatus status, double timestamp) {
-    trace()<<"[info] Entering addRoutingEntry(nw_address="<<nw_address<<", sm_node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<status<<", timestamp="<<timestamp;
+    trace()<<"[info] Entering addRoutingEntry(nw_address="<<nw_address<<", sm_node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<pathStatusToStr(status)<<", timestamp="<<timestamp;
     for(auto it=routing_table.begin() ; it != routing_table.end() ; ++it) {
         if(it->nw_address == nw_address && it->prio == prio) {
             std::string("[error] record with prio already exists"); // throw?
@@ -809,7 +811,7 @@ void smrp::updateFieldTableWithQA(smrpQueryAckPacket *query_ack_pkt) {
                 return;
             }
         }
-        trace()<<"[info] QURY_ACK record does not exists";
+        trace()<<"[info] QUERY_ACK record does not exists yet";
         field_table[query_ack_pkt->getSource()].pe.push_back({query_ack_pkt->getOrigin(),status });
     } else {
         trace()<<"[warn] Query responder does not exists in field_table";
