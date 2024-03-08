@@ -375,8 +375,23 @@ void ForestFire::serializeEnergy() {
 
 }
 
-map<int,int> ForestFire::summarizeSentPkts(std::vector<map<int,set<int>>>) {
+map<int,int> ForestFire::summarizeSentPkts(std::vector<map<int,set<int>>> pkts) {
+    map<int, int> out;
+    map<int,set<int>> nodes;
 
+    for(auto sink: pkts) {
+        for(auto node: sink) {
+            if(nodes.find(node.first) != nodes.end()) {
+                nodes[node.first].insert(node.second.begin(), node.second.end());
+            } else {
+                nodes[node.first]=node.second;
+            }
+        } 
+    }
+    for(auto node: nodes) {
+        out[node.first]=node.second.size();
+    }
+    return out;
 }
 
 void ForestFire::finishSpecific()
