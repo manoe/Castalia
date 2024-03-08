@@ -138,7 +138,7 @@ string smrp::stateToStr(smrpStateDef state) const {
             return "LEARN";
         }
         case smrpStateDef::INIT: {
-            return "LEARN";
+            return "INIT";
         }
     }
     return "UNKNOWN";
@@ -910,7 +910,7 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             break;
         }
         case smrpStateDef::BUILD: {
-            trace()<<"[info] In BUILD state, best effort routing";
+            trace()<<"[info] In BUILD state, can't route packet";
             break;
         }
         case smrpStateDef::WORK: {

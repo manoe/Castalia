@@ -165,7 +165,6 @@ bool ForestFire::isPacketSeen(int source, int sn, std::string name) {
 }
 
 
-
 void ForestFire::timerFiredCallback(int timer)
 {
     switch (timer) {
