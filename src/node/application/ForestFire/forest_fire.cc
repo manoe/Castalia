@@ -153,8 +153,8 @@ bool ForestFire::isPacketSeen(int source, int sn, std::string name) {
     } else {
         throw std::string("Unknown packet name");
     }
-    if(ptr->find(source) ==ptr->end()) {
-        ptr->at(source).insert(sn);
+    if(ptr->find(source) == ptr->end()) {
+        ptr->insert({source,{sn}});
         return false;
     }
     if(ptr->at(source).find(sn) == ptr->at(source).end()) {
@@ -430,6 +430,8 @@ void ForestFire::finishSpecific()
                 event_pkts.push_back(appModule->getEventPacketsSeen());
             }
         }
+        auto report_pkt_sum = summarizeSentPkts(report_pkts);
+        auto event_pkt_sum = summarizeSentPkts(event_pkts);
         for (int i = 0; i < numNodes; i++) {
             y_out<<YAML::BeginMap;
             y_out<<YAML::Key<<"node";
@@ -448,9 +450,12 @@ void ForestFire::finishSpecific()
                     }
 
                     float rate = (float)report_recv/(float)reportSent;
-                    collectOutput("Report reception rate", i, "total", rate);
+                    float rate_unique=(float)report_pkt_sum[i]/(float)reportSent;
+                   collectOutput("Report reception rate", i, "total", rate);
                     y_out<<YAML::Key<<"report_pdr";
                     y_out<<YAML::Value<<rate;
+                    y_out<<YAML::Key<<"report_pdr_new";
+                    y_out<<YAML::Value<<rate_unique;
                 }
                 if (eventSent > 0) {
                     int event_recv = 0;
@@ -461,9 +466,12 @@ void ForestFire::finishSpecific()
                     }
 
                     float rate = (float)event_recv/(float)eventSent;
+                    float rate_unique=(float)event_pkt_sum[i]/(float)eventSent;
                     collectOutput("Event reception rate", i, "total", rate);
                     y_out<<YAML::Key<<"event_pdr";
                     y_out<<YAML::Value<<rate;
+                    y_out<<YAML::Key<<"event_pdr_new";
+                    y_out<<YAML::Value<<rate_unique;
                 }
 
             }
