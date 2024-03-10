@@ -34,13 +34,12 @@ void smrp::startup() {
         setState(smrpStateDef::INIT);
     }
 
-    fp.ttl      = par("t_ttl");
-    fp.field    = par("t_field");
-    fp.query    = par("t_query");
-    fp.env_c    = par("t_env_c");
-    fp.d_update = par("t_d_update");
-    fp.restart  = par("t_restart");
-
+    fp.ttl              = par("t_ttl");
+    fp.field            = par("t_field");
+    fp.query            = par("t_query");
+    fp.env_c            = par("t_env_c");
+    fp.d_update         = par("t_d_update");
+    fp.restart          = par("t_restart");
     fp.alpha            = par("p_alpha");
     fp.beta             = par("p_beta");
     fp.pnum             = par("p_pnum");
@@ -84,7 +83,7 @@ int smrp::getHop(int sink) {
     if(g_hop.find(sink) != g_hop.end()) {
         return g_hop[sink];
     }
-    throw std::string("Sink-specific entry not present.");
+    throw std::runtime_error("Sink-specific entry not present.");
 }
 
 bool smrp::updateHop(int sink,int hop) {
@@ -273,7 +272,7 @@ void smrp::updateFieldTable(smrpFieldPacket *field_pkt) {
 void smrp::updateFieldTableEntry(std::string ne, double env, double nrg, double trg) {
     trace()<<"[info] Entering updateFieldTableEntry(ne="<<ne<<", env="<<env<<", nrg="<<nrg<<", trg="<<trg<<")";
     if(field_table.find(ne) == field_table.end()) {
-        throw std::string("[error] Entry not present");
+        throw std::runtime_error("[error] Entry not present");
     }
     field_table[ne].env=env;
     field_table[ne].nrg=nrg;
@@ -293,7 +292,6 @@ void smrp::initRouting() {
     auto ne=getNthTargetValueEntry(1, {});
     addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),ne,1);
     updateFieldTableWithPE(ne.nw_address,SELF_NETWORK_ADDRESS,smrpPathStatus::USED);
-
     setTimer(smrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
 }
 
@@ -314,13 +312,13 @@ int smrp::calcNextPriFromRtTable(std::string ne, bool a_paths) {
             pv.push_back(re.prio);
         }
     }
-    for(int i=1; i <= 5 ; ++i) {
+    for(int i=1; i <= fp.pnum ; ++i) {
         if(std::find(pv.begin(),pv.end(),i) == pv.end()) {
             trace()<<"[info] Priority "<<i<<" missing, comes next.";
             return i;
         }
     }
-    throw std::string("Max prio met");
+    throw std::runtime_error("Max prio met");
 }
 
 
@@ -368,7 +366,7 @@ sm_node_entry smrp::getSinkFieldTableEntry() {
     trace()<<"[info] Entering getSinkFieldTableEntry()";
     if(field_table.find(getSinkAddress()) == field_table.end()) {
         trace()<<"[error] Sink address not found.";
-        throw std::string("[error] No sink entry");
+        throw std::runtime_error("[error] No sink entry");
     }
     return field_table[getSinkAddress()];
 }
@@ -385,7 +383,7 @@ void smrp::updateRoutingEntry(std::string nw_address, sm_node_entry ne, int prio
             return;
         }
     }
-    throw std::string("[error] No record found.");
+    throw std::runtime_error("[error] No record found.");
 }
 
 
@@ -409,7 +407,7 @@ sm_routing_entry smrp::getRoutingEntry(std::string ne, int prio) {
             return re;
         }
     }
-    throw std::string("[error] Entry not found.");
+    throw std::runtime_error("[error] Entry not found.");
 }
 
 void smrp::removeRoutingEntry(std::string ne, int prio, bool noprio=false) {
@@ -450,7 +448,7 @@ sm_node_entry smrp::getNthTargetValueEntry(int order, std::vector<std::string> n
 sm_node_entry smrp::getNthTargetValueEntry(int order, std::vector<std::string> ne_lst, bool use_pe) {
     trace()<<"[info] Entering getNthTargetValueEntry(order="<<order<<", use_pe="<<use_pe<<")";
     if(field_table.size() < order) {
-        throw std::string("[error] Less record than order");
+        throw std::runtime_error("[error] Less record than order");
     }
     trace()<<"[info] Field table size: "<<field_table.size();
 
@@ -483,7 +481,7 @@ sm_node_entry smrp::getNthTargetValueEntry(int order, std::vector<std::string> n
         }
     }
     if(fv.size()<order) {
-        throw std::string("[error] No record left");
+        throw std::runtime_error("[error] No record left");
     }
 
     std::sort(fv.begin(), fv.end(), [this](sm_node_entry a, sm_node_entry b) { return targetFunction(a) > targetFunction(b);  });
@@ -606,8 +604,8 @@ void smrp::forwardData(smrpDataPacket *data_pkt) {
     sm_routing_entry re;
     try {
         re=getPath(data_pkt->getOrigin(),data_pkt->getPri());
-    } catch(std::string &e) {
-        trace()<<"[error] "<<e;
+    } catch(std::runtime_error &e) {
+        trace()<<"[error] "<<e.what();
         return;
     }
     trace()<<"[info] Next hop: "<<re.next_hop;
@@ -696,7 +694,7 @@ sm_routing_entry smrp::getPath(std::string ne, int prio) {
             return entry;
         }
     }
-    throw std::string("[error] No path found");
+    throw std::runtime_error("[error] No path found");
 }
 
 void smrp::updateEntries(std::string ne, double env, double nrg, double trg) {
@@ -746,7 +744,7 @@ sm_routing_entry smrp::getPath(std::string ne) {
         }
     }
     if(rv.size()==0) {
-        throw std::string("[error] No routing entry");
+        throw std::runtime_error("[error] No routing entry");
     }
 
     trace()<<"[info] rand: "<<rnd<<" tv_sum: "<<tv_sum;
@@ -770,6 +768,7 @@ sm_node_entry smrp::findPath(std::string ne, std::vector<std::string> ne_lst) {
         for(auto pe: entry.second.pe) {
             if(pe.origin == ne && pe.status == smrpPathStatus::AVAILABLE) {
                 bool found=false;
+                trace()<<"[info] Entry found: "<<entry.second.nw_address<<", pe.origin="<<pe.origin<<", pe.status="<<pathStatusToStr(pe.status);
                 for(auto xe: ne_lst) {
                     if(xe==entry.second.nw_address) {
                         found=true;
@@ -791,11 +790,29 @@ sm_node_entry smrp::findPath(std::string ne, std::vector<std::string> ne_lst) {
     }
     if(0==nv.size()) {
         trace()<<"[error] No path candidate, giving up.";
-        throw std::string("[error] No path candidate");
+        throw std::runtime_error("[error] No path candidate");
+    }
+
+    trace()<<"[info] Removing routing entries from candidates";
+    for(auto re: routing_table) {
+        for(auto it=nv.begin() ; it != nv.end();) {
+            if(re.next_hop == it->nw_address && re.nw_address == ne) {
+                trace()<<"[info] "<<it->nw_address<<" already present in routing table, removing";
+                it=nv.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    if(0==nv.size()) {
+        trace()<<"[error] No path candidate present after routing table based filtering, giving up.";
+        throw std::runtime_error("[error] No path candidate after routing table based filtering");
     }
 
     std::sort(nv.begin(), nv.end(), [this](sm_node_entry a, sm_node_entry b) { return targetFunction(a) > targetFunction(b);  });
-    
+
+    trace()<<"[info] Entry selected node: "<<nv[0].nw_address<<" sink: "<<nv[0].hop.begin()->first<<" hop: "<<nv[0].hop.begin()->second;
     return nv[0];
 }
 
@@ -819,7 +836,7 @@ void smrp::updateFieldTableWithQA(smrpQueryAckPacket *query_ack_pkt) {
 }
 
 void smrp::updateFieldTableWithPE(std::string ne, std::string pe, smrpPathStatus status) {
-    trace()<<"[info] Entering updateFieldTableWithPE(ne="<<ne<<", pe="<<pe<<", status="<<status<<")";
+    trace()<<"[info] Entering updateFieldTableWithPE(ne="<<ne<<", pe="<<pe<<", status="<<pathStatusToStr(status)<<")";
     if(field_table.find(ne) != field_table.end()) {
         trace()<<"[info] Record found";
         for(auto &&e: field_table[ne].pe) {
@@ -907,6 +924,10 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
     }
 
     switch (getState()) {
+        case smrpStateDef::INIT: {
+            trace()<<"[info] In INIT state, can't route packet";
+            break;
+        }
         case smrpStateDef::LEARN: {
             trace()<<"[error] In LEARN state, can't route packet";
             break;
@@ -917,7 +938,7 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         }
         case smrpStateDef::WORK: {
             trace()<<"[info] In WORK state, routing";
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS)==0) {
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths)==0) {
                 trace()<<"[error] No route available";
                 break;
             }
@@ -927,6 +948,7 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 trace()<<"[info] Establishing path with priority "<<pri;
                 if(checkRoutingEntry(SELF_NETWORK_ADDRESS, pri)) {
                     trace()<<"[error] Path with priority "<<pri<<" exists.";
+                    throw runtime_error("What?");
                     break;
                 }
                 trace()<<"[info] No path present with priority "<<pri<<".";
@@ -937,8 +959,8 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                     try {
                         ne=findPath(SELF_NETWORK_ADDRESS,{SELF_NETWORK_ADDRESS});
                         updateFieldTableWithPE(ne.nw_address,SELF_NETWORK_ADDRESS,smrpPathStatus::USED);
-                    } catch (std::string &e) {
-                        trace()<<"[error] "<<e;
+                    } catch (std::runtime_error &e) {
+                        trace()<<"[error] "<<e.what();
                         trace()<<"[error] How do we got here?";
                         removeRoutingEntry(SELF_NETWORK_ADDRESS, pri);
                         break;
@@ -949,6 +971,13 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 } else {
                     trace()<<"[info] No path with priority "<<pri<<" available.";
                     sm_node_entry ne;
+                    ne.nw_address="0";
+                    ne.hop[0]=0;
+                    ne.nrg=0;
+                    ne.env=0;
+                    ne.trg=0;
+                    ne.pe.push_back({"0",UNDER_QUERY});
+
                     addRoutingEntry(SELF_NETWORK_ADDRESS, ne, pri, smrpPathStatus::UNDER_QUERY,getClock().dbl());
                     sendQuery(SELF_NETWORK_ADDRESS);
                 }
@@ -1091,8 +1120,8 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 try {
                     ne=findPath(data_pkt->getOrigin(),{data_pkt->getSource() } );
                     updateFieldTableWithPE(ne.nw_address,data_pkt->getOrigin(),smrpPathStatus::USED);
-                } catch (std::string &e) {
-                    trace()<<"[error] "<<e;
+                } catch (std::runtime_error &e) {
+                    trace()<<"[error] "<<e.what();
                     removeRoutingEntry(data_pkt->getOrigin(), data_pkt->getPri());
                     sendRetreat(data_pkt);
                     break;
@@ -1117,8 +1146,8 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
             sm_routing_entry re;
             try {
                 re=getRoutingEntry(retreat_pkt->getOrigin(),retreat_pkt->getPri());
-            } catch (std::string &e) {
-                trace()<<"[error] "<<e;
+            } catch (std::runtime_error &e) {
+                trace()<<"[error] "<<e.what();
                 break;
             }
             if(re.next_hop == retreat_pkt->getSource()) {
