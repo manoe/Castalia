@@ -70,6 +70,7 @@ jobs:
       if: always()
       run: |
         cd castalia/Simulations/shmrp_nf
+        cat pdr.yaml
 
     - name: Test Castalia for efmrp
       run: |
@@ -82,4 +83,5 @@ jobs:
       run: |
         cd castalia/Simulations/efmrp_test
         tail Castalia-Trace.txt
+        cat pdr.yaml
 

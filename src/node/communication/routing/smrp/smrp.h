@@ -52,7 +52,7 @@ enum smrpPathStatus {
     UNDER_QUERY = 4
 };
 
-struct path_entry {
+struct sm_path_entry {
     std::string     origin;
     smrpPathStatus  status;
 };
@@ -63,7 +63,7 @@ struct sm_node_entry {
     double              nrg;
     double              env;
     double              trg;
-    std::vector<path_entry> pe;
+    std::vector<sm_path_entry> pe;
 };
 
 struct sm_routing_entry {
