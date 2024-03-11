@@ -374,6 +374,7 @@ sm_node_entry smrp::getSinkFieldTableEntry() {
 void smrp::updateRoutingEntry(std::string nw_address, sm_node_entry ne, int prio, smrpPathStatus status) {
     trace()<<"[info] Entering updateRoutingEntry(nw_address="<<nw_address<<", sm_node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<pathStatusToStr(status);
     for(auto &&re: routing_table) {
+        trace()<<"[info] Entry: "<<re.nw_address<<", prio: "<<re.prio;
         if(re.nw_address == nw_address && re.prio==prio) {
             trace()<<"[info] record found";
             re.next_hop=ne.nw_address;
