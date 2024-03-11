@@ -175,8 +175,8 @@ class smrp: public VirtualRouting {
 
         void sendQuery(std::string);
         void sendQueryAck(std::string, std::string, bool);
-        bool queryStarted(std::string);
-        bool queryCompleted(std::string);
+        bool queryStarted(std::string, int);
+        bool queryCompleted(std::string, int);
 
         void sendData(sm_routing_entry, cPacket *);
         void sendData(std::string, cPacket *);

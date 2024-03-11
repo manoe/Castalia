@@ -50,7 +50,7 @@ simple smrp like node.communication.routing.iRouting
     double p_gamma      = default(0.5);
     double p_n_lim      = default(0.1);
     bool   p_periodic_restart = default(false);
-    bool   p_a_paths    = default(true);
+    bool   p_a_paths    = default(true); // Consider only available paths
 
 
  gates:
