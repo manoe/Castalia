@@ -85,3 +85,8 @@ jobs:
         tail Castalia-Trace.txt
         cat pdr.yaml
 
+    - name: Test Castalia for smrp
+      run: |
+        source omnetpp/setenv
+        cd castalia/Simulations/smrp_smoke_test
+        ./batch.sh

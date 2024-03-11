@@ -372,8 +372,9 @@ sm_node_entry smrp::getSinkFieldTableEntry() {
 }
 
 void smrp::updateRoutingEntry(std::string nw_address, sm_node_entry ne, int prio, smrpPathStatus status) {
-    trace()<<"[info] Entering updateRoutingEntry(nw_address="<<nw_address<<", sm_node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<status;
+    trace()<<"[info] Entering updateRoutingEntry(nw_address="<<nw_address<<", sm_node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<pathStatusToStr(status);
     for(auto &&re: routing_table) {
+        trace()<<"[info] Entry: "<<re.nw_address<<", prio: "<<re.prio;
         if(re.nw_address == nw_address && re.prio==prio) {
             trace()<<"[info] record found";
             re.next_hop=ne.nw_address;
@@ -540,10 +541,10 @@ void smrp::sendQueryAck(std::string origin, std::string dst, bool used) {
 
 }
 
-bool smrp::queryStarted(std::string ne) {
+bool smrp::queryStarted(std::string ne, int prio=0) {
     trace()<<"[info] Entering queryStarted(ne="<<ne<<")";
     for(auto re: routing_table) {
-        if(re.nw_address==ne && re.status==smrpPathStatus::UNDER_QUERY && re.prio>1) {
+        if(re.nw_address==ne && re.status==smrpPathStatus::UNDER_QUERY && (re.prio == prio &&re.prio>1 || prio==0 )) {
             trace()<<"[info] Query started";
             return true;
         }
@@ -552,10 +553,10 @@ bool smrp::queryStarted(std::string ne) {
     return false;
 }
 
-bool smrp::queryCompleted(std::string ne) {
+bool smrp::queryCompleted(std::string ne, int prio=0) {
     trace()<<"[info] Entering queryCompleted(ne="<<ne<<")";
     for(auto re: routing_table) {
-        if(re.nw_address==ne && re.status==smrpPathStatus::UNDER_QUERY && re.query_timestamp+fp.query < getClock().dbl()) {
+        if(re.nw_address==ne && re.status==smrpPathStatus::UNDER_QUERY && re.query_timestamp+fp.query < getClock().dbl() && (re.prio==prio && prio > 0 || prio==0)) {
             trace()<<"[info] Query completed";
             return true;
         }
@@ -740,7 +741,7 @@ sm_routing_entry smrp::getPath(std::string ne) {
         if(re.nw_address==ne && re.status==smrpPathStatus::AVAILABLE) {
             rv.push_back(re);
             tv_sum+=re.target_value;
-            trace()<<"[info] Adding entry ne: "<<re.nw_address<<" next hop: "<<re.next_hop<<" tv: "<<re.target_value;
+            trace()<<"[info] Adding entry ne: "<<re.nw_address<<" next hop: "<<re.next_hop<<" tv: "<<re.target_value<<" prio: "<<re.prio;
         }
     }
     if(rv.size()==0) {
@@ -858,7 +859,10 @@ void smrp::timerFiredCallback(int index) {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
             setTimer(smrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
-            setTimer(smrpTimerDef::RESTART,fp.restart);
+            if(fp.periodic_restart) {
+                trace()<<"[info] Periodic restart active";
+                setTimer(smrpTimerDef::RESTART,fp.restart);
+            }
             setState(smrpStateDef::LEARN);
             break;
         }
@@ -999,6 +1003,8 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
 
     trace()<<"[info] SMRP packet received from MAC: "<<srcMacAddress<<" NW: "<<smrp_pkt->getSource();
 
+    logRouting();
+
     switch (smrp_pkt->getSmrpPacketKind()) {
         case smrpPacketDef::HELLO_PACKET: {
             trace()<<"[info] HELLO_PACKET received";
@@ -1114,7 +1120,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
             }
             trace()<<"[info] No path present with priority "<<pri<<".";
             trace()<<"[info] Check query status";
-            if(queryCompleted(data_pkt->getOrigin())) {
+            if(queryCompleted(data_pkt->getOrigin(),data_pkt->getPri())) {
                 trace()<<"[info] Query completed";
                 sm_node_entry ne;
                 try {
@@ -1128,7 +1134,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 }
                 updateRoutingEntry(data_pkt->getOrigin(),ne,pri,smrpPathStatus::AVAILABLE);
                 forwardData(data_pkt->dup());
-            } else if(queryStarted(data_pkt->getOrigin())) {
+            } else if(queryStarted(data_pkt->getOrigin(), data_pkt->getPri())) {
                 trace()<<"[info] Query ongoing, dropping packet.";
                 break;
             } else {
@@ -1151,7 +1157,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 break;
             }
             if(re.next_hop == retreat_pkt->getSource()) {
-                if(retreat_pkt->getOrigin()==SELF_NETWORK_ADDRESS) {
+                if(0==std::strcmp(retreat_pkt->getOrigin(),SELF_NETWORK_ADDRESS)) {
                     trace()<<"[info] Node is the origin";
                     sm_node_entry ne;
                     updateFieldTableWithPE(retreat_pkt->getSource(), retreat_pkt->getOrigin(), smrpPathStatus::DEAD);
@@ -1302,3 +1308,4 @@ void smrp::serializeRoutingTable(std::vector<sm_routing_entry> rt) {
 
     y_out<<YAML::EndSeq;
 }
+

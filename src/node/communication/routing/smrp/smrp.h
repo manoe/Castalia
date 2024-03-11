@@ -114,7 +114,7 @@ class smrp: public VirtualRouting {
 
         std::map<std::string,sm_node_entry> hello_table;
         std::map<std::string,sm_node_entry> field_table;
-        std::vector<sm_routing_entry>          routing_table;
+        std::vector<sm_routing_entry>       routing_table;
         std::vector<smrp_state_chng_entry>  state_chng_log;
         
         ForestFire* ff_app;
@@ -175,8 +175,8 @@ class smrp: public VirtualRouting {
 
         void sendQuery(std::string);
         void sendQueryAck(std::string, std::string, bool);
-        bool queryStarted(std::string);
-        bool queryCompleted(std::string);
+        bool queryStarted(std::string, int);
+        bool queryCompleted(std::string, int);
 
         void sendData(sm_routing_entry, cPacket *);
         void sendData(std::string, cPacket *);
