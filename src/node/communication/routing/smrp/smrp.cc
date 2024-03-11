@@ -741,7 +741,7 @@ sm_routing_entry smrp::getPath(std::string ne) {
         if(re.nw_address==ne && re.status==smrpPathStatus::AVAILABLE) {
             rv.push_back(re);
             tv_sum+=re.target_value;
-            trace()<<"[info] Adding entry ne: "<<re.nw_address<<" next hop: "<<re.next_hop<<" tv: "<<re.target_value;
+            trace()<<"[info] Adding entry ne: "<<re.nw_address<<" next hop: "<<re.next_hop<<" tv: "<<re.target_value<<" prio: "<<re.prio;
         }
     }
     if(rv.size()==0) {
@@ -859,7 +859,10 @@ void smrp::timerFiredCallback(int index) {
             trace()<<"[timer] SINK_START timer expired";
             sendHello();
             setTimer(smrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
-            setTimer(smrpTimerDef::RESTART,fp.restart);
+            if(fp.periodic_restart) {
+                trace()<<"[info] Periodic restart active";
+                setTimer(smrpTimerDef::RESTART,fp.restart);
+            }
             setState(smrpStateDef::LEARN);
             break;
         }
@@ -999,6 +1002,8 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
     }
 
     trace()<<"[info] SMRP packet received from MAC: "<<srcMacAddress<<" NW: "<<smrp_pkt->getSource();
+
+    logRouting();
 
     switch (smrp_pkt->getSmrpPacketKind()) {
         case smrpPacketDef::HELLO_PACKET: {
@@ -1303,3 +1308,4 @@ void smrp::serializeRoutingTable(std::vector<sm_routing_entry> rt) {
 
     y_out<<YAML::EndSeq;
 }
+
