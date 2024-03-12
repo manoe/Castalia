@@ -1224,7 +1224,7 @@ void smrp::finishSpecific() {
            trace()<<"[info] Path entry - origin: "<<pe.origin<<" status: "<<pathStatusToStr(pe.status);
        }
     }
-    if(isSink()) {
+    if(!std::strcmp(SELF_NETWORK_ADDRESS,"0")) {
         generateYaml();
     }
 }
