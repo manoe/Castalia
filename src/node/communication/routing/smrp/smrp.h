@@ -163,6 +163,8 @@ class smrp: public VirtualRouting {
         void addRoutingEntry(std::string, sm_node_entry, int, smrpPathStatus, double timestamp);
         void updateRoutingEntry(std::string, sm_node_entry, int, smrpPathStatus);
         bool checkRoutingEntry(std::string, int);
+        bool checkRoutingEntryWithOtherPrio(std::string, int);
+
         sm_routing_entry getRoutingEntry(std::string, int);
         void removeRoutingEntry(std::string, int, bool);
         double targetFunction(sm_node_entry);

@@ -388,6 +388,17 @@ void smrp::updateRoutingEntry(std::string nw_address, sm_node_entry ne, int prio
 }
 
 
+bool smrp::checkRoutingEntryWithOtherPrio(std::string ne, int prio) {
+    trace()<<"[info] Entering checkRoutingEntry(ne="<<ne<<", prio="<<prio<<")";
+    for(auto re: routing_table) {
+        if(re.nw_address == ne && re.prio!=prio && re.status==smrpPathStatus::AVAILABLE) {
+            trace()<<"[info] Entry with other prio ("<<re.prio<<") exists";
+            return true;
+        }
+    }
+    return false;
+}
+
 
 bool smrp::checkRoutingEntry(std::string ne, int prio) {
     trace()<<"[info] Entering checkRoutingEntry(ne="<<ne<<", prio="<<prio<<")";
@@ -1120,6 +1131,11 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
             }
             trace()<<"[info] No path present with priority "<<pri<<".";
             trace()<<"[info] Check query status";
+            if(checkRoutingEntryWithOtherPrio(data_pkt->getOrigin(), pri)) {
+                trace()<<"[info] Path present with other priority, time to retreat.";
+                sendRetreat(data_pkt);
+                break;
+            }
             if(queryCompleted(data_pkt->getOrigin(),data_pkt->getPri())) {
                 trace()<<"[info] Query completed";
                 sm_node_entry ne;
