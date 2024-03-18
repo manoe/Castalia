@@ -510,7 +510,7 @@ double smrp::targetFunction(sm_node_entry a) {
 }
 
 
-int smrp::numOfAvailPaths(std::string ne, bool only_available=true) {
+int smrp::numOfAvailPaths(std::string ne, bool only_available=true, bool count_dead=true) {
     trace()<<"[info] Entering numOfAvailPaths(ne="<<ne<<")";
     int ret_val=0;
     for(auto re: routing_table) {
