@@ -517,7 +517,7 @@ int smrp::numOfAvailPaths(std::string ne, bool only_available=true, bool count_d
     for(auto re: routing_table) {
         if(ne == re.nw_address) {
            if( (!only_available || re.status==smrpPathStatus::AVAILABLE)
-            || (!count_dead || re.status==smrpPathStatus::DEAD) ) {
+            || (!count_dead && re.status==smrpPathStatus::DEAD) ) {
             ++ret_val;
            }
         }
@@ -1179,7 +1179,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                     trace()<<"[info] Node is the origin";
                     sm_node_entry ne;
                     updateFieldTableWithPE(retreat_pkt->getSource(), retreat_pkt->getOrigin(), smrpPathStatus::DEAD);
-                    removeRoutingEntry(SELF_NETWORK_ADDRESS, retreat_pkt->getPri());
+                    updateRoutingEntry(SELF_NETWORK_ADDRESS, ne, retreat_pkt->getPri(), smrpPathStatus::DEAD);
                     // this is going to cause an inifity loop
                 } else {
                     trace()<<"[info] Node is interim";
