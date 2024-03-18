@@ -101,6 +101,7 @@ struct sm_feat_par {
     double n_lim;
     bool   periodic_restart;
     bool   a_paths;
+    bool   c_dead;
 };
 
 class smrp: public VirtualRouting {
