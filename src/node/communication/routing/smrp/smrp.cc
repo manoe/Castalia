@@ -47,6 +47,7 @@ void smrp::startup() {
     fp.n_lim            = par("p_n_lim");
     fp.periodic_restart = par("p_periodic_restart");
     fp.a_paths          = par("p_a_paths");
+    fp.c_dead           = par("p_c_dead");
 
     ff_app = dynamic_cast<ForestFire *>(appModule);
 
@@ -510,12 +511,13 @@ double smrp::targetFunction(sm_node_entry a) {
 }
 
 
-int smrp::numOfAvailPaths(std::string ne, bool only_available=true) {
+int smrp::numOfAvailPaths(std::string ne, bool only_available=true, bool count_dead=false) {
     trace()<<"[info] Entering numOfAvailPaths(ne="<<ne<<")";
     int ret_val=0;
     for(auto re: routing_table) {
         if(ne == re.nw_address) {
-           if(!only_available || re.status==smrpPathStatus::AVAILABLE) {
+           if( (!only_available || re.status==smrpPathStatus::AVAILABLE)
+            || (!count_dead && re.status==smrpPathStatus::DEAD) ) {
             ++ret_val;
            }
         }
@@ -953,11 +955,11 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         }
         case smrpStateDef::WORK: {
             trace()<<"[info] In WORK state, routing";
-            if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths)==0) {
+            if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths,fp.c_dead)==0) {
                 trace()<<"[error] No route available";
                 break;
             }
-            else if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths) < fp.pnum) {
+            else if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths,fp.c_dead) < fp.pnum) {
                 trace()<<"[info] Path number not met.";
                 auto pri=calcNextPriFromRtTable(SELF_NETWORK_ADDRESS,fp.a_paths);
                 trace()<<"[info] Establishing path with priority "<<pri;
@@ -1177,7 +1179,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                     trace()<<"[info] Node is the origin";
                     sm_node_entry ne;
                     updateFieldTableWithPE(retreat_pkt->getSource(), retreat_pkt->getOrigin(), smrpPathStatus::DEAD);
-                    removeRoutingEntry(SELF_NETWORK_ADDRESS, retreat_pkt->getPri());
+                    updateRoutingEntry(SELF_NETWORK_ADDRESS, ne, retreat_pkt->getPri(), smrpPathStatus::DEAD);
                     // this is going to cause an inifity loop
                 } else {
                     trace()<<"[info] Node is interim";
