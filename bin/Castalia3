@@ -60,6 +60,9 @@ parser.add_option("-d","--debug", dest="debug", default=False, action="store_tru
 parser.add_option("-o","--output", dest="output", type="string", metavar="FILE", help="Select output file for writing results, generated from current date by default") 
 parser.add_option("-r","--repeat", dest="repeat", type="int", metavar="N", default=1, help="Number of repetitions for each unique scenario")
 parser.add_option("-u","--userinterface", dest="interface", type="string", default="Cmdenv", help="Select the interface type, values Cmdenv, Qtenv and Tkenv, default Cmdenv")
+parser.add_option("-t","--tmp", dest="tmp", action="store_true", default=False, help="Write tmp file and quit")
+
+
 (options,args) = parser.parse_args()
 
 if len(args):
@@ -340,6 +343,8 @@ for ini in iniList:
 		f.write(k + " = " + ini[k] + "\n")
 	f.close();
 	has_output = 0
+	if options.tmp is True:
+		exit(0)
 
 	if sys.version_info > (2,7):
 		if not isExec:
