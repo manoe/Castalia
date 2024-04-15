@@ -256,7 +256,11 @@ void efmrp::initRouting() {
     trace()<<"[info] Entering initRouting()";
     trace()<<"[info] Clearing routing table, construct primary path";
     routing_table.clear();
-    addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+    try {
+        addRoutingEntry(std::string(SELF_NETWORK_ADDRESS),getNthTargetValueEntry(1, {}),1);
+    } catch (std::string &s) {
+        trace()<<"[error] "<<s;
+    }
     setTimer(efmrpTimerDef::ENV_CHK, fp.env_c+getRNG(0)->doubleRand());
     if(isSinkNextHop()) {
         trace()<<"[info] No secondary path needed, as sink is the neighbor";
