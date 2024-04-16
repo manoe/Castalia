@@ -148,7 +148,7 @@ bool ForestFire::isPacketSeen(int source, int sn, std::string name) {
     map<int,set<int>>* ptr = nullptr;
     if(name.compare(REPORT_PACKET_NAME)==0) {
         ptr=&reportPacketsSeen;
-    } else if(name.compare(REPORT_PACKET_NAME)==0) {
+    } else if(name.compare(EVENT_PACKET_NAME)==0) {
         ptr=&eventPacketsSeen;
     } else {
         throw std::string("Unknown packet name");
@@ -218,6 +218,7 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
             setTimer(EVENT_PERIOD, event_period);
             sendEvent();
         }
+	return;
     }
     if(!isPacketSeen(atoi(source),rcvPacket->getSequenceNumber(),rcvPacket->getName() )) {
         if (packetName.compare(REPORT_PACKET_NAME) == 0) {
