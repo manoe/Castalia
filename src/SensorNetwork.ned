@@ -25,6 +25,7 @@ network SN {
 
 	string deployment = default ("");
     double randomize_range = default(0.3);
+    double condiff_std_f = default(1.0);
 
 	int numPhysicalProcesses = default (1);
 	string physicalProcessName = default ("CustomizablePhysicalProcess");

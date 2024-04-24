@@ -41,6 +41,7 @@ void VirtualMobilityManager::parseDeployment() {
 	nodeLocation.phi = node->par("phi");
 	nodeLocation.theta = node->par("theta");
     double randomize_range = network->par("randomize_range");
+    double condiff_std_f   = network->par("condiff_std_f");
 	
 	string deployment = network->par("deployment");
 	cStringTokenizer t(deployment.c_str(), ";");
@@ -94,7 +95,15 @@ void VirtualMobilityManager::parseDeployment() {
 		} else if (strncmp(c, "randomized_", strlen("randomized_")) == 0) {
 			c += strlen("randomized_");
 			random_flag = 1;
-		}
+            break;
+		} else if(strncmp(c, "condiff", strlen("condiff")) == 0) {
+            nodeLocation.x = uniform(0, xlen);
+			nodeLocation.y = normal(ylen/2, ylen*condiff_std_f);
+			if (nodeLocation.y > ylen)
+				nodeLocation.y = ylen;
+			if (nodeLocation.y < 0)
+				nodeLocation.y = 0;
+        }
 		
 		int gridx, gridy, gridz, gridi;
 		gridi = index - start_range;
