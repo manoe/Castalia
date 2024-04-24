@@ -5,8 +5,7 @@ PROTO="shmrp hdmrp"
 SEED=`date +%s`
 #SEED_SET=`python3 ./rand.py -i $ITER $SEED`
 SEED_SET=$SEED
-SEED_SET=1705408132
-
+SEED_SET=1705409765
 for p in ${PROTO}
 do
     yq --null-input '{"runs": []}' > ${p}_pdr.yaml
