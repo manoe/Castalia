@@ -21,6 +21,6 @@ do
     yq --null-input '{"runs": []}' > ${PROTO}_map_scale_${i}_pdr.yaml
     for s in ${SEED_SET}
     do
-        ./gen.sh omnetpp.ini qos_pdr=0.6,non_square ${s} ${PROTO}_map_scale_${i}_pdr.yaml
+        ./gen.sh omnetpp2.ini qos_pdr=0.6,non_square ${s} ${PROTO}_map_scale_${i}_pdr.yaml
     done
 done
