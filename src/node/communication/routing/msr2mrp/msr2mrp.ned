@@ -105,6 +105,11 @@ simple msr2mrp like node.communication.routing.iRouting
     bool   f_e2e_cost         = default(false); // Use end-to-end values for pdr, energy and emergency
     bool   f_periodic_restart = default(false); // Restart network periodically
     bool   f_single_network   = default(false); // Nodes should belong only to a single (sub)network
+    string f_rinv_pathid      = default("random"); // How to select pathid?
+                                                   // random    - original random
+                                                   // inv_prob  - inverse probability
+                                                   // even      - even probability
+                                                   // min_count - select pathid with minimal count
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ

@@ -97,6 +97,13 @@ enum msr2mrpSecLParDef {
     UNICAST        = 2
 };
 
+enum msr2mrpRinvPathidDef {
+    RANDOM         = 0,
+    INV_PROB       = 1,
+    EVEN           = 2,
+    MIN_COUNT      = 3
+};
+
 
 //namespace msr2mrp {
 class rreq_table_empty : public std::runtime_error {
@@ -233,6 +240,7 @@ struct msr2mrp_feat_par {
     bool   e2e_cost;
     double t_start;
     bool   single_network;
+    msr2mrpRinvPathidDef rinv_pathid;
 };
 
 class msr2mrp;
