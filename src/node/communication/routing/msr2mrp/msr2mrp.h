@@ -98,10 +98,9 @@ enum msr2mrpSecLParDef {
 };
 
 enum msr2mrpRinvPathidDef {
-    RANDOM         = 0,
+    EVEN           = 0,
     INV_PROB       = 1,
-    EVEN           = 2,
-    MIN_COUNT      = 3
+    MIN_COUNT      = 2
 };
 
 

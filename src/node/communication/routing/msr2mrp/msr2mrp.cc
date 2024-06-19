@@ -369,17 +369,15 @@ msr2mrpSecLParDef msr2mrp::strToSecLPar(std::string str) const {
 
 
 msr2mrpRinvPathidDef msr2mrp::strToRinvPathidDef(std::string str) const {
-    if("random" == str) {
-        return msr2mrpRinvPathidDef::RANDOM;
+    if("even" == str) {
+        return msr2mrpRinvPathidDef::EVEN;
     } else if("inv_prob" == str) {
          return msr2mrpRinvPathidDef::INV_PROB;
-    } else if("even" == str) {
-        return msr2mrpRinvPathidDef::EVEN;
     } else if("min_count" == str) {
         return msr2mrpRinvPathidDef::MIN_COUNT;
     }
     throw std::invalid_argument("[error] Unknown RINV pathid parameter");
-    return msr2mrpRinvPathidDef::RANDOM;
+    return msr2mrpRinvPathidDef::EVEN;
 }
 
 

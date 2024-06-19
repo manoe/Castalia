@@ -167,6 +167,8 @@ class msr2mrp_engine {
         std::vector<int> selectAllPathid(int);
         std::string pathidToStr(vector<msr2mrp_pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
+        std::map<int,int> getPathIdWithNum();
+
 
         std::string getNextHop(int);
         std::string getNextHop(int, bool);

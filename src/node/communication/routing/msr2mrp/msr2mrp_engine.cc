@@ -1387,13 +1387,76 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid() {
         }
     }
 
-    auto i=getRNG(0)->intRand(pathid.size());
-    extTrace()<<"[info] Random number: "<<i;
-    auto it=pathid.begin();
-    std::advance(it,i);
-    extTrace()<<"[info] Selected pathid: "<<it->pathid;
-    return *it;
+    msr2mrp_pathid_entry ret_val;
+    switch (fp.rinv_pathid) {
+        case msr2mrpRinvPathidDef::EVEN: {
+            extTrace()<<"[info] Performing random even pathid selection";
+            auto i=getRNG(0)->intRand(pathid.size());
+            extTrace()<<"[info] Random number: "<<i;
+            auto it=pathid.begin();
+            std::advance(it,i);
+            extTrace()<<"[info] Selected pathid: "<<it->pathid;
+            ret_val = *it;
+            break;
+        }
+        case msr2mrpRinvPathidDef::INV_PROB: {
+            extTrace()<<"[info] Performing inverse probability pathid selection";
+            auto p_w_num = getPathIdWithNum();
+            std::map<int,double> prob_map;
+            double sum_prob = 0.0;
+            double agg_prob = 0.0;
+            for(auto i: p_w_num) {
+                sum_prob += 1.0/static_cast<double>(i.second);
+            }
+
+            for(auto p: p_w_num) {
+                double prob = 1.0/static_cast<double>(p.second);
+                agg_prob += prob;
+                prob_map[p.first] = agg_prob/sum_prob;
+            }
+            auto rnd_num=getRNG(0)->doubleRand();
+            int pathid = 0;
+            for(auto p: prob_map) {
+                if(p.second > rnd_num) {
+                    pathid = p.first;
+                    break;
+                }
+            }
+            for(auto r: routing_table) {
+                for(auto p: r.second.pathid) {
+                    if(p.pathid == pathid) {
+                        ret_val = p;
+                        break;
+                    }
+                }
+            }
+        }
+        case msr2mrpRinvPathidDef::MIN_COUNT: {
+        }
+
+    }
+    return ret_val;
 }
+
+std::map<int,int> msr2mrp_engine::getPathIdWithNum() {
+    std::map<int,int> pathid_num;
+    for(auto i: rinv_table) {
+        for(auto j: routing_table) {
+            for(auto k: j.second.pathid) {
+                for(auto l: i.second.pathid) {
+                    if(k.pathid==l.pathid) {
+                        if(pathid_num.find(k.pathid) == pathid_num.end()) {
+                            pathid_num[k.pathid]=1;
+                        } else {
+                            pathid_num[k.pathid]++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return pathid_num;
+} 
 
 std::string msr2mrp_engine::pathidToStr(vector<msr2mrp_pathid_entry> pathid) {
     std::string str;
