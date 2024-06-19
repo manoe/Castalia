@@ -367,6 +367,13 @@ msr2mrpSecLParDef msr2mrp::strToSecLPar(std::string str) const {
 }
 
 
+msr2mrpRinvPathidDef msr2mrp::strToRinvPathidDef(string) const {
+
+
+    return msr2mrpRinvPathidDef::RANDOM;
+}
+
+
 void msr2mrp::setHop(int hop) {
     extTrace()<<"[info] Entering msr2mrp::setHop(hop="<<hop<<")";  
     extTrace()<<"[info] Update hop "<<g_hop<<" to "<<hop;

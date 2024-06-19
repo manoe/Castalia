@@ -504,6 +504,7 @@ class msr2mrp: public VirtualRouting {
         msr2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         msr2mrpCostFuncDef strToCostFunc(string) const;
         msr2mrpSecLParDef strToSecLPar(string) const; 
+        msr2mrpRinvPathidDef strToRinvPathidDef(string) const;
 
         bool isSink() const;
         void setSinkAddress(std::string);
