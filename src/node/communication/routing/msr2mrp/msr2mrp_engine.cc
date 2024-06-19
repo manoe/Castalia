@@ -1407,17 +1407,21 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid() {
             double agg_prob = 0.0;
             for(auto i: p_w_num) {
                 sum_prob += 1.0/static_cast<double>(i.second);
+                extTrace()<<"Sum probability: "<<sum_prob;
             }
 
             for(auto p: p_w_num) {
                 double prob = 1.0/static_cast<double>(p.second);
                 agg_prob += prob;
+                extTrace()<<"Probability for "<<p.first<<" pathid is: "<<prob<<" aggregated probability is: "<<agg_prob;
                 prob_map[p.first] = agg_prob/sum_prob;
             }
             auto rnd_num=getRNG(0)->doubleRand();
+            extTrace()<<"Random: "<<rnd_num;
             int pathid = 0;
             for(auto p: prob_map) {
                 if(p.second > rnd_num) {
+                    extTrace()<<"Pathid selected: "<<p.first<<" with agg prob: "<<p.second;
                     pathid = p.first;
                     break;
                 }
@@ -1439,12 +1443,14 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid() {
 }
 
 std::map<int,int> msr2mrp_engine::getPathIdWithNum() {
+    extTrace()<<"Entering getPathIdWithNum()";
     std::map<int,int> pathid_num;
     for(auto i: rinv_table) {
         for(auto j: routing_table) {
             for(auto k: j.second.pathid) {
                 for(auto l: i.second.pathid) {
                     if(k.pathid==l.pathid) {
+                        extTrace()<<"Pathid "<<k.pathid<<" found.";
                         if(pathid_num.find(k.pathid) == pathid_num.end()) {
                             pathid_num[k.pathid]=1;
                         } else {
