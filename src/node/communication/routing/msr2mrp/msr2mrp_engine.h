@@ -161,8 +161,8 @@ class msr2mrp_engine {
         void addRoute(std::string, int);
         void removeRoute(std::string);
         bool isRoutingTableEmpty() const;
-        msr2mrp_pathid_entry selectPathid();
         msr2mrp_pathid_entry selectPathid(bool);
+        msr2mrp_pathid_entry selectPathid(bool, bool);
         std::vector<int> selectAllPathid();
         std::vector<int> selectAllPathid(int);
         std::string pathidToStr(vector<msr2mrp_pathid_entry> pathid);
