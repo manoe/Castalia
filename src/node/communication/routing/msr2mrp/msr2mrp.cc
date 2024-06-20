@@ -81,6 +81,7 @@ void msr2mrp::startup() {
     fp.e2e_cost          = par("f_e2e_cost");
     fp.t_start           = par("t_start");
     fp.single_network    = par("f_single_network");
+    fp.rinv_pathid       = strToRinvPathidDef(par("f_rinv_pathid").stringValue());
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
@@ -364,6 +365,19 @@ msr2mrpSecLParDef msr2mrp::strToSecLPar(std::string str) const {
     }
     throw std::invalid_argument("[error] Unknown second_learn parameter");
     return msr2mrpSecLParDef::OFF;
+}
+
+
+msr2mrpRinvPathidDef msr2mrp::strToRinvPathidDef(std::string str) const {
+    if("even" == str) {
+        return msr2mrpRinvPathidDef::EVEN;
+    } else if("inv_prob" == str) {
+         return msr2mrpRinvPathidDef::INV_PROB;
+    } else if("min_count" == str) {
+        return msr2mrpRinvPathidDef::MIN_COUNT;
+    }
+    throw std::invalid_argument("[error] Unknown RINV pathid parameter");
+    return msr2mrpRinvPathidDef::EVEN;
 }
 
 

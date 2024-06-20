@@ -97,6 +97,12 @@ enum msr2mrpSecLParDef {
     UNICAST        = 2
 };
 
+enum msr2mrpRinvPathidDef {
+    EVEN           = 0,
+    INV_PROB       = 1,
+    MIN_COUNT      = 2
+};
+
 
 //namespace msr2mrp {
 class rreq_table_empty : public std::runtime_error {
@@ -233,6 +239,7 @@ struct msr2mrp_feat_par {
     bool   e2e_cost;
     double t_start;
     bool   single_network;
+    msr2mrpRinvPathidDef rinv_pathid;
 };
 
 class msr2mrp;
@@ -496,6 +503,7 @@ class msr2mrp: public VirtualRouting {
         msr2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         msr2mrpCostFuncDef strToCostFunc(string) const;
         msr2mrpSecLParDef strToSecLPar(string) const; 
+        msr2mrpRinvPathidDef strToRinvPathidDef(string) const;
 
         bool isSink() const;
         void setSinkAddress(std::string);

@@ -552,7 +552,7 @@ void msr2mrp_engine::sendRinvBasedOnHop() {
                 }
             } else {
                 extTrace()<<"[info] Node is sensor node, selecting random pathid";
-                auto pe = selectPathid(false);
+                auto pe = selectPathid(false, true);
                 pe.enrgy = nw_layer->getEnergyValue();
                 pe.emerg = nw_layer->getEmergencyValue();
 
@@ -1304,10 +1304,10 @@ void msr2mrp_engine::constructRoutingTable(bool rresp_req, bool app_cf, double p
     }
 }
 
-msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool replay) {
+msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool replay, bool rinv_gen) {
     extTrace()<<"[info] Entering msr2mrp_engine::selectPathid(replay="<<replay<<")";
     if(!replay) {
-        g_pathid=selectPathid();
+        g_pathid=selectPathid(rinv_gen);
     }
     return g_pathid;
 }
@@ -1353,7 +1353,7 @@ std::vector<int> msr2mrp_engine::selectAllPathid(int path_sel) {
     return pathid;
 }
 
-msr2mrp_pathid_entry msr2mrp_engine::selectPathid() {
+msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool rinv_gen) {
     extTrace()<<"[info] Entering msr2mrp_engine::selectPathid()";
     if(routing_table.empty()) {
         throw routing_table_empty("[error] Routing table empty");
@@ -1387,13 +1387,111 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid() {
         }
     }
 
-    auto i=getRNG(0)->intRand(pathid.size());
-    extTrace()<<"[info] Random number: "<<i;
-    auto it=pathid.begin();
-    std::advance(it,i);
-    extTrace()<<"[info] Selected pathid: "<<it->pathid;
-    return *it;
+    if(!rinv_gen) {
+        extTrace()<<"[info] Performing random even pathid selection, no RINV generation";
+        auto i=getRNG(0)->intRand(pathid.size());
+        extTrace()<<"[info] Random number: "<<i;
+        auto it=pathid.begin();
+        std::advance(it,i);
+        extTrace()<<"[info] Selected pathid: "<<it->pathid;
+        return *it;
+    }
+
+    msr2mrp_pathid_entry ret_val;
+    extTrace()<<"[info] Getting pathid for RINV";
+    switch (fp.rinv_pathid) {
+        case msr2mrpRinvPathidDef::EVEN: {
+            extTrace()<<"[info] Performing random even pathid selection";
+            auto i=getRNG(0)->intRand(pathid.size());
+            extTrace()<<"[info] Random number: "<<i;
+            auto it=pathid.begin();
+            std::advance(it,i);
+            extTrace()<<"[info] Selected pathid: "<<it->pathid;
+            ret_val = *it;
+            break;
+        }
+        case msr2mrpRinvPathidDef::INV_PROB: {
+            extTrace()<<"[info] Performing inverse probability pathid selection";
+            auto p_w_num = getPathIdWithNum();
+            std::map<int,double> prob_map;
+            double sum_prob = 0.0;
+            double agg_prob = 0.0;
+            for(auto i: p_w_num) {
+                sum_prob += 1.0/static_cast<double>(i.second);
+                extTrace()<<"Sum probability: "<<sum_prob;
+            }
+
+            for(auto p: p_w_num) {
+                double prob = 1.0/static_cast<double>(p.second);
+                agg_prob += prob;
+                extTrace()<<"Probability for "<<p.first<<" pathid is: "<<prob<<" aggregated probability is: "<<agg_prob;
+                prob_map[p.first] = agg_prob/sum_prob;
+            }
+            auto rnd_num=getRNG(0)->doubleRand();
+            extTrace()<<"Random: "<<rnd_num;
+            int pathid = 0;
+            for(auto p: prob_map) {
+                if(p.second > rnd_num) {
+                    extTrace()<<"Pathid selected: "<<p.first<<" with agg prob: "<<p.second;
+                    pathid = p.first;
+                    break;
+                }
+            }
+            for(auto r: routing_table) {
+                for(auto p: r.second.pathid) {
+                    if(p.pathid == pathid) {
+                        ret_val = p;
+                        break;
+                    }
+                }
+            }
+        }
+        case msr2mrpRinvPathidDef::MIN_COUNT: {
+            extTrace()<<"[info] Performing minimum count pathid selection";
+            auto p_w_num = getPathIdWithNum();
+            std::pair<int,int> min=*(p_w_num.begin());
+            for(auto i: p_w_num) {
+                if(i.second < min.second) {
+                    min = i;
+                }
+            }
+            extTrace()<<"[info] Selected pathid: "<<min.first<<" with count: "<<min.second;
+            auto pathid = min.first;
+            for(auto r: routing_table) {
+                for(auto p: r.second.pathid) {
+                    if(p.pathid == pathid) {
+                        ret_val = p;
+                        break;
+                    }
+                }
+            }
+        }
+
+    }
+    return ret_val;
 }
+
+std::map<int,int> msr2mrp_engine::getPathIdWithNum() {
+    extTrace()<<"Entering getPathIdWithNum()";
+    std::map<int,int> pathid_num;
+    for(auto i: rinv_table) {
+        for(auto j: routing_table) {
+            for(auto k: j.second.pathid) {
+                for(auto l: i.second.pathid) {
+                    if(k.pathid==l.pathid) {
+                        extTrace()<<"Pathid "<<k.pathid<<" found.";
+                        if(pathid_num.find(k.pathid) == pathid_num.end()) {
+                            pathid_num[k.pathid]=1;
+                        } else {
+                            pathid_num[k.pathid]++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return pathid_num;
+} 
 
 std::string msr2mrp_engine::pathidToStr(vector<msr2mrp_pathid_entry> pathid) {
     std::string str;
@@ -1964,7 +2062,7 @@ void msr2mrp_engine::fromApplicationLayer(cPacket * pkt, const char *destination
             return;
         }
 
-        auto pathid=selectPathid();
+        auto pathid=selectPathid(false,false);
         std::string next_hop;
 
         if(msr2mrpRingDef::EXTERNAL==getRingStatus()) {
@@ -2304,14 +2402,14 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                     if(msr2mrpRingDef::EXTERNAL==getRingStatus()) {
                         next_hop=getNextHop(data_pkt->getPathid());
                     } else {
-                        next_hop=getNextHop(selectPathid().pathid,fp.rand_ring_hop );
+                        next_hop=getNextHop(selectPathid(false,false).pathid,fp.rand_ring_hop );
                     }
                 } catch (no_available_entry &e) {
                     extTrace()<<"[error] Next hop not available for pathid: "<<data_pkt->getPathid();
                     if(fp.reroute_pkt) {
                         extTrace()<<"[info] Rerouting packet";
                         try {
-                            next_hop=getNextHop(selectPathid().pathid);
+                            next_hop=getNextHop(selectPathid(false,false).pathid);
                             if(next_hop == std::string(data_pkt->getSource())) {
                                 extTrace()<<"[error] Possible loop due to reroute, aborting, removing route: "<<next_hop;
                                 removeRoute(next_hop);
@@ -2813,7 +2911,7 @@ bool msr2mrp_engine::secLPerformed(int round, int pathid) {
 
 void msr2mrp_engine::sendRwarn() {
     extTrace()<<"[info] Entering sendRwarn()";
-    sendRwarn(msr2mrpWarnDef::EMERGENCY_EVENT,selectPathid(true).pathid);
+    sendRwarn(msr2mrpWarnDef::EMERGENCY_EVENT,selectPathid(true,false).pathid);
 }
 
 void msr2mrp_engine::sendRwarn(msr2mrpWarnDef cause, int pathid) {
