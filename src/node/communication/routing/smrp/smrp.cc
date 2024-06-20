@@ -903,7 +903,13 @@ void smrp::timerFiredCallback(int index) {
         case smrpTimerDef::FIELD: {
             trace()<<"[timer] FIELD timer expired";
             setState(smrpStateDef::WORK);
-            initRouting();
+            try { 
+                 initRouting();
+                 setState(smrpStateDef::WORK);
+             } catch (std::runtime_error &e) {
+                trace()<<"[error] "<<e.what();
+                setState(smrpStateDef::INIT);
+            }
             break;
         }
         case smrpTimerDef::ENV_CHK: {
