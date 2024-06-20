@@ -93,3 +93,9 @@ jobs:
         source omnetpp/setenv
         cd castalia/Simulations/smrp_smoke_test
         ./batch.sh
+
+    - name: Test Castalia for msr2mrp
+        source omnetpp/setenv
+        cd castalia/Simulations/msr2mrp_smoke_test
+        ./batch.sh
+
