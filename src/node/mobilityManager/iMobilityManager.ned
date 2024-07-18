@@ -15,4 +15,6 @@ package node.mobilityManager;
 moduleinterface iMobilityManager {
  parameters:
 	bool collectTraceInfo;
+ gates:
+    input fromApplicationModule;
 }

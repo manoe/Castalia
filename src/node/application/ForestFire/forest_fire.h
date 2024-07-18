@@ -14,6 +14,7 @@
 #include "node/application/ForestFire/forest_fire_packet_m.h"
 #include "node/application/ForestFire/forest_fire_message_m.h"
 #include "node/resourceManager/ResourceManager.h"
+#include "node/mobilityManager/MobilityManagerMessage_m.h"
 #include <yaml-cpp/yaml.h>
 
 #define REPORT_PACKET_NAME "Wildfire report"

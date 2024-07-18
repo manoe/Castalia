@@ -28,7 +28,8 @@ simple SimpleAggregation like node.application.iApplication {
  gates:
  	output toCommunicationModule;
 	output toSensorDeviceManager;
-	input fromCommunicationModule;
+    output toMobilityManager;
+   	input fromCommunicationModule;
 	input fromSensorDeviceManager;
 	input fromResourceManager;
 }

@@ -55,6 +55,7 @@ module Node {
     Communication.toNodeContainerModule --> toWirelessChannel;
     fromWirelessChannel --> Communication.fromNodeContainerModule;
     Application.toCommunicationModule --> Communication.fromApplicationModule;
+    Application.toMobilityManager     --> MobilityManager.fromApplicationModule;
     Application.toSensorDeviceManager --> SensorManager.fromApplicationModule;
     Communication.toApplicationModule --> Application.fromCommunicationModule;
     SensorManager.toApplicationModule --> Application.fromSensorDeviceManager;
