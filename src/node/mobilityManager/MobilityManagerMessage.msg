@@ -12,7 +12,13 @@
 
 enum MobilityManagerMessageType {
 	MOBILITY_PERIODIC = 1;
+    DISCRETE_MOBILITY = 2;
 }
 
 message MobilityManagerMessage {
+}
+
+message DiscreteMobilityManagerMessage {
+    double x;
+    double y;
 }
