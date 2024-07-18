@@ -20,4 +20,6 @@ simple LineMobilityManager like node.mobilityManager.iMobilityManager {
 	double yCoorDestination = default (0);
 	double zCoorDestination = default (0);
 	double speed = default (1);
+ gates:
+    input fromApplicationModule;
 }

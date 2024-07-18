@@ -16,4 +16,6 @@ simple NoMobilityManager like node.mobilityManager.iMobilityManager {
  parameters:
     bool positionOverride = default (false);
 	bool collectTraceInfo = default (false);
+ gates:
+    input fromApplicationModule;
 }
