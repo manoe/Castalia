@@ -2763,8 +2763,13 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
         case MsgType::PREP_MOBILITY: {
             extTrace()<<"[info] Application preparing for mobility";
             sendRwarn(msr2mrpWarnDef::MOBILITY_EVENT,0);
-            
+            destroyEngines();
+            setState(msr2mrpStateDef::LOCK);
             break;
+        }
+        case MsgType::RELEARN: {
+            extTrace()<<"[info] Application finished mobility, relearn.";
+            setState(msr2mrpStateDef::LIMIT);
         }
     }
 }

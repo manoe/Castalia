@@ -43,7 +43,8 @@ enum msr2mrpStateDef {
     LOCAL_LEARN   = 6,
     DEAD          = 7,
     S_ESTABLISH   = 8,
-    LOCK          = 9
+    LOCK          = 9,
+    LIMIT         = 10
 };
 
 enum msr2mrpTimerDef {
