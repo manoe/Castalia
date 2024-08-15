@@ -1664,6 +1664,17 @@ void msr2mrp::updateRinvTableFromRreqTable() {
     }
 }
 
+
+void msr2mrp::destroyEngines() {
+    extTrace()<<"[info] Entering destroyEngines()";
+    extTrace()<<"[info] Destroying "<<engine_table.size()<<" engines.";
+    for(auto &&e: engine_table) {
+        delete e.second;
+    }
+    engine_table.clear();
+}
+
+
 void msr2mrp::timerFiredCallback(int index) {
     switch (index) {
         case msr2mrpTimerDef::T_SINK_START: {
@@ -2747,6 +2758,12 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
         case MsgType::EMERGENCY: {
             extTrace()<<"[info] Application in Emergency state, start local re-learn";
             sendRwarn();
+            break;
+        }
+        case MsgType::PREP_MOBILITY: {
+            extTrace()<<"[info] Application preparing for mobility";
+            sendRwarn(msr2mrpWarnDef::MOBILITY_EVENT,0);
+            
             break;
         }
     }
