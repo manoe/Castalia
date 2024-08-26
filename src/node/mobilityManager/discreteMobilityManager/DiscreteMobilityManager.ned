@@ -10,12 +10,16 @@
 //*                                                                          *  
 //****************************************************************************/
 
-package node.mobilityManager.noMobilityManager;
+package node.mobilityManager.discreteMobilityManager;
 
-simple NoMobilityManager like node.mobilityManager.iMobilityManager {
+simple DiscreteMobilityManager like node.mobilityManager.iMobilityManager {
  parameters:
-    bool positionOverride = default (false);
 	bool collectTraceInfo = default (false);
+	double updateInterval = default (1000);
+	double xCoorDestination = default (0);
+	double yCoorDestination = default (0);
+	double zCoorDestination = default (0);
+	double speed = default (1);
  gates:
     input fromApplicationModule;
 }

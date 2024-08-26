@@ -58,6 +58,7 @@ simple ForestFire like node.application.iApplication {
  gates:
  	output toCommunicationModule;
 	output toSensorDeviceManager;
+    output toMobilityManager;
 	input fromCommunicationModule;
 	input fromSensorDeviceManager;
 	input fromResourceManager;

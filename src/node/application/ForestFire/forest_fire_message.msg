@@ -1,6 +1,8 @@
 enum MsgType {
-    EMERGENCY   = 1;
-    STEADY      = 2;
+    EMERGENCY     = 1;
+    STEADY        = 2;
+    PREP_MOBILITY = 3;
+    RELEARN       = 4;
 }
 
 message EmergencyMessage {

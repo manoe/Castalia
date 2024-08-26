@@ -34,15 +34,17 @@
 
 
 enum msr2mrpStateDef {
-    UNDEF       = 0,
-    WORK        = 1,
-    INIT        = 2,
-    LEARN       = 3,
-    ESTABLISH   = 4,
-    MEASURE     = 5,
-    LOCAL_LEARN = 6,
-    DEAD        = 7,
-    S_ESTABLISH = 8
+    UNDEF         = 0,
+    WORK          = 1,
+    INIT          = 2,
+    LEARN         = 3,
+    ESTABLISH     = 4,
+    MEASURE       = 5,
+    LOCAL_LEARN   = 6,
+    DEAD          = 7,
+    S_ESTABLISH   = 8,
+    LOCK          = 9,
+    LIMIT         = 10
 };
 
 enum msr2mrpTimerDef {
@@ -683,6 +685,7 @@ class msr2mrp: public VirtualRouting {
         };
 
         std::map<std::string,msr2mrp_engine*> getEngineTable() {return engine_table;};
+        void destroyEngines();
 
         double getEnergyValue();
         double getEmergencyValue();

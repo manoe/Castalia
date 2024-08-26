@@ -25,6 +25,7 @@ enum msr2mrpPacketDef {
     RWARN_PACKET        = 64;
     LREQ_PACKET         = 128;
     LRESP_PACKET        = 256;
+    RIREQ_PACKET        = 512;
 }
 
 enum msr2mrpWarnDef {
@@ -32,6 +33,7 @@ enum msr2mrpWarnDef {
     EMERGENCY_EVENT     = 1;
     NODE_FAILURE_EVENT  = 2;
     PATH_FAILURE_EVENT  = 3;
+    MOBILITY_EVENT      = 4;
 }
 
 struct msr2mrpPathDef {
@@ -108,4 +110,8 @@ packet msr2mrpPingPacket extends msr2mrpPacket {
 
 packet msr2mrpPongPacket extends msr2mrpPacket {
     int round;
+}
+
+packet msr2mrpRireqPacket extends msr2mrpPacket {
+    
 }

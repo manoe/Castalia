@@ -114,24 +114,24 @@ void msr2mrp::startup() {
 }
 
 
-
-
-
 void msr2mrp::extSetTimer(int machine, int index, simtime_t time) {
     trace()<<"[timer] extSetTimer(machine="<<machine<<", index="<<index<<", time="<<time<<")";
     trace()<<"[info] offset: "<<getTimer(msr2mrpTimerDef::T_SERIAL)<<" time: "<<getClock();
     stimer->setTimer(machine,index,time,getClock());
 }
 
+
 simtime_t msr2mrp::extGetTimer(int machine, int index) {
     trace()<<"[timer] extGetTimer(machine="<<machine<<", index="<<index<<")";
     return stimer->getTimer(machine,index,getClock());
 }
 
+
 void msr2mrp::extCancelTimer(int machine, int index) {
     trace()<<"[timer] extCancelTimer(machine="<<machine<<", index="<<index<<")";
     stimer->cancelTimer(machine,index,getClock());
 }
+
 
 void msr2mrp::updateTimer() {
     trace()<<"[timer] updateTimer()";
@@ -144,6 +144,7 @@ void msr2mrp::updateTimer() {
         setTimer(msr2mrpTimerDef::T_SERIAL, stimer->getTimerValue());
     }
 }
+
 
 cRNG* msr2mrp::extGetRNG(int index) {
     return getRNG(index);
@@ -1663,6 +1664,17 @@ void msr2mrp::updateRinvTableFromRreqTable() {
     }
 }
 
+
+void msr2mrp::destroyEngines() {
+    extTrace()<<"[info] Entering destroyEngines()";
+    extTrace()<<"[info] Destroying "<<engine_table.size()<<" engines.";
+    for(auto &&e: engine_table) {
+        delete e.second;
+    }
+    engine_table.clear();
+}
+
+
 void msr2mrp::timerFiredCallback(int index) {
     switch (index) {
         case msr2mrpTimerDef::T_SINK_START: {
@@ -2742,9 +2754,23 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
     if(!msg) {
         extTrace()<<"[error] Unknown Network Control Command Message";
     }
-    if(MsgType::EMERGENCY == app_msg->getEvent()) {
-        extTrace()<<"[info] Application in Emergency state, start local re-learn";
-        sendRwarn();
+    switch(app_msg->getEvent()) {
+        case MsgType::EMERGENCY: {
+            extTrace()<<"[info] Application in Emergency state, start local re-learn";
+            sendRwarn();
+            break;
+        }
+        case MsgType::PREP_MOBILITY: {
+            extTrace()<<"[info] Application preparing for mobility";
+            sendRwarn(msr2mrpWarnDef::MOBILITY_EVENT,0);
+            destroyEngines();
+            setState(msr2mrpStateDef::LOCK);
+            break;
+        }
+        case MsgType::RELEARN: {
+            extTrace()<<"[info] Application finished mobility, relearn.";
+            setState(msr2mrpStateDef::LIMIT);
+        }
     }
 }
 
