@@ -526,7 +526,8 @@ void msr2mrp_engine::sendRinvBasedOnHop() {
         std::vector<msr2mrp_pathid_entry> pathid;
         try {
             if(isMaster()) {
-                throw state_not_permitted("Master functionality not implemented");
+                // maybe it is implemented?
+                //throw state_not_permitted("Master functionality not implemented");
                 extTrace()<<"[info] Node is master node, selecting all pathids";
                 extTrace()<<"[info] Master hack, let's consume 1 random number, to keep simulation in-sync: "<<getRNG(0)->intRand(pathid.size());
                 for(auto ne: routing_table) {
