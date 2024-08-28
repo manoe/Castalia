@@ -17,7 +17,7 @@ Y_NODE=8
 
 for i in $SCALE
 do
-    ./gen_deployment.sh ${X_NODE} ${Y_NODE} `echo "${i} * 22.8"|bc`
+    ./gen_deployment.sh ${X_NODE} ${Y_NODE} `echo "${i} * 22.8"|bc` 4h
     yq --null-input '{"runs": []}' > ${PROTO}_map_scale_${i}_pdr.yaml
     for s in ${SEED_SET}
     do
