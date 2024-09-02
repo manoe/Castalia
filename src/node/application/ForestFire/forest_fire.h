@@ -52,6 +52,7 @@ class ForestFire : public VirtualApplication {
     double emergency_broadcast;
     double event_period;
     double report_period;
+    double startup_delay;
     double emergency_threshold;
     bool emergency;
     ResourceManager *rm;
