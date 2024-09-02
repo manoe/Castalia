@@ -36,14 +36,15 @@ void ForestFire::startup()
     event_period=par("eventPeriod");
     emergency_threshold=par("emergencyThreshold");
     emergency_broadcast=par("emergencyBroadcastPeriod");
+    startup_delay=par("startup_delay");
 
     rm=dynamic_cast<ResourceManager *>(getParentModule()->getSubmodule("ResourceManager"));
 
     report_timer_offset=par("report_timer_offset");
     if (!isSink) {
-        setTimer(ForestFireTimers::REQUEST_SAMPLE, sampleInterval);
+        setTimer(ForestFireTimers::REQUEST_SAMPLE, sampleInterval+startup_delay);
         if(report_timer_offset) {
-            setTimer(ForestFireTimers::REPORT_PERIOD, sampleInterval+std::atof(selfAddress.c_str()));
+            setTimer(ForestFireTimers::REPORT_PERIOD, sampleInterval+std::atof(selfAddress.c_str()) + startup_delay );
         }
         else {
             setTimer(ForestFireTimers::REPORT_PERIOD, sampleInterval);

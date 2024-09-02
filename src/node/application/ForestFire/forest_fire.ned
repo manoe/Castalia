@@ -33,6 +33,7 @@ simple ForestFire like node.application.iApplication {
 	string reportDestination = default ("0");	//this can also be set to "-1" for broadcast
 												// or to a specific node's address (e.g "0")
     bool report_timer_offset = default (true);
+    double startup_delay = default(0);
 	double reportTreshold = default (10);
 	double sampleInterval = default (100);	// in s
     double emergencyThreshold = default (0.8);
