@@ -11,7 +11,7 @@
 //****************************************************************************/
 
 enum MobilityManagerMessageType {
-	MOBILITY_PERIODIC = 1;
+    MOBILITY_PERIODIC = 1;
     DISCRETE_MOBILITY = 2;
 }
 

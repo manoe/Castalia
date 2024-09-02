@@ -207,6 +207,13 @@ void ForestFire::timerFiredCallback(int timer)
         }
         case ForestFireTimers::TEST_DM: {
             trace()<<"[info] TEST_DM timer expired";
+            auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("mobilityManager"))->getLocation();
+            DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
+            dm_msg->setX(pos.x/2.0);
+            dm_msg->setY(pos.y/2.0);
+            // set parameters, x,y
+            
+            send(dm_msg,"toMobilityManager");
             break;
         }
     }
