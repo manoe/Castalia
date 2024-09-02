@@ -32,6 +32,8 @@ void ForestFire::startup()
     version_info_table.clear();
     report_info_table.clear();
 
+    test_dm=par("test_dm");
+
     report_period=par("reportPeriod"); 
     event_period=par("eventPeriod");
     emergency_threshold=par("emergencyThreshold");

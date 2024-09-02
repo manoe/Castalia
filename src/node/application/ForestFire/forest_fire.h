@@ -49,6 +49,7 @@ class ForestFire : public VirtualApplication {
 	int maxPayload;
     double sensedValue;
 	simtime_t outOfEnergy;
+    bool test_dm;
     double emergency_broadcast;
     double event_period;
     double report_period;
