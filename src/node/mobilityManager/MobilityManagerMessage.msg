@@ -16,9 +16,10 @@ enum MobilityManagerMessageType {
 }
 
 message MobilityManagerMessage {
+    int msgType enum (MobilityManagerMessageType);
 }
 
-message DiscreteMobilityManagerMessage {
+message DiscreteMobilityManagerMessage extends MobilityManagerMessage {
     double x;
     double y;
 }

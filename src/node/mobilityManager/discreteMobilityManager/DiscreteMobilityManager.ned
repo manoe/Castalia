@@ -22,4 +22,5 @@ simple DiscreteMobilityManager like node.mobilityManager.iMobilityManager {
 	double speed = default (1);
  gates:
     input fromApplicationModule;
+    output toApplicationModule;
 }
