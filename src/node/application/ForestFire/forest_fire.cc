@@ -33,6 +33,10 @@ void ForestFire::startup()
     report_info_table.clear();
 
     test_dm=par("test_dm");
+    if(test_dm) {
+        trace()<<"[info] test_dm - Discrete mobility testing activated";
+        setTimer(ForestFireTimers::TEST_DM, 700.0);
+    }
 
     report_period=par("reportPeriod"); 
     event_period=par("eventPeriod");
@@ -199,6 +203,10 @@ void ForestFire::timerFiredCallback(int timer)
             trace()<<"SRLZ_NRG timer expired";
             serializeEnergy();
             setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
+            break;
+        }
+        case ForestFireTimers::TEST_DM: {
+            trace()<<"[info] TEST_DM timer expired";
             break;
         }
     }

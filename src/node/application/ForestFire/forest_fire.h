@@ -38,7 +38,8 @@ enum ForestFireTimers {
     EMERGENCY_BROADCAST = 2,
     EVENT_PERIOD        = 3,
     REPORT_PERIOD       = 4,
-    SRLZ_NRG            = 5
+    SRLZ_NRG            = 5,
+    TEST_DM             = 6
 };
 
 class ForestFire : public VirtualApplication {
