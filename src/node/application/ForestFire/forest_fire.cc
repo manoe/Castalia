@@ -327,6 +327,7 @@ double ForestFire::getAverageSpentEnergy() {
             (topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
         nrg+=rm->getSpentEnergy();
     }
+    delete topo;
     return nrg;
 }
 
@@ -372,7 +373,7 @@ void ForestFire::serializeEnergy() {
     }
     yn_out<<YAML::EndSeq;
     yn_out<<YAML::EndMap;
-
+    delete topo;
 }
 
 map<int,int> ForestFire::summarizeSentPkts(std::vector<map<int,set<int>>> pkts) {
