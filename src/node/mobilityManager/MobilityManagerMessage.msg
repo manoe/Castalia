@@ -22,3 +22,6 @@ message DiscreteMobilityManagerMessage extends MobilityManagerMessage {
     double x;
     double y;
 }
+
+message DiscreteMobilityManagerMessageAck extends MobilityManagerMessage {
+}

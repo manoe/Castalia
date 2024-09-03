@@ -27,7 +27,7 @@ void DiscreteMobilityManager::handleMessage(cMessage * msg)
 					":" << nodeLocation.y << ":" << nodeLocation.z<<")";
             break;
         }
-		default:{
+		default: {
 			trace() << "WARNING: Unexpected message " << msgKind;
             break;
 		}
