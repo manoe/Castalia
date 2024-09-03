@@ -32,6 +32,12 @@ void ForestFire::startup()
     version_info_table.clear();
     report_info_table.clear();
 
+    test_dm=par("test_dm");
+    if(test_dm) {
+        trace()<<"[info] test_dm - Discrete mobility testing activated";
+        setTimer(ForestFireTimers::TEST_DM, 700.0);
+    }
+
     report_period=par("reportPeriod"); 
     event_period=par("eventPeriod");
     emergency_threshold=par("emergencyThreshold");
@@ -199,9 +205,23 @@ void ForestFire::timerFiredCallback(int timer)
             setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
             break;
         }
+        case ForestFireTimers::TEST_DM: {
+            trace()<<"[info] TEST_DM timer expired";
+            auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("mobilityManager"))->getLocation();
+            DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
+            dm_msg->setX(pos.x/2.0);
+            dm_msg->setY(pos.y/2.0);
+            dm_msg->setKind(MobilityManagerMessageType::DISCRETE_MOBILITY);
+            
+            send(dm_msg,"toMobilityManager");
+            break;
+        }
     }
 }
 
+void ForestFire::handleMobility(cMessage *) {
+    trace()<<"[info] Entering handleMobility";
+}
 
 
 void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,

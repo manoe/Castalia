@@ -40,6 +40,7 @@ simple ForestFire like node.application.iApplication {
     double emergencyBroadcastPeriod = default (60); // in sec
     double reportPeriod = default (86400); // 24 hours
     double eventPeriod  = default (120);  // every two min
+    bool test_dm = default(false); // Switch to test discrete mobility
 
 	int sampleSize = default (12);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes
@@ -63,5 +64,6 @@ simple ForestFire like node.application.iApplication {
 	input fromCommunicationModule;
 	input fromSensorDeviceManager;
 	input fromResourceManager;
+    input fromMobilityManager;
 }
 

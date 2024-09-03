@@ -38,7 +38,8 @@ enum ForestFireTimers {
     EMERGENCY_BROADCAST = 2,
     EVENT_PERIOD        = 3,
     REPORT_PERIOD       = 4,
-    SRLZ_NRG            = 5
+    SRLZ_NRG            = 5,
+    TEST_DM             = 6
 };
 
 class ForestFire : public VirtualApplication {
@@ -49,6 +50,7 @@ class ForestFire : public VirtualApplication {
 	int maxPayload;
     double sensedValue;
 	simtime_t outOfEnergy;
+    bool test_dm;
     double emergency_broadcast;
     double event_period;
     double report_period;
@@ -104,6 +106,7 @@ class ForestFire : public VirtualApplication {
     double getAverageSpentEnergy();
     void serializeEnergy();
     map<int,int> summarizeSentPkts(std::vector<map<int,set<int>>>);
+    void handleMobility(cMessage *);
  public:
     int getReportSent();
     int getEventSent();

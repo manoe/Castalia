@@ -44,5 +44,6 @@ simple BridgeTest like node.application.iApplication {
 	input fromCommunicationModule;
 	input fromSensorDeviceManager;
 	input fromResourceManager;
+    input fromMobilityManager;
 }
 

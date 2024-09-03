@@ -18,4 +18,5 @@ simple NoMobilityManager like node.mobilityManager.iMobilityManager {
 	bool collectTraceInfo = default (false);
  gates:
     input fromApplicationModule;
+    output toApplicationModule;
 }
