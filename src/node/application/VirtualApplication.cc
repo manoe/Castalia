@@ -144,6 +144,11 @@ void VirtualApplication::handleMessage(cMessage * msg)
 			break;
 		}
 
+        case MobilityManagerMessageType::DISCRETE_MOBILITY_ACK: {
+            handleMobility(msg);
+            break;
+        }
+
 		default:
 		{
 			throw cRuntimeError("Application module received unexpected message");

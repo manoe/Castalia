@@ -219,6 +219,9 @@ void ForestFire::timerFiredCallback(int timer)
     }
 }
 
+void ForestFire::handleMobility(cMessage *) {
+    trace()<<"[info] Entering handleMobility";
+}
 
 
 void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,

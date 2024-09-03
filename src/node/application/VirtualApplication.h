@@ -22,6 +22,7 @@
 #include "node/resourceManager/ResourceManager.h"
 #include "node/communication/radio/Radio.h"
 #include "node/mobilityManager/VirtualMobilityManager.h"
+#include "node/mobilityManager/MobilityManagerMessage_m.h"
 #include "helpStructures/CastaliaModule.h"
 #include "helpStructures/TimerService.h"
 
@@ -65,6 +66,7 @@ class VirtualApplication: public CastaliaModule, public TimerService {
 	virtual void handleNetworkControlMessage(cMessage *) {}
 	virtual void handleMacControlMessage(cMessage *) {}
 	virtual void handleRadioControlMessage(RadioControlMessage *) {}
+    virtual void handleMobility(cMessage *) {}
 };
 
 #endif
