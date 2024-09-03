@@ -53,12 +53,13 @@ module Node {
 
  connections:
     Communication.toNodeContainerModule --> toWirelessChannel;
-    fromWirelessChannel --> Communication.fromNodeContainerModule;
-    Application.toCommunicationModule --> Communication.fromApplicationModule;
-    Application.toMobilityManager     --> MobilityManager.fromApplicationModule;
-    Application.toSensorDeviceManager --> SensorManager.fromApplicationModule;
-    Communication.toApplicationModule --> Application.fromCommunicationModule;
-    SensorManager.toApplicationModule --> Application.fromSensorDeviceManager;
+    fromWirelessChannel                 --> Communication.fromNodeContainerModule;
+    Application.toCommunicationModule   --> Communication.fromApplicationModule;
+    Application.toMobilityManager       --> MobilityManager.fromApplicationModule;
+    Application.toSensorDeviceManager   --> SensorManager.fromApplicationModule;
+    Communication.toApplicationModule   --> Application.fromCommunicationModule;
+    SensorManager.toApplicationModule   --> Application.fromSensorDeviceManager;
+    MobilityManager.toApplicationModule --> Application.fromMobilityManager;
 
     for i = 0..sizeof(toPhysicalProcess) - 1 {
         fromPhysicalProcess[i] --> SensorManager.fromNodeContainerModule[i];

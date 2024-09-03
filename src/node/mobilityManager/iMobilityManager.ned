@@ -17,4 +17,5 @@ moduleinterface iMobilityManager {
 	bool collectTraceInfo;
  gates:
     input fromApplicationModule;
+    output toApplicationModule;
 }
