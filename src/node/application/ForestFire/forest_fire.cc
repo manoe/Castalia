@@ -211,7 +211,7 @@ void ForestFire::timerFiredCallback(int timer)
             DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
             dm_msg->setX(pos.x/2.0);
             dm_msg->setY(pos.y/2.0);
-            dm_msg->setMsgType(MobilityManagerMessageType::DISCRETE_MOBILITY);
+            dm_msg->setKind(MobilityManagerMessageType::DISCRETE_MOBILITY);
             
             send(dm_msg,"toMobilityManager");
             break;

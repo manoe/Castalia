@@ -30,6 +30,5 @@ moduleinterface iApplication {
 	input fromCommunicationModule;
 	input fromSensorDeviceManager;
 	input fromResourceManager;
-    input fromMobilityManager;
 }
 
