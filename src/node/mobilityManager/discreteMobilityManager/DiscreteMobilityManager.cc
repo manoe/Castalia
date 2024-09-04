@@ -17,7 +17,7 @@ void DiscreteMobilityManager::handleMessage(cMessage * msg)
 {
 	int msgKind = msg->getKind();
 	switch (msgKind) {
-        case DISCRETE_MOBILITY: {
+        case MobilityManagerMessageType::DISCRETE_MOBILITY: {
             DiscreteMobilityManagerMessage *dis_msg=check_and_cast<DiscreteMobilityManagerMessage *>(msg);
             trace()<<"Current location (x:y:z) is: ("<<nodeLocation.x<<":"<<nodeLocation.y<<":"<<nodeLocation.z<<")";
             nodeLocation.x = dis_msg->getX();
