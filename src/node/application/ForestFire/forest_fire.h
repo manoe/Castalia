@@ -102,7 +102,7 @@ class ForestFire : public VirtualApplication {
     void sendReport();
     void sendEmergencyBroadcast();
     bool isPacketSeen(int source, int sn, std::string name);
-    void alertRouting();
+    void alertRouting(MsgType);
     double getAverageSpentEnergy();
     void serializeEnergy();
     map<int,int> summarizeSentPkts(std::vector<map<int,set<int>>>);

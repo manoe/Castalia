@@ -207,6 +207,7 @@ void ForestFire::timerFiredCallback(int timer)
         }
         case ForestFireTimers::TEST_DM: {
             trace()<<"[info] TEST_DM timer expired";
+
             auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("mobilityManager"))->getLocation();
             DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
             dm_msg->setX(pos.x/2.0);
@@ -293,9 +294,9 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
     }
 }
 
-void ForestFire::alertRouting() {
+void ForestFire::alertRouting(MsgType msg_type=MsgType::EMERGENCY) {
     auto *msg=new EmergencyMessage("alert Routing", NETWORK_CONTROL_COMMAND);
-    msg->setEvent(MsgType::EMERGENCY);
+    msg->setEvent(msg_type);
     toNetworkLayer(msg);
 }
 
