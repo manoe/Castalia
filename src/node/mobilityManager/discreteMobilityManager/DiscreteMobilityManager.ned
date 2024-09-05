@@ -21,6 +21,7 @@ simple DiscreteMobilityManager like node.mobilityManager.iMobilityManager {
 	double zCoorDestination = default (0);
 	double speed = default (1);
     bool positionOverride = default (false);
+    double dm_delay = default (1);
  gates:
     input fromApplicationModule;
     output toApplicationModule;

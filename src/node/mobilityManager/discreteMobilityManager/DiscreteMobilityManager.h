@@ -22,6 +22,7 @@ class DiscreteMobilityManager: public VirtualMobilityManager {
 	double loc2_y;
 	double loc2_z;
 	double speed;
+    double dm_delay;
 
 	/*--- Custom class parameters ---*/
 	double incr_x;
@@ -29,6 +30,10 @@ class DiscreteMobilityManager: public VirtualMobilityManager {
 	double incr_z;
 	double distance;
 	int direction;
+    bool timer_armed=false;
+    double j_x;
+    double j_y;
+    double j_z;
 
  protected:
 	void initialize();

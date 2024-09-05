@@ -226,8 +226,18 @@ void ForestFire::timerFiredCallback(int timer)
     }
 }
 
-void ForestFire::handleMobility(cMessage *) {
+void ForestFire::handleMobility(cMessage *msg) {
     trace()<<"[info] Entering handleMobility";
+    switch (msg->getKind()) {
+        case MobilityManagerMessageType::DISCRETE_MOBILITY_ACK: {
+            trace()<<"[info] DISCRETE_MOBILITY_ACK received";
+            break;
+        }
+        case MobilityManagerMessageType::DISCRETE_MOBILITY_NACK: {
+            trace()<<"[info] DISCRETE_MOBILITY_NACK received";
+            break;
+        }
+    }
 }
 
 

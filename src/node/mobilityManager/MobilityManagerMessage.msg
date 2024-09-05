@@ -14,6 +14,8 @@ enum MobilityManagerMessageType {
     MOBILITY_PERIODIC = 1;
     DISCRETE_MOBILITY = 70;
     DISCRETE_MOBILITY_ACK = 71;
+    DISCRETE_MOBILITY_NACK = 72;
+
 }
 
 message MobilityManagerMessage {
@@ -26,3 +28,7 @@ message DiscreteMobilityManagerMessage extends MobilityManagerMessage {
 
 message DiscreteMobilityManagerMessageAck extends MobilityManagerMessage {
 }
+
+message DiscreteMobilityManagerMessageNack extends MobilityManagerMessage {
+}
+
