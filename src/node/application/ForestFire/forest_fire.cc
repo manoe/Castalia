@@ -240,6 +240,9 @@ void ForestFire::handleMobility(cMessage *msg) {
             trace()<<"[info] DISCRETE_MOBILITY_NACK received";
             break;
         }
+        default: {
+            trace()<<"[info] Unknown messsage, what's going on?";
+        }
     }
 }
 
