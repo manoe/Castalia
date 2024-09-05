@@ -51,7 +51,7 @@ class ForestFire : public VirtualApplication {
     double sensedValue;
 	simtime_t outOfEnergy;
     bool test_dm;
-    bool test_dm_sr;
+    bool dm_sr;
     double emergency_broadcast;
     double event_period;
     double report_period;

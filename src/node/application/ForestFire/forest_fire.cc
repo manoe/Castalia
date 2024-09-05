@@ -33,7 +33,7 @@ void ForestFire::startup()
     report_info_table.clear();
 
     test_dm=par("test_dm");
-    test_dm_sr=par("test_dm_sr");
+    dm_sr=par("dm_sr");
     if(test_dm) {
         trace()<<"[info] test_dm - Discrete mobility testing activated";
         setTimer(ForestFireTimers::TEST_DM, 700.0);
@@ -209,7 +209,7 @@ void ForestFire::timerFiredCallback(int timer)
         case ForestFireTimers::TEST_DM: {
             trace()<<"[info] TEST_DM timer expired";
 
-            if(test_dm_sr) {
+            if(dm_sr) {
                 trace()<<"[info] Alerting routing - prepare:";
                 alertRouting(MsgType::PREP_MOBILITY);
             }
