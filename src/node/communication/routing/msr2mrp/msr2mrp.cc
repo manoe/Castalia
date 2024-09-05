@@ -2770,6 +2770,7 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
         case MsgType::RELEARN: {
             extTrace()<<"[info] Application finished mobility, relearn.";
             setState(msr2mrpStateDef::LIMIT);
+
         }
     }
 }
@@ -2795,6 +2796,11 @@ void msr2mrp::sendRwarn(msr2mrpWarnDef cause, int pathid) {
     warn_pkt->setEnrgy(getEmergencyValue());
     warn_pkt->setSequenceNumber(currentSequenceNumber++);
     nw_layer->extToMacLayer(warn_pkt, BROADCAST_MAC_ADDRESS);
+
+}
+
+void msr2mrp::sendRireq() {
+    extTrace()<<"[info] Entering sendRireq()";
 
 }
 

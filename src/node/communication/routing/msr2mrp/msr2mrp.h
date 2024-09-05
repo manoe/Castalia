@@ -613,6 +613,8 @@ class msr2mrp: public VirtualRouting {
         void sendRwarn();
         void sendRwarn(msr2mrpWarnDef, int);
 
+        void sendRireq();
+
         void handleLinkFailure(int);
 
         void serializeRoutingTable();
