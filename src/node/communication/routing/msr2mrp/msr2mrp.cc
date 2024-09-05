@@ -2801,7 +2801,13 @@ void msr2mrp::sendRwarn(msr2mrpWarnDef cause, int pathid) {
 
 void msr2mrp::sendRireq() {
     extTrace()<<"[info] Entering sendRireq()";
-
+    msr2mrpRireqPacket *rireq_pkt=new msr2mrpRireqPacket("MSR2MRP RIREQ packet",NETWORK_LAYER_PACKET);
+    rireq_pkt->setByteLength(netDataFrameOverhead);
+    rireq_pkt->setMsr2mrpPacketKind(msr2mrpPacketDef::RIREQ_PACKET);
+    rireq_pkt->setSource(SELF_NETWORK_ADDRESS);
+    rireq_pkt->setDestination(BROADCAST_NETWORK_ADDRESS);
+    rireq_pkt->setSequenceNumber(currentSequenceNumber++);
+    nw_layer->extToMacLayer(rireq_pkt, BROADCAST_MAC_ADDRESS);
 }
 
 
