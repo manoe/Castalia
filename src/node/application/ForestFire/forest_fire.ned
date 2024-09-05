@@ -41,6 +41,7 @@ simple ForestFire like node.application.iApplication {
     double reportPeriod = default (86400); // 24 hours
     double eventPeriod  = default (120);  // every two min
     bool test_dm = default(false); // Switch to test discrete mobility
+    bool dm_sr = default(false); // Signal routing in case of discrete mobility
 
 	int sampleSize = default (12);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes

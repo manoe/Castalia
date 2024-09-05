@@ -33,6 +33,7 @@ void ForestFire::startup()
     report_info_table.clear();
 
     test_dm=par("test_dm");
+    dm_sr=par("dm_sr");
     if(test_dm) {
         trace()<<"[info] test_dm - Discrete mobility testing activated";
         setTimer(ForestFireTimers::TEST_DM, 700.0);
@@ -208,7 +209,12 @@ void ForestFire::timerFiredCallback(int timer)
         case ForestFireTimers::TEST_DM: {
             trace()<<"[info] TEST_DM timer expired";
 
-            auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("mobilityManager"))->getLocation();
+            if(dm_sr) {
+                trace()<<"[info] Alerting routing - prepare:";
+                alertRouting(MsgType::PREP_MOBILITY);
+            }
+
+            auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
             DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
             dm_msg->setX(pos.x/2.0);
             dm_msg->setY(pos.y/2.0);
@@ -220,8 +226,18 @@ void ForestFire::timerFiredCallback(int timer)
     }
 }
 
-void ForestFire::handleMobility(cMessage *) {
+void ForestFire::handleMobility(cMessage *msg) {
     trace()<<"[info] Entering handleMobility";
+    switch (msg->getKind()) {
+        case MobilityManagerMessageType::DISCRETE_MOBILITY_ACK: {
+            trace()<<"[info] DISCRETE_MOBILITY_ACK received";
+            break;
+        }
+        case MobilityManagerMessageType::DISCRETE_MOBILITY_NACK: {
+            trace()<<"[info] DISCRETE_MOBILITY_NACK received";
+            break;
+        }
+    }
 }
 
 
