@@ -231,11 +231,17 @@ void ForestFire::handleMobility(cMessage *msg) {
     switch (msg->getKind()) {
         case MobilityManagerMessageType::DISCRETE_MOBILITY_ACK: {
             trace()<<"[info] DISCRETE_MOBILITY_ACK received";
+            if(dm_sr) {
+                alertRouting(MsgType::RELEARN);
+            }
             break;
         }
         case MobilityManagerMessageType::DISCRETE_MOBILITY_NACK: {
             trace()<<"[info] DISCRETE_MOBILITY_NACK received";
             break;
+        }
+        default: {
+            trace()<<"[info] Unknown messsage, what's going on?";
         }
     }
 }
