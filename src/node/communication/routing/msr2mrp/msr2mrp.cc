@@ -2770,7 +2770,12 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
         case MsgType::RELEARN: {
             extTrace()<<"[info] Application finished mobility, relearn.";
             setState(msr2mrpStateDef::LIMIT);
-
+            sendRireq();
+            break;
+        }
+        default: {
+            extTrace()<<"[info] Unknown network control command";
+            break;
         }
     }
 }
