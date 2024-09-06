@@ -2141,6 +2141,8 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
 
     extTrace()<<"[info] Packet received from: NW "<<net_pkt->getSource()<<" MAC: "<<srcMacAddress<<" Sink: "<<net_pkt->getSink();
 
+    // getSink() would return a \0 terminated string, if the sink field is not set.
+    // Hopefully, \0 is not equal to 0\0, i.e. with the sink address, set to zero.
     if(engine_table.find(net_pkt->getSink()) != engine_table.end()) {
         trace()<<"[info] Engine found: "<<net_pkt->getSink();
         engine_table[net_pkt->getSink()]->fromMacLayer(pkt,srcMacAddress,rssi,lqi);
@@ -2243,6 +2245,9 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                         markRinvEntryFail(std::string(rwarn_pkt->getSource()));
                     }
                     break;
+                }
+                case msr2mrpWarnDef::MOBILITY_EVENT: {
+                    extTrace()<<"[info] MOBILITY_EVENT";
                 }
             }
             break;
