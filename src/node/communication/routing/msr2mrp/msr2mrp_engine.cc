@@ -2338,6 +2338,10 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                     }
                     break;
                 }
+                case msr2mrpWarnDef::MOBILITY_EVENT: {
+                    extTrace()<<"[info] MOBILITY_EVENT";
+                    break;
+                }
             }
             break;
         }

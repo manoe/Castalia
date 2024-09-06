@@ -2687,6 +2687,9 @@ void msr2mrp::finishSpecific() {
     return;
 }
 
+
+// This simply does not work with MSR2MRP. The failing link information does not reach the engines.
+// A global, that is node level table should be maintained where fail/ack information is stored. 
 void msr2mrp::handleMacControlMessage(cMessage *msg) {
     extTrace()<<"[info] Entering handleMacControlMessage()";
     /* Something we should do about buffer overflow */
