@@ -2733,6 +2733,12 @@ void msr2mrp::handleMacControlMessage(cMessage *msg) {
     }
     extTrace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
     std::string nw_address = std::to_string(mac_msg->getDestination());
+    for(auto re: engine_table) {
+        if(re.second->checkRoute(nw_address)) {
+            trace()<<"[info] Node present in engine's routing table";
+        }
+    } 
+    
     if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
 //        if(rreq_table.find(nw_address) != rreq_table.end() && (msr2mrpStateDef::ESTABLISH == getState() || msr2mrpStateDef::S_ESTABLISH == getState() ) ){
 //            rreq_table[nw_address].ack_count++;
