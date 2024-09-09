@@ -175,7 +175,6 @@ class msr2mrp_engine {
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
         bool checkPathid(int);
-        bool checkRoute(std::string);
         int  calculateRepeat(const char *);
         int  getRoutingTableSize() { return routing_table.size();};
 
@@ -243,6 +242,8 @@ class msr2mrp_engine {
         int  getRound() const;
         bool getSecL();
         bool isMaster() const;
+
+        bool checkRoute(std::string);
        
         bool isLimitedState() { return g_limited_state; };
         void setLimitedState(bool state) { g_limited_state=state; };
