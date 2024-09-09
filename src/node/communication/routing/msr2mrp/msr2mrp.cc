@@ -88,18 +88,20 @@ void msr2mrp::startup() {
 
     if(isSink()) {
         trace()<<"[info] Sink start.";
+        setState(msr2mrpStateDef::WORK);
         engine_table[SELF_NETWORK_ADDRESS]=new msr2mrp_engine(this,
                                                               isSink(),
                                                               isMaster(),
                                                               SELF_NETWORK_ADDRESS,
                                                               SELF_NETWORK_ADDRESS,
                                                               fp,
-                                                              netDataFrameOverhead);
+                                                              netDataFrameOverhead,
+                                                              getState()
+                                                              );
         updateTimer();
         setHop(0);
         initPongTableSize();
 //        setTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
-        setState(msr2mrpStateDef::WORK);
 //        if(fp.second_learn != msr2mrpSecLParDef::OFF) {
 //            setTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
     } else {
@@ -2180,7 +2182,9 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                                                               net_pkt->getSink(),
                                                               SELF_NETWORK_ADDRESS,
                                                               fp,
-                                                              netDataFrameOverhead);
+                                                              netDataFrameOverhead,
+                                                              getState()
+                                                              );
             engine_table[net_pkt->getSink()]->fromMacLayer(pkt, srcMacAddress, rssi, lqi);
             updateTimer();
             break;

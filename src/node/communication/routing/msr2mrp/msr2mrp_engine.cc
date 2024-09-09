@@ -9,7 +9,7 @@
 
 #include "node/communication/routing/msr2mrp/msr2mrp_engine.h"
 
-msr2mrp_engine::msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, std::string sink_addr, std::string self_addr, msr2mrp_feat_par fp, int netDataFrameOverhead) :
+msr2mrp_engine::msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, std::string sink_addr, std::string self_addr, msr2mrp_feat_par fp, int netDataFrameOverhead, msr2mrpStateDef state) :
             nw_layer(nw_layer),
             g_sink_addr(sink_addr),
             selfAddress(self_addr),
