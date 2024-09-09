@@ -32,6 +32,9 @@ msr2mrp_engine::msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, 
                     SetTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
                 }
             } else {
+                if(msr2mrpStateDef::LIMIT == state) {
+                    setLimitedState(true);
+                }
                 setHop(std::numeric_limits<int>::max());
                 setState(msr2mrpStateDef::INIT);
             }
@@ -1990,7 +1993,11 @@ void msr2mrp_engine::timerFiredCallback(int index) {
                     SetTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
                 }
                 setState(msr2mrpStateDef::WORK);
-                sendRinvBasedOnHop();
+                if(isLimitedState()) {
+                    extTrace()<<"[info] Node is in LIMIT state, not sending RINV message.";
+                } else {
+                    sendRinvBasedOnHop();
+                }
             }
             break;
         }
@@ -2004,7 +2011,12 @@ void msr2mrp_engine::timerFiredCallback(int index) {
                 }
 
             setState(msr2mrpStateDef::WORK);
-            sendRinvBasedOnHop();
+            if(isLimitedState()) {
+                extTrace()<<"[info] Node is in LIMIT state, not sending RINV message.";
+            } else {
+                sendRinvBasedOnHop();
+            }
+
             break;
         }
         case msr2mrpTimerDef::T_SEND_PKT: {

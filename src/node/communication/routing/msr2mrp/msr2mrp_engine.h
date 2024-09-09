@@ -61,7 +61,7 @@ class msr2mrp_engine {
         bool g_is_master=false;
         msr2mrp_feat_par fp;
         msr2mrpStateDef g_state;
-        bool g_limited_state;
+        bool g_limited_state=false;
         std::map<std::string,msr2mrp_node_entry> rinv_table;
         std::map<std::string,msr2mrp_node_entry> rreq_table;
         std::map<std::string,msr2mrp_node_entry> routing_table;
@@ -245,7 +245,7 @@ class msr2mrp_engine {
         bool isMaster() const;
        
         bool isLimitedState() { return g_limited_state; };
-        bool setLimitedState(bool state) { g_limited_state=state; };
+        void setLimitedState(bool state) { g_limited_state=state; };
 
         int getPongTableSize() const;
         void initPongTableSize();
