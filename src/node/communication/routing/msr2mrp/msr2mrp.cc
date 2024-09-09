@@ -516,6 +516,13 @@ string msr2mrp::stateToStr(msr2mrpStateDef state) const {
         case msr2mrpStateDef::S_ESTABLISH: {
             return "S_ESTABLISH";
         }
+        case msr2mrpStateDef::LOCK: {
+            return "LOCK";
+        }
+        case msr2mrpStateDef::LIMIT: {
+            return "LIMIT";
+        }
+
     }
     return "UNKNOWN";
 
@@ -2248,6 +2255,9 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                 }
                 case msr2mrpWarnDef::MOBILITY_EVENT: {
                     extTrace()<<"[info] MOBILITY_EVENT";
+                    for(auto engine: engine_table) {
+                        engine.second->fromMacLayer(pkt, srcMacAddress, rssi, lqi);
+                    }
                 }
             }
             break;

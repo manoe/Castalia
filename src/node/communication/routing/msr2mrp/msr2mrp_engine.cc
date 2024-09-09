@@ -2340,6 +2340,32 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                 }
                 case msr2mrpWarnDef::MOBILITY_EVENT: {
                     extTrace()<<"[info] MOBILITY_EVENT";
+                    if(checkRoute(std::string(rwarn_pkt->getSource()))) {
+                        auto p=routing_table[rwarn_pkt->getSource()].pathid;
+                        removeRoute(std::string(rwarn_pkt->getSource()));
+                        try { 
+                            removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                        } catch (no_available_entry &e) {
+                            extTrace()<<"[error] "<<e.what()<<", trying backup table";
+                            try {
+                                removeRreqEntry(std::string(rwarn_pkt->getSource()),true);
+                            } catch (no_available_entry &e) {
+                                extTrace()<<"[error] "<<e.what()<<", backup table failed, giving up";
+                                break;
+                            }
+                        }
+                        try {
+                            markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                        } catch ( no_available_entry &e) {
+                            extTrace()<<"[error] "<<e.what();
+                        }
+                        handleLinkFailure(p[0].pathid);
+                    } else if(rreqEntryExists(std::string(rwarn_pkt->getSource()))) {
+                        removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                        markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                    } else if(checkRinvEntry(std::string(rwarn_pkt->getSource()))) {
+                        markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                    }
                     break;
                 }
             }
