@@ -2268,6 +2268,14 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
             }
             break;
         }
+        case msr2mrpPacketDef::RIREQ_PACKET: {
+            extTrace()<<"[info] RIREQ_PACKET received";
+            for(auto engine: engine_table) {
+                engine.second->fromMacLayer(pkt, srcMacAddress, rssi, lqi);
+            }
+            break;
+        }
+
         case msr2mrpPacketDef::PING_PACKET: {
             extTrace()<<"[info] PING_PACKET received";
             sendPong(dynamic_cast<msr2mrpPingPacket *>(pkt)->getRound());
