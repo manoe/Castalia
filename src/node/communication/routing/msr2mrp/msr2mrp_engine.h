@@ -61,6 +61,7 @@ class msr2mrp_engine {
         bool g_is_master=false;
         msr2mrp_feat_par fp;
         msr2mrpStateDef g_state;
+        bool g_limited_state=false;
         std::map<std::string,msr2mrp_node_entry> rinv_table;
         std::map<std::string,msr2mrp_node_entry> rreq_table;
         std::map<std::string,msr2mrp_node_entry> routing_table;
@@ -174,7 +175,6 @@ class msr2mrp_engine {
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
         bool checkPathid(int);
-        bool checkRoute(std::string);
         int  calculateRepeat(const char *);
         int  getRoutingTableSize() { return routing_table.size();};
 
@@ -228,7 +228,7 @@ class msr2mrp_engine {
         cPacket* decapsulatePacket(cPacket * pkt);
 
     public:
-        msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, std::string sink_addr, std::string self_addr, msr2mrp_feat_par fp, int netDataFrameOverhead);
+        msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, std::string sink_addr, std::string self_addr, msr2mrp_feat_par fp, int netDataFrameOverhead, msr2mrpStateDef);
 
         void timerFiredCallback(int);
         void fromMacLayer(cPacket *, int, double, double);
@@ -243,6 +243,10 @@ class msr2mrp_engine {
         bool getSecL();
         bool isMaster() const;
 
+        bool checkRoute(std::string);
+       
+        bool isLimitedState() { return g_limited_state; };
+        void setLimitedState(bool state) { g_limited_state=state; };
 
         int getPongTableSize() const;
         void initPongTableSize();

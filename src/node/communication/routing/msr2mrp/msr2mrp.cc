@@ -88,18 +88,20 @@ void msr2mrp::startup() {
 
     if(isSink()) {
         trace()<<"[info] Sink start.";
+        setState(msr2mrpStateDef::WORK);
         engine_table[SELF_NETWORK_ADDRESS]=new msr2mrp_engine(this,
                                                               isSink(),
                                                               isMaster(),
                                                               SELF_NETWORK_ADDRESS,
                                                               SELF_NETWORK_ADDRESS,
                                                               fp,
-                                                              netDataFrameOverhead);
+                                                              netDataFrameOverhead,
+                                                              getState()
+                                                              );
         updateTimer();
         setHop(0);
         initPongTableSize();
 //        setTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
-        setState(msr2mrpStateDef::WORK);
 //        if(fp.second_learn != msr2mrpSecLParDef::OFF) {
 //            setTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
     } else {
@@ -516,6 +518,13 @@ string msr2mrp::stateToStr(msr2mrpStateDef state) const {
         case msr2mrpStateDef::S_ESTABLISH: {
             return "S_ESTABLISH";
         }
+        case msr2mrpStateDef::LOCK: {
+            return "LOCK";
+        }
+        case msr2mrpStateDef::LIMIT: {
+            return "LIMIT";
+        }
+
     }
     return "UNKNOWN";
 
@@ -2141,6 +2150,14 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
 
     extTrace()<<"[info] Packet received from: NW "<<net_pkt->getSource()<<" MAC: "<<srcMacAddress<<" Sink: "<<net_pkt->getSink();
 
+    // getSink() would return a \0 terminated string, if the sink field is not set.
+    // Hopefully, \0 is not equal to 0\0, i.e. with the sink address, set to zero.
+    //
+    if(msr2mrpStateDef::LOCK==getState()) {
+        trace()<<"[info] Node in LOCK state, rejecting message.";
+        return;
+    }
+
     if(engine_table.find(net_pkt->getSink()) != engine_table.end()) {
         trace()<<"[info] Engine found: "<<net_pkt->getSink();
         engine_table[net_pkt->getSink()]->fromMacLayer(pkt,srcMacAddress,rssi,lqi);
@@ -2165,7 +2182,9 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                                                               net_pkt->getSink(),
                                                               SELF_NETWORK_ADDRESS,
                                                               fp,
-                                                              netDataFrameOverhead);
+                                                              netDataFrameOverhead,
+                                                              getState()
+                                                              );
             engine_table[net_pkt->getSink()]->fromMacLayer(pkt, srcMacAddress, rssi, lqi);
             updateTimer();
             break;
@@ -2244,9 +2263,23 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                     }
                     break;
                 }
+                case msr2mrpWarnDef::MOBILITY_EVENT: {
+                    extTrace()<<"[info] MOBILITY_EVENT";
+                    for(auto engine: engine_table) {
+                        engine.second->fromMacLayer(pkt, srcMacAddress, rssi, lqi);
+                    }
+                }
             }
             break;
         }
+        case msr2mrpPacketDef::RIREQ_PACKET: {
+            extTrace()<<"[info] RIREQ_PACKET received";
+            for(auto engine: engine_table) {
+                engine.second->fromMacLayer(pkt, srcMacAddress, rssi, lqi);
+            }
+            break;
+        }
+
         case msr2mrpPacketDef::PING_PACKET: {
             extTrace()<<"[info] PING_PACKET received";
             sendPong(dynamic_cast<msr2mrpPingPacket *>(pkt)->getRound());
@@ -2682,6 +2715,9 @@ void msr2mrp::finishSpecific() {
     return;
 }
 
+
+// This simply does not work with MSR2MRP. The failing link information does not reach the engines.
+// A global, that is node level table should be maintained where fail/ack information is stored. 
 void msr2mrp::handleMacControlMessage(cMessage *msg) {
     extTrace()<<"[info] Entering handleMacControlMessage()";
     /* Something we should do about buffer overflow */

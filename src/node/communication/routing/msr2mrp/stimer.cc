@@ -70,8 +70,6 @@ void SerialTimer::setTimer(int machine, int index, simtime_t time, simtime_t cur
         sum += it->time;
     }
 
-    out<<"FASZOM5";
-
     item.time -= sum;
     timers.push_back(item);
     out<<"[stimer] Timer pushed back.";

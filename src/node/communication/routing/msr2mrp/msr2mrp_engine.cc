@@ -9,7 +9,7 @@
 
 #include "node/communication/routing/msr2mrp/msr2mrp_engine.h"
 
-msr2mrp_engine::msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, std::string sink_addr, std::string self_addr, msr2mrp_feat_par fp, int netDataFrameOverhead) :
+msr2mrp_engine::msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, std::string sink_addr, std::string self_addr, msr2mrp_feat_par fp, int netDataFrameOverhead, msr2mrpStateDef state) :
             nw_layer(nw_layer),
             g_sink_addr(sink_addr),
             selfAddress(self_addr),
@@ -32,6 +32,9 @@ msr2mrp_engine::msr2mrp_engine(msr2mrp *nw_layer, bool is_sink, bool is_master, 
                     SetTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
                 }
             } else {
+                if(msr2mrpStateDef::LIMIT == state) {
+                    setLimitedState(true);
+                }
                 setHop(std::numeric_limits<int>::max());
                 setState(msr2mrpStateDef::INIT);
             }
@@ -1990,7 +1993,11 @@ void msr2mrp_engine::timerFiredCallback(int index) {
                     SetTimer(msr2mrpTimerDef::T_SEND_PKT,fp.t_send_pkt);
                 }
                 setState(msr2mrpStateDef::WORK);
-                sendRinvBasedOnHop();
+                if(isLimitedState()) {
+                    extTrace()<<"[info] Node is in LIMIT state, not sending RINV message.";
+                } else {
+                    sendRinvBasedOnHop();
+                }
             }
             break;
         }
@@ -2004,7 +2011,12 @@ void msr2mrp_engine::timerFiredCallback(int index) {
                 }
 
             setState(msr2mrpStateDef::WORK);
-            sendRinvBasedOnHop();
+            if(isLimitedState()) {
+                extTrace()<<"[info] Node is in LIMIT state, not sending RINV message.";
+            } else {
+                sendRinvBasedOnHop();
+            }
+
             break;
         }
         case msr2mrpTimerDef::T_SEND_PKT: {
@@ -2338,9 +2350,45 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                     }
                     break;
                 }
+                case msr2mrpWarnDef::MOBILITY_EVENT: {
+                    extTrace()<<"[info] MOBILITY_EVENT";
+                    if(checkRoute(std::string(rwarn_pkt->getSource()))) {
+                        auto p=routing_table[rwarn_pkt->getSource()].pathid;
+                        removeRoute(std::string(rwarn_pkt->getSource()));
+                        try { 
+                            removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                        } catch (no_available_entry &e) {
+                            extTrace()<<"[error] "<<e.what()<<", trying backup table";
+                            try {
+                                removeRreqEntry(std::string(rwarn_pkt->getSource()),true);
+                            } catch (no_available_entry &e) {
+                                extTrace()<<"[error] "<<e.what()<<", backup table failed, giving up";
+                                break;
+                            }
+                        }
+                        try {
+                            markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                        } catch ( no_available_entry &e) {
+                            extTrace()<<"[error] "<<e.what();
+                        }
+                        handleLinkFailure(p[0].pathid);
+                    } else if(rreqEntryExists(std::string(rwarn_pkt->getSource()))) {
+                        removeRreqEntry(std::string(rwarn_pkt->getSource()));
+                        markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                    } else if(checkRinvEntry(std::string(rwarn_pkt->getSource()))) {
+                        markRinvEntryFail(std::string(rwarn_pkt->getSource()));
+                    }
+                    break;
+                }
             }
             break;
         }
+        case msr2mrpPacketDef::RIREQ_PACKET: {
+            extTrace()<<"[info] RIREQ_PACKET received";
+            sendRinvBasedOnHop();
+            break;
+        }
+
         case msr2mrpPacketDef::PING_PACKET: {
             extTrace()<<"[info] PING_PACKET received";
             sendPong(dynamic_cast<msr2mrpPingPacket *>(pkt)->getRound());
