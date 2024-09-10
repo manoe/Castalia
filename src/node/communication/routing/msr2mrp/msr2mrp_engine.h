@@ -233,6 +233,7 @@ class msr2mrp_engine {
         void timerFiredCallback(int);
         void fromMacLayer(cPacket *, int, double, double);
         void fromApplicationLayer(cPacket *, const char *);
+        void handleMacControlMessage(cMessage *);
 
         msr2mrpRingDef getRingStatus() const;
         msr2mrpStateDef getState() const;
