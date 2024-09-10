@@ -2879,53 +2879,49 @@ void msr2mrp_engine::finishSpecific() {
     return;
 }
 
-//void msr2mrp_engine::handleMacControlMessage(cMessage *msg) {
-//    extTrace()<<"[info] Entering handleMacControlMessage()";
-//    /* Something we should do about buffer overflow */
-//    MacControlMessage *mac_ctrl_msg=check_and_cast<MacControlMessage *>(msg);
-//    if(MacControlMessage_type::MAC_BUFFER_FULL == mac_ctrl_msg->getMacControlMessageKind()) {
-//        extTrace()<<"[error] MAC buffer full";
-//        return;
-//    }
-//    TMacControlMessage *mac_msg=check_and_cast<TMacControlMessage *>(msg);
-//    if(!mac_msg) {
-//        extTrace()<<"[error] Not TMacControlMessage";
-//        throw cRuntimeError("[error] Message not a TMacControlMessage");
-//    }
-//    extTrace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
-//    std::string nw_address = std::to_string(mac_msg->getDestination());
-//    if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
-////        if(rreq_table.find(nw_address) != rreq_table.end() && (msr2mrpStateDef::ESTABLISH == getState() || msr2mrpStateDef::S_ESTABLISH == getState() ) ){
-////            rreq_table[nw_address].ack_count++;
-////        }
-//        if(routing_table.find(nw_address) != routing_table.end()) {
-//            routing_table[nw_address].ack_count++;
-//            if(fp.detect_link_fail) {
-//                extTrace()<<"[info] Resetting fail_count";
-//                routing_table[nw_address].fail_count = 0;
-//            }
-//        }
-//    }
-//    if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
-//        if(routing_table.find(nw_address) != routing_table.end()) {
-//            routing_table[nw_address].fail_count++;
-//            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getHop() > 2 && getState() == msr2mrpStateDef::WORK) { // Ugly :-( - do not check for secL
-//                extTrace()<<"[info] Link "<<nw_address<<" failed, removing";
-//                auto p=routing_table[nw_address].pathid;
-//                removeRoute(nw_address);
-//                removeRreqEntry(nw_address);
-//                try {
-//                    markRinvEntryFail(nw_address);
-//                } catch ( no_available_entry &e) {
-//                    extTrace()<<"[error] "<<e.what();
-//                }
-//
-//                handleLinkFailure(p[0].pathid);
-//            }
-//        }
-//    }
-//    delete msg;
-//}
+void msr2mrp_engine::handleMacControlMessage(cMessage *msg) {
+    extTrace()<<"[info] Entering handleMacControlMessage()";
+    TMacControlMessage *mac_msg=check_and_cast<TMacControlMessage *>(msg);
+    if(!mac_msg) {
+        extTrace()<<"[error] Not TMacControlMessage";
+        throw cRuntimeError("[error] Message not a TMacControlMessage");
+    }
+    extTrace()<<"[info] Event: "<<mac_msg->getMacControlMessageKind()<<" Node: "<<mac_msg->getDestination()<<" Seqnum: "<<mac_msg->getSeq_num();
+    std::string nw_address = std::to_string(mac_msg->getDestination());
+    switch (mac_msg->getMacControlMessageKind()) {
+        case MacControlMessage_type::ACK_RECV: {
+            extTrace()<<"[info] ACK_RECV received.";
+            if(routing_table.find(nw_address) != routing_table.end()) {
+                routing_table[nw_address].ack_count++;
+                if(fp.detect_link_fail) {
+                    extTrace()<<"[info] Resetting fail_count";
+                    routing_table[nw_address].fail_count = 0;
+                }
+            }
+            break;
+        }
+        case MacControlMessage_type::PKT_FAIL: {
+            extTrace()<<"[info] PKT_FAIL received.";
+            if(routing_table.find(nw_address) != routing_table.end()) {
+                routing_table[nw_address].fail_count++;
+                if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getHop() > 2 && getState() == msr2mrpStateDef::WORK) { // Ugly :-( - do not check for secL
+                    extTrace()<<"[info] Link "<<nw_address<<" failed, removing";
+                    auto p=routing_table[nw_address].pathid;
+                    removeRoute(nw_address);
+                    removeRreqEntry(nw_address);
+                    try {
+                        markRinvEntryFail(nw_address);
+                    } catch ( no_available_entry &e) {
+                        extTrace()<<"[error] "<<e.what();
+                    }
+    
+                    handleLinkFailure(p[0].pathid);
+                }
+            }
+            break;
+        }
+    }
+}
 
 bool msr2mrp_engine::secLPerformed(int round, int pathid) {
     extTrace()<<"[info] Entering secLPerformed(round="<<round<<", pathid="<<pathid<<")";
