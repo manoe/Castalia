@@ -2738,37 +2738,45 @@ void msr2mrp::handleMacControlMessage(cMessage *msg) {
             trace()<<"[info] Node present in engine's routing table";
         }
     } 
-    
-    if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
-//        if(rreq_table.find(nw_address) != rreq_table.end() && (msr2mrpStateDef::ESTABLISH == getState() || msr2mrpStateDef::S_ESTABLISH == getState() ) ){
-//            rreq_table[nw_address].ack_count++;
-//        }
-        if(routing_table.find(nw_address) != routing_table.end()) {
-            routing_table[nw_address].ack_count++;
-            if(fp.detect_link_fail) {
-                extTrace()<<"[info] Resetting fail_count";
-                routing_table[nw_address].fail_count = 0;
-            }
-        }
-    }
-    if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
-        if(routing_table.find(nw_address) != routing_table.end()) {
-            routing_table[nw_address].fail_count++;
-            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getHop() > 2 && getState() == msr2mrpStateDef::WORK) { // Ugly :-( - do not check for secL
-                extTrace()<<"[info] Link "<<nw_address<<" failed, removing";
-                auto p=routing_table[nw_address].pathid;
-                removeRoute(nw_address);
-                removeRreqEntry(nw_address);
-                try {
-                    markRinvEntryFail(nw_address);
-                } catch ( no_available_entry &e) {
-                    extTrace()<<"[error] "<<e.what();
-                }
 
-                handleLinkFailure(p[0].pathid);
-            }
+
+    switch (mac_msg->getMacControlMessageKind()) {
+        case MacControlMessage_type::ACK_RECV: {
+            extTrace()<<"[info] ACK_RECV received.";
+            break;
+        }
+        case MacControlMessage_type::PKT_FAIL: {
+            extTrace()<<"[info] PKT_FAIL received.";
+            break;
         }
     }
+//    if(MacControlMessage_type::ACK_RECV == mac_msg->getMacControlMessageKind()) {
+//        if(routing_table.find(nw_address) != routing_table.end()) {
+//            routing_table[nw_address].ack_count++;
+//            if(fp.detect_link_fail) {
+//                extTrace()<<"[info] Resetting fail_count";
+//                routing_table[nw_address].fail_count = 0;
+//            }
+//        }
+//    }
+//    if(MacControlMessage_type::PKT_FAIL == mac_msg->getMacControlMessageKind()) {
+//        if(routing_table.find(nw_address) != routing_table.end()) {
+//            routing_table[nw_address].fail_count++;
+//            if(fp.detect_link_fail && fp.fail_count <= static_cast<int>(static_cast<double>(routing_table[nw_address].fail_count))/fp.qos_pdr && getHop() > 2 && getState() == msr2mrpStateDef::WORK) { // Ugly :-( - do not check for secL
+//                extTrace()<<"[info] Link "<<nw_address<<" failed, removing";
+//                auto p=routing_table[nw_address].pathid;
+//                removeRoute(nw_address);
+//                removeRreqEntry(nw_address);
+//                try {
+//                    markRinvEntryFail(nw_address);
+//                } catch ( no_available_entry &e) {
+//                    extTrace()<<"[error] "<<e.what();
+//                }
+//
+//                handleLinkFailure(p[0].pathid);
+//            }
+//        }
+//    }
     delete msg;
 }
 
