@@ -578,6 +578,7 @@ double ForestFire::getEmergencyValue() {
 }
 
 void ForestFire::notifySensorManager(int msg_type) {
+    trace()<<"Notify Sensor manager with msg: "<<msg_type;
     cMessage *msg=new cMessage("Notify sensorManager", msg_type);
     send(msg,"toSensorDeviceManager");
 }
