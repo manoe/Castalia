@@ -234,6 +234,7 @@ void ForestFire::handleMobility(cMessage *msg) {
             if(dm_sr) {
                 alertRouting(MsgType::RELEARN);
             }
+            notifySensorManager(POSITION_UPDATE);
             break;
         }
         case MobilityManagerMessageType::DISCRETE_MOBILITY_NACK: {
@@ -575,3 +576,9 @@ double ForestFire::getEmergencyValue() {
     }
     return ret_val;
 }
+
+void ForestFire::notifySensorManager(int msg_type) {
+    cMessage *msg=new cMessage("Notify sensorManager", msg_type);
+    send(msg,"toSensorDeviceManager");
+}
+
