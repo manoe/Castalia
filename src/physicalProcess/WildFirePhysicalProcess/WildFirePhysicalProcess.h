@@ -18,6 +18,7 @@
 #include "physicalProcess/PhysicalEventMessage_m.h"
 #include "wf.h"
 #include <yaml-cpp/yaml.h>
+#include <cmath>
 
 typedef struct {
 	simtime_t time;
@@ -57,6 +58,7 @@ class WildFirePhysicalProcess: public CastaliaModule {
     int step=0;
     std::string yp_coding;
     YAML::Emitter y_out;
+    double rad_res;
 
  protected:
 	virtual void initialize();
@@ -81,6 +83,8 @@ class WildFirePhysicalProcess: public CastaliaModule {
     void deleteCellStates(CellState** states);
     double calculateDistance(CellPosition x, CellPosition y);
     void dumpPlane();
+ public:
+     vector<nodeLocation> collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord);
 
 };
 

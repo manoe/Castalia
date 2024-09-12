@@ -226,6 +226,7 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     plane_to_yaml   = par("plane_to_yaml");
     step_limit      = par("step_limit");
     yp_coding       = par("yp_coding").stringValue();
+    rad_res         = par("rad_res");
 }
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {
@@ -337,6 +338,22 @@ std::vector<int> WildFirePhysicalProcess::getDestroyedNodes(std::vector<CellPosi
     }
     return b_nodes;
 }
+
+
+vector<nodeLocation> WildFirePhysicalProcess::collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord) {
+  double pi = std::acos(-1);
+  vector<nodeLocation> v_pos;
+  for(double i=0; i < 1 ; i+=rad_res) {
+      double x=x_sim_coord+radius*std::cos(2*pi*i);
+      double y=y_sim_coord+radius*std::sin(2*pi*i);
+      auto state = wf_ca->getState(getMapCoordinates(x, y));
+      if(CellState::NOT_IGNITED == state || CellState::NO_FUEL == state) {
+          v_pos.push_back({x,y});
+      }
+  }
+}
+
+
 
 void WildFirePhysicalProcess::signalTermination(std::vector<int> nodes) {
     if(!nodes.size()) {

@@ -43,6 +43,7 @@ parameters:
     bool    plane_to_yaml    = default(false);   // - serialize WF plane to yaml after every iteration
     string  yp_coding        = default("digit"); // - how to code yaml plane, digit or enum
 	string  description      = default ("CA based wildfire");
+    double  rad_res          = default(0.01);    // - radius resolution
 
  gates:
 	output toNode[];
