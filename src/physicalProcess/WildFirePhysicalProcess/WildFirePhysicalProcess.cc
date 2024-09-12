@@ -166,6 +166,14 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             PhysicalEventMessage *reg_msg=check_and_cast<PhysicalEventMessage *>(msg);
             if(EventType::REGISTER==reg_msg->getEvent()) {
                 trace()<<reg_msg->getSrcID()<<" registered. Position x: "<<reg_msg->getXCoor()<<" y: "<<reg_msg->getYCoor();
+                for(auto it = subs.begin() ; it != subs.end() ;) {
+                    if(it->id == reg_msg->getSrcID()) {
+                        trace()<<"record "<<reg_msg->getSrcID()<<" found, removing";
+                        it = subs.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
                 subs.push_back({reg_msg->getSrcID(), reg_msg->getXCoor(), reg_msg->getYCoor()});
             }
             delete msg;

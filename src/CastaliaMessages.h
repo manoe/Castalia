@@ -29,6 +29,7 @@ enum CastaliaMessageTypes {
 	RESOURCE_MANAGER_DRAW_POWER = 6,
 	PHYSICAL_PROCESS_SAMPLING = 7,
     PHYSICAL_EVENT = 8,
+    
 
 	WC_SIGNAL_START = 9,
 	WC_SIGNAL_END = 10,
@@ -49,7 +50,8 @@ enum CastaliaMessageTypes {
 
 	APPLICATION_PACKET = 50,
 
-    TERMINAL_EVENT = 60
+    TERMINAL_EVENT = 60,
+    POSITION_UPDATE = 61
 };
 
 #endif

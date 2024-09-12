@@ -74,6 +74,22 @@ void SensorManager::handleMessage(cMessage * msg)
             }
 			break;
 		}
+        case POSITION_UPDATE: {
+            trace()<<"Received POSITION_UPDATE";
+            PhysicalEventMessage *reg_msg=new PhysicalEventMessage("register node", PHYSICAL_EVENT);
+		    reg_msg->setSrcID(self);	//insert information about the ID of the node
+		    reg_msg->setXCoor(nodeMobilityModule->getLocation().x);
+		    reg_msg->setYCoor(nodeMobilityModule->getLocation().y);
+            
+            trace()<<"Position x: "<<nodeMobilityModule->getLocation().x<<" y: "<<nodeMobilityModule->getLocation().y;
+            
+            reg_msg->setEvent(EventType::REGISTER);
+            
+            // Ugly hack, but at this point we assume that there is only one physical process
+            // An alternative solution would be to iterate through all physical processes
+		    send(reg_msg, "toNodeContainerModule", corrPhyProcess[0]);
+            
+        } 
 
 		/*
 		 * Sent from Application to initiate a new sample request to the physical process.

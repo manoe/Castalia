@@ -108,6 +108,7 @@ class ForestFire : public VirtualApplication {
     void serializeEnergy();
     map<int,int> summarizeSentPkts(std::vector<map<int,set<int>>>);
     void handleMobility(cMessage *);
+    void notifySensorManager(int);
  public:
     int getReportSent();
     int getEventSent();
