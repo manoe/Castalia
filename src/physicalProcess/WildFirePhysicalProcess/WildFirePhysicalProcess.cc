@@ -76,6 +76,13 @@ double WildFirePhysicalProcess::calculateDistance(CellPosition x, CellPosition y
     return sqrt(pow(static_cast<double>(x.x) - static_cast<double>(y.x),2) + pow(static_cast<double>(x.y) - static_cast<double>(y.y),2));
 }
 
+
+double WildFirePhysicalProcess::calculateDistance(nodeRecord x, nodeRecord y) {
+    return sqrt(pow(x.x - y.x,2) + pow(x.y - y.y,2));
+}
+
+
+
 double WildFirePhysicalProcess::calculateSensorValue(CellState** states) {
     double ret_val=0;
     for(int i=0 ; i < sense_distance*2+1 ; ++i) {
@@ -348,14 +355,22 @@ vector<nodeRecord> WildFirePhysicalProcess::collectCellsInRadius(double radius, 
         double y=y_sim_coord+radius*std::sin(2*pi*i);
         auto state = wf_ca->getState(getMapCoordinates(x, y));
         if(CellState::NOT_IGNITED == state || CellState::NO_FUEL == state) {
-            v_pos.push_back({x,y});
+            v_pos.push_back({x,y,0});
         }
     }
 }
 
 
-vector<nodeRecord> WildFirePhysicalProcess::collectCellsInsideRadius(double radius, double x_sim_coord, double y_sim_coord) {
-
+vector<nodeRecord> WildFirePhysicalProcess::collectCellsInsideRadius(double radius, vector<nodeRecord> points) {
+    vector<nodeRecord> res;
+    for(auto nr: points) {
+        vector<nodeRecord> coll;
+        for(auto x = nr.x-radius ; x < nr.x+radius  ; x+=map_scale) {
+            for(auto y = nr.y-radius ; y < nr.y+radius; y+=map_scale) {
+                
+            }
+        }
+    }
 }
 
 
