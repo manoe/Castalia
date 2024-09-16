@@ -32,6 +32,12 @@ struct nodeLocation {
     double y_coord;
 };
 
+struct nodeRecord {
+    double x;
+    double y;
+    double value;
+};
+
 class WildFirePhysicalProcess: public CastaliaModule {
  private:
     int wf_start_x_coord;
@@ -84,7 +90,8 @@ class WildFirePhysicalProcess: public CastaliaModule {
     double calculateDistance(CellPosition x, CellPosition y);
     void dumpPlane();
  public:
-     vector<nodeLocation> collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord);
+     vector<nodeRecord> collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord);
+     vector<nodeRecord> collectCellsInsideRadius(double radius, double x_sim_coord, double y_sim_coord);
 
 };
 
