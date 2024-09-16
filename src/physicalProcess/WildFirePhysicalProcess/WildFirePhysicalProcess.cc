@@ -341,16 +341,16 @@ std::vector<int> WildFirePhysicalProcess::getDestroyedNodes(std::vector<CellPosi
 
 
 vector<nodeLocation> WildFirePhysicalProcess::collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord) {
-  double pi = std::acos(-1);
-  vector<nodeLocation> v_pos;
-  for(double i=0; i < 1 ; i+=rad_res) {
-      double x=x_sim_coord+radius*std::cos(2*pi*i);
-      double y=y_sim_coord+radius*std::sin(2*pi*i);
-      auto state = wf_ca->getState(getMapCoordinates(x, y));
-      if(CellState::NOT_IGNITED == state || CellState::NO_FUEL == state) {
-          v_pos.push_back({x,y});
-      }
-  }
+    double pi = std::acos(-1);
+    vector<nodeLocation> v_pos;
+    for(double i=0; i < 1 ; i+=rad_res) {
+        double x=x_sim_coord+radius*std::cos(2*pi*i);
+        double y=y_sim_coord+radius*std::sin(2*pi*i);
+        auto state = wf_ca->getState(getMapCoordinates(x, y));
+        if(CellState::NOT_IGNITED == state || CellState::NO_FUEL == state) {
+            v_pos.push_back({x,y});
+        }
+    }
 }
 
 
