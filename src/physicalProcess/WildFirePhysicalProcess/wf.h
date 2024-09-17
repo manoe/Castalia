@@ -198,9 +198,6 @@ class WildFireCA {
             }
         }
 
-        bool validPosition(CellPosition pos) {
-            return pos.x >=0 && pos.y >= 0 && pos.x < x_size && pos.y < y_size;
-        }
 
         float getPropagationWindAngle(CellPosition from, CellPosition to) {
             auto x_dir = to.x-from.x;
@@ -417,6 +414,10 @@ class WildFireCA {
         GridCell** getPlane() { return plane; };
         int getSizeX() { return x_size; };
         int getSizeY() { return y_size; };
+
+        bool validPosition(CellPosition pos) {
+            return pos.x >=0 && pos.y >= 0 && pos.x < x_size && pos.y < y_size;
+        }
 
         friend std::ostream& operator<<(std::ostream& os, const WildFireCA& ca) {
             for(int j=0 ; j < ca.y_size ; ++j) {
