@@ -15,6 +15,7 @@
 #include "node/application/ForestFire/forest_fire_message_m.h"
 #include "node/resourceManager/ResourceManager.h"
 #include "node/mobilityManager/MobilityManagerMessage_m.h"
+#include "physicalProcess/WildFirePhysicalProcess/WildFirePhysicalProcess.h"
 #include <yaml-cpp/yaml.h>
 
 #define REPORT_PACKET_NAME "Wildfire report"
@@ -59,6 +60,9 @@ class ForestFire : public VirtualApplication {
     double emergency_threshold;
     bool emergency;
     ResourceManager *rm;
+    WildFirePhysicalProcess *wfphy_proc;
+    double sense_and_mob_rad; 
+
 
     bool    pot_field;
     double  d_max;

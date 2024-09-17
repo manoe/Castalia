@@ -76,6 +76,13 @@ double WildFirePhysicalProcess::calculateDistance(CellPosition x, CellPosition y
     return sqrt(pow(static_cast<double>(x.x) - static_cast<double>(y.x),2) + pow(static_cast<double>(x.y) - static_cast<double>(y.y),2));
 }
 
+
+double WildFirePhysicalProcess::calculateDistance(nodeRecord x, nodeRecord y) {
+    return sqrt(pow(x.x - y.x,2) + pow(x.y - y.y,2));
+}
+
+
+
 double WildFirePhysicalProcess::calculateSensorValue(CellState** states) {
     double ret_val=0;
     for(int i=0 ; i < sense_distance*2+1 ; ++i) {
@@ -226,6 +233,9 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     plane_to_yaml   = par("plane_to_yaml");
     step_limit      = par("step_limit");
     yp_coding       = par("yp_coding").stringValue();
+    rad_res         = par("rad_res");
+    sel_all_cell    = par("sel_all_cell");
+    look_rad        = par("look_rad");
 }
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {
@@ -337,6 +347,75 @@ std::vector<int> WildFirePhysicalProcess::getDestroyedNodes(std::vector<CellPosi
     }
     return b_nodes;
 }
+
+
+vector<nodeRecord> WildFirePhysicalProcess::collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord) {
+    double pi = std::acos(-1);
+    vector<nodeRecord> v_pos;
+    for(double i=0; i < 1 ; i+=rad_res) {
+        double x=x_sim_coord+radius*std::cos(2*pi*i);
+        double y=y_sim_coord+radius*std::sin(2*pi*i);
+        auto state = wf_ca->getState(getMapCoordinates(x, y));
+        if(CellState::NOT_IGNITED == state || CellState::NO_FUEL == state) {
+            v_pos.push_back({x,y,0,0});
+        }
+    }
+    return collectCellsInsideRadius(look_rad, v_pos);
+}
+
+
+vector<nodeRecord> WildFirePhysicalProcess::collectCellsInsideRadius(double radius, vector<nodeRecord> points) {
+    vector<nodeRecord> res;
+    for(auto nr: points) {
+        int node_count=0;
+        int em_node_count=0;
+        for(auto x = nr.x-radius ; x < nr.x+radius  ; x+=static_cast<double>(map_scale)) {
+            for(auto y = nr.y-radius ; y < nr.y+radius; y+=static_cast<double>(map_scale)) {
+                if(radius >= calculateDistance(nr, {x,y,0})) {
+                   if(wf_ca->validPosition(getMapCoordinates(x,y))) {
+                       for(auto nl: subs) {
+                           if(getMapCoordinates(nl.x_coord,nl.y_coord) == getMapCoordinates(x,y)) {
+                               node_count++;
+                               auto state=wf_ca->getState(getMapCoordinates(nl.x_coord,nl.y_coord));
+                               if(state == CellState::BURNING) {
+                                   em_node_count++;
+                               }
+                           }
+                       }
+                   }
+                }
+            }
+        }
+        nodeRecord new_nr=nr;
+        new_nr.node=node_count;
+        new_nr.em_node=em_node_count;
+        if(new_nr.em_node == 0) {
+            int rep=1;
+            switch (new_nr.node) {
+                case 1: {
+                    rep+=3;
+                    break;
+                }
+                case 2: {
+                    rep+=2;
+                    break;
+                }
+                case 3: {
+                    rep+=1;
+                    break;
+                }
+            }
+            for(int i=0 ; i < rep ; ++i) {
+                res.push_back(new_nr);
+            }
+        }
+        if(new_nr.em_node == 1 && new_nr.node == 2 ||  sel_all_cell) {
+            res.push_back(new_nr);
+        }
+    }
+    return res;
+}
+
 
 void WildFirePhysicalProcess::signalTermination(std::vector<int> nodes) {
     if(!nodes.size()) {
