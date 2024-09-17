@@ -365,19 +365,20 @@ vector<nodeRecord> WildFirePhysicalProcess::collectCellsInsideRadius(double radi
     vector<nodeRecord> res;
     for(auto nr: points) {
         vector<nodeRecord> coll;
+        int node_count=0;
+        int em_node_count=0;
         for(auto x = nr.x-radius ; x < nr.x+radius  ; x+=static_cast<double>(map_scale)) {
             for(auto y = nr.y-radius ; y < nr.y+radius; y+=static_cast<double>(map_scale)) {
                 if(radius >= calculateDistance(nr, {x,y,0})) {
                    if(wf_ca->validPosition(getMapCoordinates(x,y))) {
                        for(auto nl: subs) {
                            if(getMapCoordinates(nl.x_coord,nl.y_coord) == getMapCoordinates(x,y)) {
-
+                               node_count++;
+                               auto state=wf_ca->getState(getMapCoordinates(nl.x_coord,nl.y_coord));
                            }
                        }
                    }
-                    
                 }
- 
             }
         }
     }
