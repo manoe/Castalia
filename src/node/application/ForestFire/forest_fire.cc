@@ -47,7 +47,7 @@ void ForestFire::startup()
 
     rm=dynamic_cast<ResourceManager *>(getParentModule()->getSubmodule("ResourceManager"));
 
-    wfphy_proc=dynamic_cast<WildFirePhysicalProcess *>(getParentModule()->getParentModule()->getSubmodule("PhysicalProcess"));
+    wfphy_proc=dynamic_cast<WildFirePhysicalProcess *>(getParentModule()->getParentModule()->getSubmodule("physicalProcess",0));
 
     report_timer_offset=par("report_timer_offset");
     if (!isSink) {
