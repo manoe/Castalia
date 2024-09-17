@@ -38,7 +38,7 @@ void ForestFire::startup()
         trace()<<"[info] test_dm - Discrete mobility testing activated";
         setTimer(ForestFireTimers::TEST_DM, 700.0);
     }
-
+    sense_and_mob_rad=par("sense_and_mob_rad");
     report_period=par("reportPeriod"); 
     event_period=par("eventPeriod");
     emergency_threshold=par("emergencyThreshold");
@@ -46,6 +46,8 @@ void ForestFire::startup()
     startup_delay=par("startup_delay");
 
     rm=dynamic_cast<ResourceManager *>(getParentModule()->getSubmodule("ResourceManager"));
+
+    wfphy_proc=dynamic_cast<WildFirePhysicalProcess *>(getParentModule()->getParentModule()->getSubmodule("PhysicalProcess"));
 
     report_timer_offset=par("report_timer_offset");
     if (!isSink) {
@@ -208,13 +210,15 @@ void ForestFire::timerFiredCallback(int timer)
         }
         case ForestFireTimers::TEST_DM: {
             trace()<<"[info] TEST_DM timer expired";
+            auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
+
+            auto res=wfphy_proc->collectCellsInRadius(sense_and_mob_rad,pos.x,pos.y);
 
             if(dm_sr) {
                 trace()<<"[info] Alerting routing - prepare:";
                 alertRouting(MsgType::PREP_MOBILITY);
             }
 
-            auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
             DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
             dm_msg->setX(pos.x/2.0);
             dm_msg->setY(pos.y/2.0);

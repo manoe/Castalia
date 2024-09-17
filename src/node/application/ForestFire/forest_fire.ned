@@ -42,6 +42,7 @@ simple ForestFire like node.application.iApplication {
     double eventPeriod  = default (120);  // every two min
     bool test_dm = default(false); // Switch to test discrete mobility
     bool dm_sr = default(false); // Signal routing in case of discrete mobility
+    double sense_and_mob_rad = default(20); // radius of sensing and mobility
 
 	int sampleSize = default (12);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes

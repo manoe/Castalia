@@ -93,9 +93,9 @@ class WildFirePhysicalProcess: public CastaliaModule {
     double calculateDistance(CellPosition x, CellPosition y);
     double calculateDistance(nodeRecord x, nodeRecord y);
     void dumpPlane();
+     vector<nodeRecord> collectCellsInsideRadius(double radius, vector<nodeRecord> points);
  public:
      vector<nodeRecord> collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord);
-     vector<nodeRecord> collectCellsInsideRadius(double radius, vector<nodeRecord> points);
 };
 
 #endif /* _WILDFIREPHYSICALPROCESS_H_ */

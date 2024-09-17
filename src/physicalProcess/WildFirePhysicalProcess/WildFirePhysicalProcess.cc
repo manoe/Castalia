@@ -412,7 +412,6 @@ vector<nodeRecord> WildFirePhysicalProcess::collectCellsInsideRadius(double radi
         if(new_nr.em_node == 1 && new_nr.node == 2 ||  sel_all_cell) {
             res.push_back(new_nr);
         }
-        // Parameter tuning to decide differently?
     }
     return res;
 }
