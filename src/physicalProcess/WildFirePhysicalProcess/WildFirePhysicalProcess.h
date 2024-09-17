@@ -35,7 +35,8 @@ struct nodeLocation {
 struct nodeRecord {
     double x;
     double y;
-    double value;
+    int node;
+    int em_node;
 };
 
 class WildFirePhysicalProcess: public CastaliaModule {

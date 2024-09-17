@@ -355,7 +355,7 @@ vector<nodeRecord> WildFirePhysicalProcess::collectCellsInRadius(double radius, 
         double y=y_sim_coord+radius*std::sin(2*pi*i);
         auto state = wf_ca->getState(getMapCoordinates(x, y));
         if(CellState::NOT_IGNITED == state || CellState::NO_FUEL == state) {
-            v_pos.push_back({x,y,0});
+            v_pos.push_back({x,y,0,0});
         }
     }
 }
@@ -375,6 +375,9 @@ vector<nodeRecord> WildFirePhysicalProcess::collectCellsInsideRadius(double radi
                            if(getMapCoordinates(nl.x_coord,nl.y_coord) == getMapCoordinates(x,y)) {
                                node_count++;
                                auto state=wf_ca->getState(getMapCoordinates(nl.x_coord,nl.y_coord));
+                               if(state == CellState::BURNING) {
+                                   em_node_count++;
+                               }
                            }
                        }
                    }
