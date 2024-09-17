@@ -66,6 +66,8 @@ class WildFirePhysicalProcess: public CastaliaModule {
     std::string yp_coding;
     YAML::Emitter y_out;
     double rad_res;
+    bool sel_all_cell;
+    double look_rad;
 
  protected:
 	virtual void initialize();

@@ -234,6 +234,8 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     step_limit      = par("step_limit");
     yp_coding       = par("yp_coding").stringValue();
     rad_res         = par("rad_res");
+    sel_all_cell    = par("sel_all_cell");
+    look_rad        = par("look_rad");
 }
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {
@@ -358,13 +360,13 @@ vector<nodeRecord> WildFirePhysicalProcess::collectCellsInRadius(double radius, 
             v_pos.push_back({x,y,0,0});
         }
     }
+    return collectCellsInsideRadius(look_rad, v_pos);
 }
 
 
 vector<nodeRecord> WildFirePhysicalProcess::collectCellsInsideRadius(double radius, vector<nodeRecord> points) {
     vector<nodeRecord> res;
     for(auto nr: points) {
-        vector<nodeRecord> coll;
         int node_count=0;
         int em_node_count=0;
         for(auto x = nr.x-radius ; x < nr.x+radius  ; x+=static_cast<double>(map_scale)) {
@@ -384,7 +386,35 @@ vector<nodeRecord> WildFirePhysicalProcess::collectCellsInsideRadius(double radi
                 }
             }
         }
+        nodeRecord new_nr=nr;
+        new_nr.node=node_count;
+        new_nr.em_node=em_node_count;
+        if(new_nr.em_node == 0) {
+            int rep=1;
+            switch (new_nr.node) {
+                case 1: {
+                    rep+=3;
+                    break;
+                }
+                case 2: {
+                    rep+=2;
+                    break;
+                }
+                case 3: {
+                    rep+=1;
+                    break;
+                }
+            }
+            for(int i=0 ; i < rep ; ++i) {
+                res.push_back(new_nr);
+            }
+        }
+        if(new_nr.em_node == 1 && new_nr.node == 2 ||  sel_all_cell) {
+            res.push_back(new_nr);
+        }
+        // Parameter tuning to decide differently?
     }
+    return res;
 }
 
 
