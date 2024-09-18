@@ -213,6 +213,9 @@ void ForestFire::timerFiredCallback(int timer)
             auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
 
             auto res=wfphy_proc->collectCellsInRadius(sense_and_mob_rad,pos.x,pos.y);
+            for(auto ps: res) {
+                trace()<<"[info] Results for cells - X: "<<ps.x<<", Y: "<<ps.y<<", Node count: "<<ps.node<<", Emergency node count: "<<ps.em_node;
+            }
 
             if(dm_sr) {
                 trace()<<"[info] Alerting routing - prepare:";
