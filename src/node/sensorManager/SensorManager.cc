@@ -88,7 +88,7 @@ void SensorManager::handleMessage(cMessage * msg)
             // Ugly hack, but at this point we assume that there is only one physical process
             // An alternative solution would be to iterate through all physical processes
 		    send(reg_msg, "toNodeContainerModule", corrPhyProcess[0]);
-            
+            break;            
         } 
 
 		/*
