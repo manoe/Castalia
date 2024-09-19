@@ -32,17 +32,18 @@ simple ForestFire like node.application.iApplication {
 //      bool broadcastReports = default(false);
 	string reportDestination = default ("0");	//this can also be set to "-1" for broadcast
 												// or to a specific node's address (e.g "0")
-    bool report_timer_offset = default (true);
-    double startup_delay = default(0);
-	double reportTreshold = default (10);
-	double sampleInterval = default (100);	// in s
-    double emergencyThreshold = default (0.8);
-    double emergencyBroadcastPeriod = default (60); // in sec
-    double reportPeriod = default (86400); // 24 hours
-    double eventPeriod  = default (120);  // every two min
-    bool test_dm = default(false); // Switch to test discrete mobility
-    bool dm_sr = default(false); // Signal routing in case of discrete mobility
-    double sense_and_mob_rad = default(20); // radius of sensing and mobility
+    bool    report_timer_offset = default (true);
+    double  startup_delay = default(0);
+	double  reportTreshold = default (10);
+	double  sampleInterval = default (100);	// in s
+    double  emergencyThreshold = default (0.8);
+    double  emergencyBroadcastPeriod = default (60); // in sec
+    double  reportPeriod = default (86400); // 24 hours
+    double  eventPeriod  = default (120);   // every two min
+    bool    test_dm = default(false);       // Switch to test discrete mobility
+    bool    dm_sr = default(false);         // Signal routing in case of discrete mobility
+    bool    rnd_dm = default(false);        // Random discrete mobility during test
+    double  sense_and_mob_rad = default(20);// radius of sensing and mobility
 
 	int sampleSize = default (12);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes

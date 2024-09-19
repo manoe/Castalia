@@ -34,6 +34,7 @@ void ForestFire::startup()
 
     test_dm=par("test_dm");
     dm_sr=par("dm_sr");
+    rnd_dm=("rnd_dm");
     if(test_dm) {
         trace()<<"[info] test_dm - Discrete mobility testing activated";
         setTimer(ForestFireTimers::TEST_DM, 700.0);
@@ -213,6 +214,12 @@ void ForestFire::timerFiredCallback(int timer)
             auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
 
             auto res=wfphy_proc->collectCellsInRadius(sense_and_mob_rad,pos.x,pos.y);
+            trace()<<"[info] Results for cells";
+            for(auto ps: res) {
+                trace()<<"[info] X: "<<ps.x<<", Y: "<<ps.y<<", Node count: "<<ps.node<<", Emergency node count: "<<ps.em_node;
+            }
+
+            auto dest=res[getRNG(0)->intRand(res.size())];
 
             if(dm_sr) {
                 trace()<<"[info] Alerting routing - prepare:";
@@ -220,8 +227,14 @@ void ForestFire::timerFiredCallback(int timer)
             }
 
             DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
-            dm_msg->setX(pos.x/2.0);
-            dm_msg->setY(pos.y/2.0);
+            if(rnd_dm) {
+                dm_msg->setX(dest.x);
+                dm_msg->setY(dest.y);
+            }
+            else {
+                dm_msg->setX(pos.x/2.0);
+                dm_msg->setY(pos.y/2.0);
+            }
             dm_msg->setKind(MobilityManagerMessageType::DISCRETE_MOBILITY);
             
             send(dm_msg,"toMobilityManager");
@@ -498,7 +511,7 @@ void ForestFire::finishSpecific()
                             report_recv+=r[i];
                         }
                     }
-
+                    trace()<<"report sent: "<<reportSent;
                     float rate = (float)report_recv/(float)reportSent;
                     float rate_unique=(float)report_pkt_sum[i]/(float)reportSent;
                    collectOutput("Report reception rate", i, "total", rate);
@@ -534,14 +547,6 @@ void ForestFire::finishSpecific()
         pdr_file<<y_out.c_str();
         pdr_file.close();
 
-        if(srlz_pkt_arr) {
-            yp_out<<YAML::EndSeq;
-            yp_out<<YAML::EndMap;
-            ofstream pkt_file("pkt.yaml");
-            pkt_file<<yp_out.c_str();
-            pkt_file<<std::endl;
-            pkt_file.close();
-        }
 
         if(srlz_nrg) {
             yn_out<<YAML::EndSeq;
@@ -562,6 +567,16 @@ void ForestFire::finishSpecific()
             }
         }
     }
+        if(srlz_pkt_arr) {
+            yp_out<<YAML::EndSeq;
+            yp_out<<YAML::EndMap;
+            std::string file_name=getFullPath()+"pkt.yaml";
+            ofstream pkt_file(file_name);
+            pkt_file<<yp_out.c_str();
+            pkt_file<<std::endl;
+            pkt_file.close();
+        }
+
 }
 
 double ForestFire::getEnergyValue() {
