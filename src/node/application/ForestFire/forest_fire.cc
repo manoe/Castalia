@@ -502,7 +502,7 @@ void ForestFire::finishSpecific()
                             report_recv+=r[i];
                         }
                     }
-
+                    trace()<<"report sent: "<<reportSent;
                     float rate = (float)report_recv/(float)reportSent;
                     float rate_unique=(float)report_pkt_sum[i]/(float)reportSent;
                    collectOutput("Report reception rate", i, "total", rate);
@@ -538,14 +538,6 @@ void ForestFire::finishSpecific()
         pdr_file<<y_out.c_str();
         pdr_file.close();
 
-        if(srlz_pkt_arr) {
-            yp_out<<YAML::EndSeq;
-            yp_out<<YAML::EndMap;
-            ofstream pkt_file("pkt.yaml");
-            pkt_file<<yp_out.c_str();
-            pkt_file<<std::endl;
-            pkt_file.close();
-        }
 
         if(srlz_nrg) {
             yn_out<<YAML::EndSeq;
@@ -566,6 +558,16 @@ void ForestFire::finishSpecific()
             }
         }
     }
+        if(srlz_pkt_arr) {
+            yp_out<<YAML::EndSeq;
+            yp_out<<YAML::EndMap;
+            std::string file_name=getFullPath()+"pkt.yaml";
+            ofstream pkt_file(file_name);
+            pkt_file<<yp_out.c_str();
+            pkt_file<<std::endl;
+            pkt_file.close();
+        }
+
 }
 
 double ForestFire::getEnergyValue() {
