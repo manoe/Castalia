@@ -34,6 +34,7 @@ void ForestFire::startup()
 
     test_dm=par("test_dm");
     dm_sr=par("dm_sr");
+    rnd_dm=("rnd_dm");
     if(test_dm) {
         trace()<<"[info] test_dm - Discrete mobility testing activated";
         setTimer(ForestFireTimers::TEST_DM, 700.0);
@@ -218,14 +219,22 @@ void ForestFire::timerFiredCallback(int timer)
                 trace()<<"[info] X: "<<ps.x<<", Y: "<<ps.y<<", Node count: "<<ps.node<<", Emergency node count: "<<ps.em_node;
             }
 
+            auto dest=res[getRNG(0)->intRand(res.size())];
+
             if(dm_sr) {
                 trace()<<"[info] Alerting routing - prepare:";
                 alertRouting(MsgType::PREP_MOBILITY);
             }
 
             DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
-            dm_msg->setX(pos.x/2.0);
-            dm_msg->setY(pos.y/2.0);
+            if(rnd_dm) {
+                dm_msg->setX(dest.x);
+                dm_msg->setY(dest.y);
+            }
+            else {
+                dm_msg->setX(pos.x/2.0);
+                dm_msg->setY(pos.y/2.0);
+            }
             dm_msg->setKind(MobilityManagerMessageType::DISCRETE_MOBILITY);
             
             send(dm_msg,"toMobilityManager");
