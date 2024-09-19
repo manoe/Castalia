@@ -34,10 +34,11 @@ void ForestFire::startup()
 
     test_dm=par("test_dm");
     dm_sr=par("dm_sr");
-    rnd_dm=("rnd_dm");
+    rnd_dm=par("rnd_dm");
+    test_dm_timer=par("test_dm_timer");
     if(test_dm) {
         trace()<<"[info] test_dm - Discrete mobility testing activated";
-        setTimer(ForestFireTimers::TEST_DM, 700.0);
+        setTimer(ForestFireTimers::TEST_DM, test_dm_timer);
     }
     sense_and_mob_rad=par("sense_and_mob_rad");
     report_period=par("reportPeriod"); 

@@ -41,6 +41,7 @@ simple ForestFire like node.application.iApplication {
     double  reportPeriod = default (86400); // 24 hours
     double  eventPeriod  = default (120);   // every two min
     bool    test_dm = default(false);       // Switch to test discrete mobility
+    double  test_dm_timer = default(800);   // When to start
     bool    dm_sr = default(false);         // Signal routing in case of discrete mobility
     bool    rnd_dm = default(false);        // Random discrete mobility during test
     double  sense_and_mob_rad = default(20);// radius of sensing and mobility
