@@ -2385,7 +2385,12 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
         }
         case msr2mrpPacketDef::RIREQ_PACKET: {
             extTrace()<<"[info] RIREQ_PACKET received";
-            sendRinvBasedOnHop();
+            try {
+                sendRinvBasedOnHop();
+            } catch (std::exception &e) {
+                extTrace()<<"[error] RIREQ_PACKET construction failed";
+                extTrace()<<"[error] "<<e.what();
+            }
             break;
         }
 
