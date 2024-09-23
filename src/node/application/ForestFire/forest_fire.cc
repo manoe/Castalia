@@ -44,6 +44,7 @@ void ForestFire::startup()
     report_period=par("reportPeriod"); 
     event_period=par("eventPeriod");
     emergency_threshold=par("emergencyThreshold");
+    mobility_threshold=par("mobilityThreshold");
     emergency_broadcast=par("emergencyBroadcastPeriod");
     startup_delay=par("startup_delay");
 

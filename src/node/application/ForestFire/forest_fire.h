@@ -60,6 +60,7 @@ class ForestFire : public VirtualApplication {
     double report_period;
     double startup_delay;
     double emergency_threshold;
+    double mobility_threshold;
     bool emergency;
     ResourceManager *rm;
     WildFirePhysicalProcess *wfphy_proc;

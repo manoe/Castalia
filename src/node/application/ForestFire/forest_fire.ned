@@ -37,6 +37,7 @@ simple ForestFire like node.application.iApplication {
 	double  reportTreshold = default (10);
 	double  sampleInterval = default (100);	// in s
     double  emergencyThreshold = default (0.8);
+    double  mobilityThreshold  = default (0.9);
     double  emergencyBroadcastPeriod = default (60); // in sec
     double  reportPeriod = default (86400); // 24 hours
     double  eventPeriod  = default (120);   // every two min
