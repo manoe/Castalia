@@ -40,6 +40,11 @@ void ForestFire::startup()
         trace()<<"[info] test_dm - Discrete mobility testing activated";
         setTimer(ForestFireTimers::TEST_DM, test_dm_timer);
     }
+
+    rest_dm_timer=par("rest_dm_timer");
+    dm_count=par("dm_count");
+    rest_dm_state=false;
+
     sense_and_mob_rad=par("sense_and_mob_rad");
     report_period=par("reportPeriod"); 
     event_period=par("eventPeriod");
@@ -211,6 +216,16 @@ void ForestFire::timerFiredCallback(int timer)
             setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
             break;
         }
+        case ForestFireTimers::DM_REST: {
+            trace()<<"[info] DM_REST timer expired";
+            if(rest_dm_state) {
+                trace()<<"[info] Leaving REST_DM_STATE.";
+                rest_dm_state=false;
+            } else {
+                trace()<<"[error] REST_DM_STATE not active?!";
+            }
+            break;
+        }
         case ForestFireTimers::TEST_DM: {
             trace()<<"[info] TEST_DM timer expired";
             auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
@@ -220,6 +235,9 @@ void ForestFire::timerFiredCallback(int timer)
             for(auto ps: res) {
                 trace()<<"[info] X: "<<ps.x<<", Y: "<<ps.y<<", Node count: "<<ps.node<<", Emergency node count: "<<ps.em_node;
             }
+
+            trace()<<"[info] Starting REST_DM_TIMER";
+            setTimer(DM_REST,rest_dm_timer);
 
             auto dest=res[getRNG(0)->intRand(res.size())];
 
@@ -358,6 +376,10 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
         cancelTimer(EMERGENCY_BROADCAST);
         setTimer(EMERGENCY_BROADCAST,emergency_broadcast);
         alertRouting();
+    }
+    if(sensedValue >= mobility_threshold) {
+        trace()<<"[info] Mobility threshold reached";
+
     }
     //if (isSink) {
     //	trace() << "Sink recieved SENSOR_READING (while it shouldnt) "
