@@ -136,6 +136,7 @@ void ForestFire::sendEvent() {
     event_sent++;
 }
 
+
 void ForestFire::sendReport() {
     ForestFirePacket *newPkt = new ForestFirePacket("ForestFire report packet", APPLICATION_PACKET);
     newPkt->setName(REPORT_PACKET_NAME);
@@ -149,6 +150,7 @@ void ForestFire::sendReport() {
     report_sent++;
 }
 
+
 void ForestFire::sendEmergencyBroadcast() {
     ForestFirePacket *newPkt = new ForestFirePacket("ForestFire emergency broadcast packet", APPLICATION_PACKET);
     newPkt->setName(BROADCAST_PACKET_NAME);
@@ -158,7 +160,18 @@ void ForestFire::sendEmergencyBroadcast() {
     newPkt->setByteLength(2);
     toNetworkLayer(newPkt, BROADCAST_NETWORK_ADDRESS);
     currSampleSN++;
+}
 
+
+void ForestFire::sendMobilityBroadcast() {
+    ForestFirePacket *newPkt = new ForestFirePacket("ForestFire mobility broadcast packet", APPLICATION_PACKET);
+    newPkt->setName(MOBILITY_PACKET_NAME);
+    newPkt->setData(sensedValue);
+    newPkt->setSequenceNumber(currSampleSN);
+    newPkt->setForestFirePacketKind(ForestFirePacketDef::MOBILITY_BROADCAST_PACKET);
+    newPkt->setByteLength(2);
+    toNetworkLayer(newPkt, BROADCAST_NETWORK_ADDRESS);
+    currSampleSN++;
 }
 
 
@@ -295,14 +308,14 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
     double data = rcvPacket->getData();
     int sequenceNumber = rcvPacket->getSequenceNumber();
 
-    if(packetName.compare(BROADCAST_PACKET_NAME) == 0) {
-        trace()<<"Emergency broadcast message received.";
+    if(packetName.compare(BROADCAST_PACKET_NAME) == 0 || packetName.compare(MOBILITY_PACKET_NAME) == 0 ) {
+        trace()<<packetName<<" message received.";
         if(!emergency && getTimer(EVENT_PERIOD)==-1) {
             trace()<<"Start EVENT_PERIOD timer based on broadcast message";
             setTimer(EVENT_PERIOD, event_period);
             sendEvent();
         }
-	return;
+	    return;
     }
     if(!isPacketSeen(atoi(source),rcvPacket->getSequenceNumber(),rcvPacket->getName() )) {
         if (packetName.compare(REPORT_PACKET_NAME) == 0) {
@@ -403,7 +416,7 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
         dm_msg->setY(dest.y);
         
         dm_msg->setKind(MobilityManagerMessageType::DISCRETE_MOBILITY);
-        
+        sendMobilityBroadcast(); 
         send(dm_msg,"toMobilityManager");
         return;
     }

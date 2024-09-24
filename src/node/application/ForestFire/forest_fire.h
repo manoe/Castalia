@@ -21,6 +21,7 @@
 #define REPORT_PACKET_NAME "Wildfire report"
 #define EVENT_PACKET_NAME  "Wildfire event"
 #define BROADCAST_PACKET_NAME "Wildfire broadcast"
+#define MOBILITY_PACKET_NAME "Wildfire mobility"
 
 struct version_info {
 	double version;
@@ -112,6 +113,7 @@ class ForestFire : public VirtualApplication {
     void sendEvent();
     void sendReport();
     void sendEmergencyBroadcast();
+    void sendMobilityBroadcast();
     bool isPacketSeen(int source, int sn, std::string name);
     void alertRouting(MsgType);
     double getAverageSpentEnergy();
