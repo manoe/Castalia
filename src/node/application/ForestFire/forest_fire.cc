@@ -40,10 +40,16 @@ void ForestFire::startup()
         trace()<<"[info] test_dm - Discrete mobility testing activated";
         setTimer(ForestFireTimers::TEST_DM, test_dm_timer);
     }
+
+    rest_dm_timer=par("rest_dm_timer");
+    dm_count=par("dm_count");
+    rest_dm_state=false;
+
     sense_and_mob_rad=par("sense_and_mob_rad");
     report_period=par("reportPeriod"); 
     event_period=par("eventPeriod");
     emergency_threshold=par("emergencyThreshold");
+    mobility_threshold=par("mobilityThreshold");
     emergency_broadcast=par("emergencyBroadcastPeriod");
     startup_delay=par("startup_delay");
 
@@ -210,6 +216,16 @@ void ForestFire::timerFiredCallback(int timer)
             setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
             break;
         }
+        case ForestFireTimers::DM_REST: {
+            trace()<<"[info] DM_REST timer expired";
+            if(rest_dm_state) {
+                trace()<<"[info] Leaving REST_DM_STATE.";
+                rest_dm_state=false;
+            } else {
+                trace()<<"[error] REST_DM_STATE not active?!";
+            }
+            break;
+        }
         case ForestFireTimers::TEST_DM: {
             trace()<<"[info] TEST_DM timer expired";
             auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
@@ -219,6 +235,9 @@ void ForestFire::timerFiredCallback(int timer)
             for(auto ps: res) {
                 trace()<<"[info] X: "<<ps.x<<", Y: "<<ps.y<<", Node count: "<<ps.node<<", Emergency node count: "<<ps.em_node;
             }
+
+            trace()<<"[info] Starting REST_DM_TIMER";
+            setTimer(DM_REST,rest_dm_timer);
 
             auto dest=res[getRNG(0)->intRand(res.size())];
 
@@ -253,6 +272,8 @@ void ForestFire::handleMobility(cMessage *msg) {
                 alertRouting(MsgType::RELEARN);
             }
             notifySensorManager(POSITION_UPDATE);
+            trace()<<"[info] Resetting emergency state";
+            emergency=false;
             break;
         }
         case MobilityManagerMessageType::DISCRETE_MOBILITY_NACK: {
@@ -347,6 +368,38 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
     sensedValue = sensorMsg->getSensedValue();
 
     trace()<<"Sensed value: "<<sensedValue;
+
+    if(sensedValue >= mobility_threshold && !rest_dm_state) {
+        trace()<<"[info] Mobility threshold reached";
+        rest_dm_state=true;
+        auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
+
+        auto res=wfphy_proc->collectCellsInRadius(sense_and_mob_rad,pos.x,pos.y);
+        trace()<<"[info] Results for cells";
+        for(auto ps: res) {
+            trace()<<"[info] X: "<<ps.x<<", Y: "<<ps.y<<", Node count: "<<ps.node<<", Emergency node count: "<<ps.em_node;
+        }
+
+        trace()<<"[info] Starting REST_DM_TIMER";
+        setTimer(DM_REST,rest_dm_timer);
+
+        auto dest=res[getRNG(0)->intRand(res.size())];
+
+        if(dm_sr) {
+            trace()<<"[info] Alerting routing - prepare:";
+            alertRouting(MsgType::PREP_MOBILITY);
+        }
+
+        DiscreteMobilityManagerMessage *dm_msg = new DiscreteMobilityManagerMessage();
+            
+        dm_msg->setX(dest.x);
+        dm_msg->setY(dest.y);
+        
+        dm_msg->setKind(MobilityManagerMessageType::DISCRETE_MOBILITY);
+        
+        send(dm_msg,"toMobilityManager");
+        return;
+    }
     if(sensedValue >= emergency_threshold && !emergency) {
         trace()<<"Node enters emergency state based on sensor reading.";
         emergency=true;
@@ -358,24 +411,6 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
         setTimer(EMERGENCY_BROADCAST,emergency_broadcast);
         alertRouting();
     }
-    //if (isSink) {
-    //	trace() << "Sink recieved SENSOR_READING (while it shouldnt) "
-    //	    << sensValue << " (int)" << (int)sensValue;
-    //	return;
-    //}
-    //
-    //if (sensValue < reportTreshold) {
-    //	trace() << "Sensed value " << sensValue << " is less than the treshold ("
-    //		<< reportTreshold << "), discarding";
-    //	return;
-    //}
-    //
-    //currentSampleAccumulated += sampleSize;
-    //if (currentSampleAccumulated < maxSampleAccumulated) {
-    //	trace() << "Accumulated " << currentSampleAccumulated << "/" << maxSampleAccumulated << " bytes of samples";
-    //	return;
-    //}
-    //
 
 }
 

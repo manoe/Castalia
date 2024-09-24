@@ -40,7 +40,8 @@ enum ForestFireTimers {
     EVENT_PERIOD        = 3,
     REPORT_PERIOD       = 4,
     SRLZ_NRG            = 5,
-    TEST_DM             = 6
+    TEST_DM             = 6,
+    DM_REST             = 7
 };
 
 class ForestFire : public VirtualApplication {
@@ -60,11 +61,14 @@ class ForestFire : public VirtualApplication {
     double report_period;
     double startup_delay;
     double emergency_threshold;
+    double mobility_threshold;
     bool emergency;
     ResourceManager *rm;
     WildFirePhysicalProcess *wfphy_proc;
     double sense_and_mob_rad; 
-
+    bool rest_dm_state;
+    double rest_dm_timer;
+    int dm_count;
 
     bool    pot_field;
     double  d_max;
