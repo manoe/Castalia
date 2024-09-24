@@ -387,6 +387,7 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
             trace()<<"[info] X: "<<ps.x<<", Y: "<<ps.y<<", Node count: "<<ps.node<<", Emergency node count: "<<ps.em_node;
         }
 
+        cancelTimer(EVENT_PERIOD);
         trace()<<"[info] Starting REST_DM_TIMER";
         setTimer(DM_REST,rest_dm_timer);
         auto dest=res[getRNG(0)->intRand(res.size())];
