@@ -371,6 +371,13 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 
     if(sensedValue >= mobility_threshold && !rest_dm_state) {
         trace()<<"[info] Mobility threshold reached";
+        if(0 < dm_count) {
+            dm_count--;
+        } else {
+            trace()<<"[info] No mobility allowed any more, dm_count is zero";
+            return;
+        }
+
         rest_dm_state=true;
         auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
 
@@ -382,7 +389,6 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 
         trace()<<"[info] Starting REST_DM_TIMER";
         setTimer(DM_REST,rest_dm_timer);
-
         auto dest=res[getRNG(0)->intRand(res.size())];
 
         if(dm_sr) {
