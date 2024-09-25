@@ -128,6 +128,8 @@ class smrp: public VirtualRouting {
         void startup();
         void fromApplicationLayer(cPacket *, const char *);
         void fromMacLayer(cPacket *, int, double, double);
+        void handleNetworkControlCommand(cMessage *);
+
         void timerFiredCallback(int);
         void finishSpecific();
 
