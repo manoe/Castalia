@@ -18,6 +18,7 @@ enum ForestFirePacketDef {
     PERIODIC_REPORT_PACKET     = 1;
     EVENT_REPORT_PACKET        = 2;
     EMERGENCY_BROADCAST_PACKET = 3;
+    MOBILITY_BROADCAST_PACKET  = 4;
 }
 
 packet ForestFirePacket extends ApplicationPacket {
