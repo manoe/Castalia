@@ -1234,6 +1234,35 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
     }
 }
 
+
+void smrp::handleNetworkControlCommand(cMessage *msg) {
+    trace()<<"[info] Entering handleNetworkControlCommand()";
+    EmergencyMessage *app_msg=check_and_cast<EmergencyMessage *>(msg);
+    if(!msg) {
+        trace()<<"[error] Unknown Network Control Command Message";
+    }
+    switch(app_msg->getEvent()) {
+        case MsgType::EMERGENCY: {
+            trace()<<"[info] Application in Emergency state, start local re-learn";
+            break;
+        }
+        case MsgType::PREP_MOBILITY: {
+            trace()<<"[info] Application preparing for mobility";
+            break;
+        }
+        case MsgType::RELEARN: {
+            trace()<<"[info] Application finished mobility, relearn.";
+            break;
+        }
+        default: {
+            trace()<<"[info] Unknown network control command";
+            break;
+        }
+    }
+}   
+
+
+
 void smrp::finishSpecific() {
     trace()<<"[info] Entering finishSpecific()";
     trace()<<"[info] Routing table";
