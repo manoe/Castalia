@@ -1243,7 +1243,7 @@ void smrp::handleNetworkControlCommand(cMessage *msg) {
     }
     switch(app_msg->getEvent()) {
         case MsgType::EMERGENCY: {
-            trace()<<"[info] Application in Emergency state, start local re-learn";
+            trace()<<"[info] Application in Emergency state";
             break;
         }
         case MsgType::PREP_MOBILITY: {

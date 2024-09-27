@@ -251,6 +251,8 @@ void ForestFire::timerFiredCallback(int timer)
 
             trace()<<"[info] Starting REST_DM_TIMER";
             setTimer(DM_REST,rest_dm_timer);
+            rest_dm_state=true;
+
 
             auto dest=res[getRNG(0)->intRand(res.size())];
 
