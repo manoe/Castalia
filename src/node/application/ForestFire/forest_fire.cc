@@ -40,6 +40,7 @@ void ForestFire::startup()
         trace()<<"[info] test_dm - Discrete mobility testing activated";
         setTimer(ForestFireTimers::TEST_DM, test_dm_timer);
     }
+    dm_support=par("dm_support");
 
     rest_dm_timer=par("rest_dm_timer");
     dm_count=par("dm_count");
@@ -384,7 +385,7 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 
     trace()<<"Sensed value: "<<sensedValue;
 
-    if(sensedValue >= mobility_threshold && !rest_dm_state) {
+    if(sensedValue >= mobility_threshold && !rest_dm_state && dm_support) {
         trace()<<"[info] Mobility threshold reached";
         if(0 < dm_count) {
             dm_count--;

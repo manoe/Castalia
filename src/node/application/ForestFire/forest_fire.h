@@ -56,6 +56,7 @@ class ForestFire : public VirtualApplication {
     bool test_dm;
     double test_dm_timer;
     bool dm_sr;
+    bool dm_support;
     bool rnd_dm;
     double emergency_broadcast;
     double event_period;
