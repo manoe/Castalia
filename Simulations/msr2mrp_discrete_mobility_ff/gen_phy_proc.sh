@@ -14,6 +14,10 @@ case $1 in
     echo "include phy_proc_center.ini" > physical_process.ini
     ;;
 
+  "test")
+    echo "include phy_proc_test.ini" > physical_process.ini
+    ;;
+
   *)
     echo "unknown placement"
     ;;

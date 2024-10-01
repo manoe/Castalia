@@ -47,6 +47,7 @@ simple ForestFire like node.application.iApplication {
     int     dm_count = default(1);          // How many mobility events are allowed?
     bool    dm_sr = default(false);         // Signal routing in case of discrete mobility
     bool    rnd_dm = default(false);        // Random discrete mobility during test
+    bool    dm_support = default(false);    // Support discrete mobility or not
     double  sense_and_mob_rad = default(20);// radius of sensing and mobility
 
 	int sampleSize = default (12);	// in bytes

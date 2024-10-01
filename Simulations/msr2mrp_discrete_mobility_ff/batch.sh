@@ -12,7 +12,7 @@ SCALE=1
 X_NODE=8
 Y_NODE=8
 
-./gen_phy_proc.sh none
+./gen_phy_proc.sh test
 ./gen_routing.sh ${PROTO}
 
 for i in $SCALE
