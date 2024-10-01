@@ -51,7 +51,6 @@ packet smrpHelloPacket extends smrpPacket {
 
 packet smrpFieldPacket extends smrpPacket {
     smrpHop hop[];
-    int     sink;
     double  env;
     double  nrg;
     double  trg;
