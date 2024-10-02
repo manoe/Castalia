@@ -1264,6 +1264,10 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                     if(checkFieldEntry(alarm_pkt->getSource())) {
                         trace()<<"[info] Sender present in field table";
                         updateFieldTableEntry(alarm_pkt->getSource(),alarm_pkt->getEnv(), alarm_pkt->getNrg(), alarm_pkt->getTrg());
+                        // Maybe we shouldn't remove the routing entry
+                        // that says: I'm routing the source's packet
+                        // We should remove entries, where the node
+                        // in question is the next hop
                         cleanRouting(alarm_pkt->getSource());
                     }
                     break;
@@ -1272,8 +1276,8 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                     trace()<<"[info] MOBILITY_ALARM received, removing corresponding entries";
                     if(checkNextHop(alarm_pkt->getSource())) {
                         trace()<<"[info] Entry in routing table exists with "<<alarm_pkt->getSource()<<" as next hop";
-
-                        cleanRouting(alarm_pkt->getSource());
+                        removeEntries(alarm_pkt->getSource());
+                        // cleanRouting??
                     }
                     break;
                 }
