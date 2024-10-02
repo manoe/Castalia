@@ -1144,7 +1144,6 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 }
                 updateFieldTable(field_pkt);
             }
-
             break;
         }
         case smrpPacketDef::QUERY_PACKET: {
@@ -1267,6 +1266,23 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                         updateFieldTableEntry(alarm_pkt->getSource(),alarm_pkt->getEnv(), alarm_pkt->getNrg(), alarm_pkt->getTrg());
                         cleanRouting(alarm_pkt->getSource());
                     }
+                    break;
+                }
+                case smrpAlarmDef::MOBILITY_ALARM: {
+                    trace()<<"[info] MOBILITY_ALARM received, removing corresponding entries";
+                    if(checkNextHop(alarm_pkt->getSource())) {
+                        trace()<<"[info] Entry in routing table exists with "<<alarm_pkt->getSource()<<" as next hop";
+
+                        cleanRouting(alarm_pkt->getSource());
+                    }
+                    break;
+                }
+                case smrpAlarmDef::RELEARN_ALARM: {
+                    trace()<<"[info] RELERN_ALARM received, sending FIELD packet";
+                    break;
+                }
+                default: {
+                    trace()<<"[error] Unknown, "<<alarm_pkt->getSmrpAlarmKind()<<" ALARM received";
                     break;
                 }
             }
