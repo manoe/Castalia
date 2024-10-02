@@ -1136,7 +1136,13 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
             }
             if(getState()==smrpStateDef::RE_LEARN) {
                 trace()<<"[info] Node in RE_LEARN state, processing FIELD_PACKET";
-
+                try {
+                    updateHelloTable(field_pkt);
+                } catch (std::runtime_error &e) {
+                    trace()<<e.what();
+                    trace()<<"[error] Cannot add any entry to hello table";
+                }
+                updateFieldTable(field_pkt);
             }
 
             break;
