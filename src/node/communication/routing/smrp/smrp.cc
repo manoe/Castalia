@@ -1343,6 +1343,7 @@ void smrp::handleNetworkControlCommand(cMessage *msg) {
             trace()<<"[info] Application finished mobility, relearn.";
             setState(smrpStateDef::RE_LEARN);
             sendAlarm(smrpAlarmDef::RELEARN_ALARM,0.0,0.0,0.0);
+            setTimer(smrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
             break;
         }
         default: {
