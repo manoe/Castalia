@@ -27,11 +27,13 @@
 #include "node/mobilityManager/VirtualMobilityManager.h"
 
 enum smrpStateDef {
-    UNDEF   = 0,
-    INIT    = 1,
-    LEARN   = 2,
-    BUILD   = 3,
-    WORK    = 4
+    UNDEF    = 0,
+    INIT     = 1,
+    LEARN    = 2,
+    BUILD    = 3,
+    WORK     = 4,
+    MOBILITY = 5,
+    RE_LEARN = 6
 };
 
 enum smrpTimerDef {

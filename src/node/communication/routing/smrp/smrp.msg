@@ -28,6 +28,7 @@ enum smrpPacketDef {
 enum smrpAlarmDef {
     ENVIRONMENT_ALARM   = 0;
     ENERGY_ALARM        = 1;
+    MOBILITY_ALARM      = 2;
 }
 
 struct smrpHop {
@@ -51,7 +52,6 @@ packet smrpHelloPacket extends smrpPacket {
 
 packet smrpFieldPacket extends smrpPacket {
     smrpHop hop[];
-    int     sink;
     double  env;
     double  nrg;
     double  trg;

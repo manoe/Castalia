@@ -1009,6 +1009,18 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
             break;
         }
+        case smrpStateDef::MOBILITY: {
+            trace()<<"[info] In MOBILITY state, can't route packet";
+            break;
+        }
+        case smrpStateDef::RE_LEARN: {
+            trace()<<"[info] In RE_LEARN state, can't route packet";
+            break;
+        }
+        default: {
+            trace()<<"[error] In unknown state, can't route packet";
+            break;
+        }
     }
 }
 
@@ -1248,10 +1260,13 @@ void smrp::handleNetworkControlCommand(cMessage *msg) {
         }
         case MsgType::PREP_MOBILITY: {
             trace()<<"[info] Application preparing for mobility";
+            setState(smrpStateDef::MOBILITY);
+            sendAlarm(smrpAlarmDef::MOBILITY_ALARM,0.0,0.0,0.0);
             break;
         }
         case MsgType::RELEARN: {
             trace()<<"[info] Application finished mobility, relearn.";
+
             break;
         }
         default: {
