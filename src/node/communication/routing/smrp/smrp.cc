@@ -233,6 +233,24 @@ void smrp::updateHelloTable(smrpHelloPacket *hello_pkt) {
     hello_table[hello_pkt->getSource()]=ne;
 }
 
+void smrp::updateHelloTable(smrpFieldPacket *field_pkt) {
+    trace()<<"[info] Entering updateHelloTable(..)";
+    sm_node_entry ne;
+    ne.nw_address=field_pkt->getSource();
+    ne.env=field_pkt->getEnv();
+    ne.nrg=field_pkt->getNrg();
+    for(unsigned int i=0 ; i < field_pkt->getHopArraySize() ; ++i) {
+        auto he = field_pkt->getHop(i);
+        trace()<<"[info] Add hop: "<<he.hop<<" associeted with sink: "<<he.sink;
+        ne.hop[he.sink]=he.hop;
+    }
+    trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" env: "<<ne.env<<" nrg: "<<ne.nrg<<" to hello_table";
+    if(hello_table.find(ne.nw_address) != hello_table.end()) {
+            trace()<<"[warn] Overriding record";
+    }
+    hello_table[ne.nw_address]=ne;
+}
+
 bool smrp::checkHelloTable(std::string nw_address) {
     trace()<<"[info] Entering checkHelloTable(nw_address="<<nw_address<<")";
     if(hello_table.find(nw_address) != hello_table.end()) {
@@ -1106,6 +1124,13 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
             if(getState()==smrpStateDef::WORK) {
                 trace()<<"[info] Node in WORK state, discarding FIELD_PACKET";
             }
+            if(getState()==smrpStateDef::MOBILITY) {
+                trace()<<"[info] Node in MOBILITY state, discarding FIELD_PACKET";
+            }
+            if(getState()==smrpStateDef::RE_LEARN) {
+                trace()<<"[info] Node in RE_LEARN state, processing FIELD_PACKET";
+
+            }
 
             break;
         }
@@ -1269,7 +1294,8 @@ void smrp::handleNetworkControlCommand(cMessage *msg) {
         }
         case MsgType::RELEARN: {
             trace()<<"[info] Application finished mobility, relearn.";
-
+            setState(smrpStateDef::RE_LEARN);
+            sendAlarm(smrpAlarmDef::RELEARN_ALARM,0.0,0.0,0.0);
             break;
         }
         default: {

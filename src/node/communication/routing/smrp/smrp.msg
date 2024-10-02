@@ -29,6 +29,7 @@ enum smrpAlarmDef {
     ENVIRONMENT_ALARM   = 0;
     ENERGY_ALARM        = 1;
     MOBILITY_ALARM      = 2;
+    RELEARN_ALARM       = 3;
 }
 
 struct smrpHop {
