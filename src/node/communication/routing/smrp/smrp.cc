@@ -1262,6 +1262,9 @@ void smrp::handleNetworkControlCommand(cMessage *msg) {
             trace()<<"[info] Application preparing for mobility";
             setState(smrpStateDef::MOBILITY);
             sendAlarm(smrpAlarmDef::MOBILITY_ALARM,0.0,0.0,0.0);
+            initHelloTable();
+            initRoutingTable();
+            initFieldTable();
             break;
         }
         case MsgType::RELEARN: {
