@@ -1150,6 +1150,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 } catch (std::runtime_error &e) {
                     trace()<<e.what();
                     trace()<<"[error] Cannot add any entry to hello table";
+                    break;
                 }
                 updateFieldTable(field_pkt);
             }
