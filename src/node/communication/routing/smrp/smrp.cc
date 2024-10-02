@@ -241,8 +241,15 @@ void smrp::updateHelloTable(smrpFieldPacket *field_pkt) {
     ne.nrg=field_pkt->getNrg();
     for(unsigned int i=0 ; i < field_pkt->getHopArraySize() ; ++i) {
         auto he = field_pkt->getHop(i);
-        trace()<<"[info] Add hop: "<<he.hop<<" associeted with sink: "<<he.sink;
-        ne.hop[he.sink]=he.hop;
+        if(he.hop > getHop(he.sink)) {
+            trace()<<"[error] Hop count "<<he.hop<<" for sink "<<he.sink<<" is greater than self hop: "<<getHop(he.sink);
+        } else {
+            trace()<<"[info] Add hop: "<<he.hop<<" associeted with sink: "<<he.sink;
+            ne.hop[he.sink]=he.hop;
+        }
+    }
+    if(ne.hop.empty()) {
+        throw std::runtime_error("[error] No hop information added");
     }
     trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" env: "<<ne.env<<" nrg: "<<ne.nrg<<" to hello_table";
     if(hello_table.find(ne.nw_address) != hello_table.end()) {
