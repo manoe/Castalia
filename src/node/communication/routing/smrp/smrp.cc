@@ -266,6 +266,15 @@ bool smrp::checkHelloTable(std::string nw_address) {
     return false;
 }
 
+void smrp::removeHelloEntry(std::string nw_address) {
+    trace()<<"[info] Entering removeHelloEntry(nw_address="<<nw_address<<")";
+    if(hello_table.find(nw_address) != hello_table.end()) {
+        hello_table.erase(nw_address);
+    }
+    throw std::runtime_error("No hello table entry present");
+}
+
+
 void smrp::initHelloTable() {
     trace()<<"[info] Entering initHelloTable()";
     hello_table.clear();
@@ -1277,12 +1286,16 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                     if(checkNextHop(alarm_pkt->getSource())) {
                         trace()<<"[info] Entry in routing table exists with "<<alarm_pkt->getSource()<<" as next hop";
                         removeEntries(alarm_pkt->getSource());
+                        if(checkHelloTable(alarm_pkt->getSource())) {
+                            removeHelloEntry(alarm_pkt->getSource());
+                        }
                         // cleanRouting??
                     }
                     break;
                 }
                 case smrpAlarmDef::RELEARN_ALARM: {
                     trace()<<"[info] RELERN_ALARM received, sending FIELD packet";
+                    sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue());
                     break;
                 }
                 default: {
