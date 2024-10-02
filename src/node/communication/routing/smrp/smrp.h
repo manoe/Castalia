@@ -138,7 +138,9 @@ class smrp: public VirtualRouting {
         void sendHello();
         void sendHello(int, int, double, double, double);
         void updateHelloTable(smrpHelloPacket *);
+        void updateHelloTable(smrpFieldPacket *field_pkt);
         bool checkHelloTable(std::string);
+        void removeHelloEntry(std::string);
         void initHelloTable();
 
 

@@ -233,6 +233,31 @@ void smrp::updateHelloTable(smrpHelloPacket *hello_pkt) {
     hello_table[hello_pkt->getSource()]=ne;
 }
 
+void smrp::updateHelloTable(smrpFieldPacket *field_pkt) {
+    trace()<<"[info] Entering updateHelloTable(..)";
+    sm_node_entry ne;
+    ne.nw_address=field_pkt->getSource();
+    ne.env=field_pkt->getEnv();
+    ne.nrg=field_pkt->getNrg();
+    for(unsigned int i=0 ; i < field_pkt->getHopArraySize() ; ++i) {
+        auto he = field_pkt->getHop(i);
+        if(he.hop > getHop(he.sink)) {
+            trace()<<"[error] Hop count "<<he.hop<<" for sink "<<he.sink<<" is greater than self hop: "<<getHop(he.sink);
+        } else {
+            trace()<<"[info] Add hop: "<<he.hop<<" associeted with sink: "<<he.sink;
+            ne.hop[he.sink]=he.hop;
+        }
+    }
+    if(ne.hop.empty()) {
+        throw std::runtime_error("[error] No hop information added");
+    }
+    trace()<<"[info] Adding entry NW address: "<<ne.nw_address<<" env: "<<ne.env<<" nrg: "<<ne.nrg<<" to hello_table";
+    if(hello_table.find(ne.nw_address) != hello_table.end()) {
+            trace()<<"[warn] Overriding record";
+    }
+    hello_table[ne.nw_address]=ne;
+}
+
 bool smrp::checkHelloTable(std::string nw_address) {
     trace()<<"[info] Entering checkHelloTable(nw_address="<<nw_address<<")";
     if(hello_table.find(nw_address) != hello_table.end()) {
@@ -240,6 +265,15 @@ bool smrp::checkHelloTable(std::string nw_address) {
     }
     return false;
 }
+
+void smrp::removeHelloEntry(std::string nw_address) {
+    trace()<<"[info] Entering removeHelloEntry(nw_address="<<nw_address<<")";
+    if(hello_table.find(nw_address) != hello_table.end()) {
+        hello_table.erase(nw_address);
+    }
+    throw std::runtime_error("No hello table entry present");
+}
+
 
 void smrp::initHelloTable() {
     trace()<<"[info] Entering initHelloTable()";
@@ -1106,7 +1140,20 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
             if(getState()==smrpStateDef::WORK) {
                 trace()<<"[info] Node in WORK state, discarding FIELD_PACKET";
             }
-
+            if(getState()==smrpStateDef::MOBILITY) {
+                trace()<<"[info] Node in MOBILITY state, discarding FIELD_PACKET";
+            }
+            if(getState()==smrpStateDef::RE_LEARN) {
+                trace()<<"[info] Node in RE_LEARN state, processing FIELD_PACKET";
+                try {
+                    updateHelloTable(field_pkt);
+                } catch (std::runtime_error &e) {
+                    trace()<<e.what();
+                    trace()<<"[error] Cannot add any entry to hello table";
+                    break;
+                }
+                updateFieldTable(field_pkt);
+            }
             break;
         }
         case smrpPacketDef::QUERY_PACKET: {
@@ -1227,8 +1274,33 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                     if(checkFieldEntry(alarm_pkt->getSource())) {
                         trace()<<"[info] Sender present in field table";
                         updateFieldTableEntry(alarm_pkt->getSource(),alarm_pkt->getEnv(), alarm_pkt->getNrg(), alarm_pkt->getTrg());
+                        // Maybe we shouldn't remove the routing entry
+                        // that says: I'm routing the source's packet
+                        // We should remove entries, where the node
+                        // in question is the next hop
                         cleanRouting(alarm_pkt->getSource());
                     }
+                    break;
+                }
+                case smrpAlarmDef::MOBILITY_ALARM: {
+                    trace()<<"[info] MOBILITY_ALARM received, removing corresponding entries";
+                    if(checkNextHop(alarm_pkt->getSource())) {
+                        trace()<<"[info] Entry in routing table exists with "<<alarm_pkt->getSource()<<" as next hop";
+                        removeEntries(alarm_pkt->getSource());
+                        if(checkHelloTable(alarm_pkt->getSource())) {
+                            removeHelloEntry(alarm_pkt->getSource());
+                        }
+                        // cleanRouting??
+                    }
+                    break;
+                }
+                case smrpAlarmDef::RELEARN_ALARM: {
+                    trace()<<"[info] RELERN_ALARM received, sending FIELD packet";
+                    sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue());
+                    break;
+                }
+                default: {
+                    trace()<<"[error] Unknown, "<<alarm_pkt->getSmrpAlarmKind()<<" ALARM received";
                     break;
                 }
             }
@@ -1262,11 +1334,16 @@ void smrp::handleNetworkControlCommand(cMessage *msg) {
             trace()<<"[info] Application preparing for mobility";
             setState(smrpStateDef::MOBILITY);
             sendAlarm(smrpAlarmDef::MOBILITY_ALARM,0.0,0.0,0.0);
+            initHelloTable();
+            initRoutingTable();
+            initFieldTable();
             break;
         }
         case MsgType::RELEARN: {
             trace()<<"[info] Application finished mobility, relearn.";
-
+            setState(smrpStateDef::RE_LEARN);
+            sendAlarm(smrpAlarmDef::RELEARN_ALARM,0.0,0.0,0.0);
+            setTimer(smrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
             break;
         }
         default: {
