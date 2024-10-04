@@ -2141,6 +2141,9 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                 setSecL(false);
                 setState(msr2mrpStateDef::LEARN);
                 SetTimer(msr2mrpTimerDef::T_L,getTl());
+                extTrace()<<"[info] Setting limited state to false, since this is a new round.";
+                setLimitedState(false);
+
 
             } else if(rinv_pkt->getRound() == getRound()) {
                 if(true == rinv_pkt->getLocal()) {
@@ -2949,17 +2952,32 @@ bool msr2mrp_engine::secLPerformed(int round, int pathid) {
 
 
 
-//void msr2mrp_engine::handleNetworkControlCommand(cMessage *msg) {
-//    extTrace()<<"[info] Entering handleNetworkControlCommand()";
-//    EmergencyMessage *app_msg=check_and_cast<EmergencyMessage *>(msg);
-//    if(!msg) {
-//        extTrace()<<"[error] Unknown Network Control Command Message";
-//    }
-//    if(MsgType::EMERGENCY == app_msg->getEvent()) {
-//        extTrace()<<"[info] Application in Emergency state, start local re-learn";
-//        sendRwarn();
-//    }
-//}
+void msr2mrp_engine::handleNetworkControlCommand(cMessage *msg) {
+    extTrace()<<"[info] Entering handleNetworkControlCommand()";
+    EmergencyMessage *app_msg=check_and_cast<EmergencyMessage *>(msg);
+    if(!msg) {
+        extTrace()<<"[error] Unknown Network Control Command Message";
+    }
+    switch (app_msg->getEvent()) {
+        case MsgType::EMERGENCY: {
+            extTrace()<<"[info] Application in Emergency state";
+            break;
+        }
+        case MsgType::RELEARN: {
+            extTrace()<<"[info] Application finished mobility";
+            if(isSink()) {
+                extTrace()<<"[info] Sink starts new round after mobility";
+                setRound(1+getRound());
+                sendRinv(getRound(),SELF_NETWORK_ADDRESS);
+                SetTimer(msr2mrpTimerDef::T_REPEAT,fp.t_start*10.0);
+                if(fp.periodic_restart) {
+                    SetTimer(msr2mrpTimerDef::T_RESTART,fp.t_restart);
+                }
+            }
+            break;
+        }
+    }
+}
 
 
 void msr2mrp_engine::sendRwarn() {

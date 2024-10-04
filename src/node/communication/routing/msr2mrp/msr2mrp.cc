@@ -2776,8 +2776,17 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
         }
         case MsgType::RELEARN: {
             extTrace()<<"[info] Application finished mobility, relearn.";
-            setState(msr2mrpStateDef::LIMIT);
-            sendRireq();
+            if(!isSink()) {
+                setState(msr2mrpStateDef::LIMIT);
+                sendRireq();
+            } else {
+                // this s
+                if(engine_table.find(SELF_NETWORK_ADDRESS) == engine_table.end()) {
+                    extTrace()<<"[error] Node is a sink, but no engine present";
+                    throw state_not_permitted("No engine available for sink");
+                }
+                engine_table[SELF_NETWORK_ADDRESS]->handleNetworkControlCommand(msg);
+            }
             break;
         }
         default: {

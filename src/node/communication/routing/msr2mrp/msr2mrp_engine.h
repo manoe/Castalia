@@ -87,7 +87,6 @@ class msr2mrp_engine {
 
     protected:
         void startup();
-        void handleNetworkControlCommand(cMessage *);
         void finishSpecific();
 
         msr2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
@@ -234,6 +233,7 @@ class msr2mrp_engine {
         void fromMacLayer(cPacket *, int, double, double);
         void fromApplicationLayer(cPacket *, const char *);
         void handleMacControlMessage(cMessage *);
+        void handleNetworkControlCommand(cMessage *);
 
         msr2mrpRingDef getRingStatus() const;
         msr2mrpStateDef getState() const;
