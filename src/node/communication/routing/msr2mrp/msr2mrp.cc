@@ -2209,31 +2209,20 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
             extTrace()<<"[info] RWARN_PACKET received";
             auto rwarn_pkt=dynamic_cast<msr2mrpRwarnPacket *>(pkt);
             if(rwarn_pkt->getRound() > getRound()) {
-                extTrace()<<"[warn] Warning node's round is greater than receiving node's round. Exiting.";
-                break;
+                extTrace()<<"[warn] Warning node's round is greater than receiving node's round.";
             }
             switch (rwarn_pkt->getCause()) {
                 case msr2mrpWarnDef::EMERGENCY_EVENT: {
                     extTrace()<<"[info] EMERGENCY_EVENT, emergency: "<<rwarn_pkt->getEmerg()<<", energy: "<<rwarn_pkt->getEnrgy();
-                    if(fp.rt_recalc_warn) {
-                        try {
-                            updateRreqEntryWithEmergency(rwarn_pkt->getSource(), rwarn_pkt->getEmerg(), rwarn_pkt->getEnrgy());
-                            if(fp.cf_after_rresp) {
-                                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
-                            } else {
-                                constructRoutingTable(fp.rresp_req);
-                            }
-                        } catch (no_available_entry &e) {
-                            extTrace()<<"[info] Entry not available (not a real error): "<<e.what();
-                        } catch (routing_table_empty &e) {
-                            extTrace()<<"[error] "<<e.what();
-                            setState(msr2mrpStateDef::INIT);
-                        }
+                    for(auto engine: engine_table) {
+                        engine.second->fromMacLayer(pkt, srcMacAddress, rssi, lqi);
                     }
                     break;
                 }
                 case msr2mrpWarnDef::PATH_FAILURE_EVENT: {
                     extTrace()<<"[info] PATH_FAILURE_EVENT";
+                    extTrace()<<"[error] Don't execute code here";
+                    break;
                     if(checkRoute(std::string(rwarn_pkt->getSource()))) {
                         removeRoute(std::string(rwarn_pkt->getSource()));
                         try { 
@@ -2780,7 +2769,9 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
             extTrace()<<"[info] Application preparing for mobility";
             sendRwarn(msr2mrpWarnDef::MOBILITY_EVENT,0);
             destroyEngines();
-            setState(msr2mrpStateDef::LOCK);
+            if(!isSink()) {
+                setState(msr2mrpStateDef::LOCK);
+            }
             break;
         }
         case MsgType::RELEARN: {

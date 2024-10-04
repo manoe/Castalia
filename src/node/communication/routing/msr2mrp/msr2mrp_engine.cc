@@ -2352,6 +2352,9 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                 }
                 case msr2mrpWarnDef::MOBILITY_EVENT: {
                     extTrace()<<"[info] MOBILITY_EVENT";
+                    if(rwarn_pkt->getSource()==getSinkAddress()) {
+                        extTrace()<<"[info] Sink in mobility";
+                    }
                     if(checkRoute(std::string(rwarn_pkt->getSource()))) {
                         auto p=routing_table[rwarn_pkt->getSource()].pathid;
                         removeRoute(std::string(rwarn_pkt->getSource()));
