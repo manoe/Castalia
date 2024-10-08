@@ -908,6 +908,7 @@ void smrp::timerFiredCallback(int index) {
             setTimer(smrpTimerDef::BUILD_START, fp.ttl + getRNG(0)->doubleRand());
             if(fp.periodic_restart) {
                 trace()<<"[info] Periodic restart active";
+                cancelTimer(smrpTimerDef::RESTART);
                 setTimer(smrpTimerDef::RESTART,fp.restart);
             }
             setState(smrpStateDef::LEARN);
@@ -1340,10 +1341,15 @@ void smrp::handleNetworkControlCommand(cMessage *msg) {
             break;
         }
         case MsgType::RELEARN: {
-            trace()<<"[info] Application finished mobility, relearn.";
-            setState(smrpStateDef::RE_LEARN);
-            sendAlarm(smrpAlarmDef::RELEARN_ALARM,0.0,0.0,0.0);
-            setTimer(smrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
+            if(isSink()) {
+                trace()<<"[info] Application finished mobility, restart network.";
+                setTimer(smrpTimerDef::SINK_START,getRNG(0)->doubleRand());
+            } else {
+                trace()<<"[info] Application finished mobility, relearn.";
+                setState(smrpStateDef::RE_LEARN);
+                sendAlarm(smrpAlarmDef::RELEARN_ALARM,0.0,0.0,0.0);
+                setTimer(smrpTimerDef::FIELD, fp.field + getRNG(0)->doubleRand());
+            }
             break;
         }
         default: {
