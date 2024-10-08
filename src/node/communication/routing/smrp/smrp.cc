@@ -1094,6 +1094,7 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 trace()<<"[info] Node in WORK state, re-learn starts";
                 setState(smrpStateDef::LEARN);
                 initHelloTable();
+                initFieldTable();
                 setTimer(smrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
             }
 
