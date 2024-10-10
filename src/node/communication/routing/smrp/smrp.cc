@@ -276,6 +276,19 @@ void smrp::removeHelloEntry(std::string nw_address) {
 
 
 void smrp::removeSinkFromHelloTable(int sink) {
+    trace()<<"[info] Entering removeSinkFromHelloTable(sink="<<sink<<")";
+    for(auto it=hello_table.begin(); it != hello_table.end();) {
+       if(it->second.hop.find(sink) != it->second.hop.end()) {
+           trace()<<"[info] Sink present in hello_table entry: "<<it->first;
+           it->second.hop.erase(sink);
+       }
+       if( it->second.hop.empty() ) {
+           trace()<<"[info] Entry related to node "<<it->first<<" empty, erasing.";
+           it = hello_table.erase(it);
+       } else {
+           ++it;
+       }
+    }
 }
 
 
