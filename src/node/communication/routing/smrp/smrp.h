@@ -141,6 +141,7 @@ class smrp: public VirtualRouting {
         void updateHelloTable(smrpFieldPacket *field_pkt);
         bool checkHelloTable(std::string);
         void removeHelloEntry(std::string);
+        void removeSinkFromHelloTable(int);
         void initHelloTable();
 
 

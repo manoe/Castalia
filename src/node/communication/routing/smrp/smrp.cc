@@ -275,6 +275,10 @@ void smrp::removeHelloEntry(std::string nw_address) {
 }
 
 
+void smrp::removeSinkFromHelloTable(int sink) {
+}
+
+
 void smrp::initHelloTable() {
     trace()<<"[info] Entering initHelloTable()";
     hello_table.clear();
