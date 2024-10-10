@@ -275,11 +275,38 @@ void smrp::removeHelloEntry(std::string nw_address) {
 }
 
 
+void smrp::removeSinkFromTable(int sink, std::map<std::string,sm_node_entry> &table) {
+    trace()<<"[info] Entering removeSinkFromTable(sink="<<sink<<")";
+    for(auto it=table.begin(); it != table.end();) {
+       if(it->second.hop.find(sink) != it->second.hop.end()) {
+           trace()<<"[info] Sink present in table entry: "<<it->first;
+           it->second.hop.erase(sink);
+       }
+       if(it->second.hop.empty()) {
+           trace()<<"[info] Entry related to node "<<it->first<<" empty, erasing.";
+           it = table.erase(it);
+       } else {
+           ++it;
+       }
+    }
+
+} 
+
+void smrp::removeSinkFromHelloTable(int sink) {
+    trace()<<"[info] Entering removeSinkFromHelloTable(sink="<<sink<<")";
+    removeSinkFromTable(sink,hello_table);
+}
+
+
 void smrp::initHelloTable() {
     trace()<<"[info] Entering initHelloTable()";
     hello_table.clear();
 }
 
+void smrp::removeSinkFromFieldTable(int sink) {
+    trace()<<"[info] Entering removeSinkFromFieldTable(sink="<<sink<<")";
+    removeSinkFromTable(sink,field_table);
+}
 
 void smrp::updateFieldTable(smrpFieldPacket *field_pkt) {
     trace()<<"[info] Entering updateFieldTable(..)";
@@ -1093,8 +1120,8 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
             if(getState()==smrpStateDef::WORK) {
                 trace()<<"[info] Node in WORK state, re-learn starts";
                 setState(smrpStateDef::LEARN);
-                initHelloTable();
-                initFieldTable();
+                removeSinkFromHelloTable(hello_pkt->getSink());
+                removeSinkFromFieldTable(hello_pkt->getSink());
                 setTimer(smrpTimerDef::TTL, fp.ttl + getRNG(0)->doubleRand());
             }
 
