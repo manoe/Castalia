@@ -135,6 +135,8 @@ class smrp: public VirtualRouting {
         void timerFiredCallback(int);
         void finishSpecific();
 
+        void removeSinkFromTable(int, std::map<std::string,sm_node_entry> &);
+
         void sendHello();
         void sendHello(int, int, double, double, double);
         void updateHelloTable(smrpHelloPacket *);
@@ -153,6 +155,7 @@ class smrp: public VirtualRouting {
         bool checkFieldEntry(std::string);
         sm_node_entry getSinkFieldTableEntry();
         double calculateTargetValue();
+        void removeSinkFromFieldTable(int);
         void initFieldTable();
 
         void constructPath(std::string, int prio);

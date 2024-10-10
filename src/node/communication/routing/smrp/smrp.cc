@@ -275,20 +275,26 @@ void smrp::removeHelloEntry(std::string nw_address) {
 }
 
 
-void smrp::removeSinkFromHelloTable(int sink) {
-    trace()<<"[info] Entering removeSinkFromHelloTable(sink="<<sink<<")";
-    for(auto it=hello_table.begin(); it != hello_table.end();) {
+void smrp::removeSinkFromTable(int sink, std::map<std::string,sm_node_entry> &table) {
+    trace()<<"[info] Entering removeSinkFromTable(sink="<<sink<<")";
+    for(auto it=table.begin(); it != table.end();) {
        if(it->second.hop.find(sink) != it->second.hop.end()) {
-           trace()<<"[info] Sink present in hello_table entry: "<<it->first;
+           trace()<<"[info] Sink present in table entry: "<<it->first;
            it->second.hop.erase(sink);
        }
-       if( it->second.hop.empty() ) {
+       if(it->second.hop.empty()) {
            trace()<<"[info] Entry related to node "<<it->first<<" empty, erasing.";
-           it = hello_table.erase(it);
+           it = table.erase(it);
        } else {
            ++it;
        }
     }
+
+} 
+
+void smrp::removeSinkFromHelloTable(int sink) {
+    trace()<<"[info] Entering removeSinkFromHelloTable(sink="<<sink<<")";
+    removeSinkFromTable(sink,hello_table);
 }
 
 
@@ -297,6 +303,10 @@ void smrp::initHelloTable() {
     hello_table.clear();
 }
 
+void smrp::removeSinkFromFieldTable(int sink) {
+    trace()<<"[info] Entering removeSinkFromFieldTable(sink="<<sink<<")";
+    removeSinkFromTable(sink,field_table);
+}
 
 void smrp::updateFieldTable(smrpFieldPacket *field_pkt) {
     trace()<<"[info] Entering updateFieldTable(..)";
