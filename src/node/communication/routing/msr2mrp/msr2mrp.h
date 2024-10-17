@@ -248,6 +248,13 @@ class msr2mrp;
 
 #include "node/communication/routing/msr2mrp/msr2mrp_engine.h"
 
+enum msr2mrpLbMechDef {
+    UN_DEF  = 0,
+    RND     = 1,
+    CFBP    = 2
+};
+
+
 ////enum hdmrpRoleDef {
 ////    SINK        = 1;
 ////    ROOT        = 2;
@@ -504,6 +511,7 @@ class msr2mrp: public VirtualRouting {
 
         msr2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         msr2mrpCostFuncDef strToCostFunc(string) const;
+        msr2mrpLbMechDef strtoLbMech(string) const;
         msr2mrpSecLParDef strToSecLPar(string) const; 
         msr2mrpRinvPathidDef strToRinvPathidDef(string) const;
 
