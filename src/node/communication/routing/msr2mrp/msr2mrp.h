@@ -255,6 +255,11 @@ class msr2mrp;
 
 #include "node/communication/routing/msr2mrp/msr2mrp_engine.h"
 
+enum msr2mrpLbMechDef {
+    UN_DEF  = 0,
+    RND     = 1,
+    CFBP    = 2
+};
 
 
 ////enum hdmrpRoleDef {
