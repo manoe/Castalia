@@ -513,7 +513,7 @@ class msr2mrp: public VirtualRouting {
 
         msr2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         msr2mrpCostFuncDef strToCostFunc(string) const;
-        msr2mrpLbMechDef strtoLbMech(string) const;
+        msr2mrpLbMechDef strToLbMech(string) const;
         msr2mrpSecLParDef strToSecLPar(string) const; 
         msr2mrpRinvPathidDef strToRinvPathidDef(string) const;
 
