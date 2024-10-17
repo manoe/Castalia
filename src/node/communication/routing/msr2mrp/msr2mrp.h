@@ -192,6 +192,12 @@ struct msr2mrp_state_chng_entry {
     double total_energy;
 };
 
+enum msr2mrpLbMechDef {
+    UN_DEF  = 0,
+    RND     = 1,
+    CFBP    = 2
+};
+
 struct msr2mrp_feat_par {
     int    ring_radius;
     double t_l;
@@ -242,17 +248,13 @@ struct msr2mrp_feat_par {
     double t_start;
     bool   single_network;
     msr2mrpRinvPathidDef rinv_pathid;
+    msr2mrpLbMechDef lb_mechanism;
 };
 
 class msr2mrp;
 
 #include "node/communication/routing/msr2mrp/msr2mrp_engine.h"
 
-enum msr2mrpLbMechDef {
-    UN_DEF  = 0,
-    RND     = 1,
-    CFBP    = 2
-};
 
 
 ////enum hdmrpRoleDef {
