@@ -109,6 +109,8 @@ simple msr2mrp like node.communication.routing.iRouting
                                                 // even      - original random
                                                 // inv_prob  - inverse probability
                                                 // min_count - select pathid with minimal count
+    string f_lb_mechanism     = default("rnd"); // rnd     - Random stack selection
+
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ

@@ -358,6 +358,19 @@ msr2mrpRinvTblAdminDef msr2mrp::strToRinvTblAdmin(string str) const {
     return msr2mrpRinvTblAdminDef::UNDEF_ADMIN;
 }
 
+
+msr2mrpLbMechDef msr2mrp::strtoLbMech(string str) const {
+    if("rnd" == str) {
+        return msr2mrpLbMechDef::RND;
+    } else if("cfbp" == str) {
+        return msr2mrpLbMechDef::CFBP;
+    }
+    throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
+    return msr2mrpLbMechDef::UN_DEF;
+}
+
+
+
 msr2mrpSecLParDef msr2mrp::strToSecLPar(std::string str) const {
     if("off" == str) {
         return msr2mrpSecLParDef::OFF;
