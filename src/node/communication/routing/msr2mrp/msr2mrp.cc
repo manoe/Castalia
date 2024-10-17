@@ -1557,6 +1557,20 @@ std::string msr2mrp::pathidToStr(vector<int> pathid) {
     return str;
 }
 
+std::vector<msr2mrp_node_entry> msr2mrp::collectAllRoutes(vector<std::string> ev) {
+    trace()<<"[info] collectAllRoutes()";
+    std::vector<msr2mrp_node_entry> rt;
+    for(auto e: ev) {
+        trace()<<"[info] Processing engine/sink: "<<e;
+        for(auto r: engine_table[e]->getRoutingTable()) {
+            trace()<<"[info] Processing pathid: "<<pathidToStr(r.second.pathid)<<", next hop: "<<r.second.nw_address;
+            rt.push_back(r.second);
+        }
+    }
+    return rt;
+}
+
+
 std::string msr2mrp::getNextHop(int pathid) {
     extTrace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
     msr2mrp_node_entry next_hop;
@@ -2153,6 +2167,11 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             case msr2mrpLbMechDef::RND: {
                 trace()<<"[info] Random stack selection";
                 engine_table[ev[getRNG(0)->intRand(ev.size())]]->fromApplicationLayer(pkt,destination);
+                break;
+            }
+            case msr2mrpLbMechDef::CFBP: {
+                trace()<<"[info] Cost function-based probability";
+                auto rt=collectAllRoutes(ev);
                 break;
             }
             case msr2mrpLbMechDef::UN_DEF: {

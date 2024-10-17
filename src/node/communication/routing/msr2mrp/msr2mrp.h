@@ -592,6 +592,8 @@ class msr2mrp: public VirtualRouting {
         std::string pathidToStr(vector<msr2mrp_pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
 
+        std::vector<msr2mrp_node_entry> collectAllRoutes(std::vector<string>);
+
         std::string getNextHop(int);
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
