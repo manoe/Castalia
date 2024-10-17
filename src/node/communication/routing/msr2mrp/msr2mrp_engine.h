@@ -235,6 +235,8 @@ class msr2mrp_engine {
         void handleMacControlMessage(cMessage *);
         void handleNetworkControlCommand(cMessage *);
 
+        void sendViaPathid(cPacket *, int);
+
         msr2mrpRingDef getRingStatus() const;
         msr2mrpStateDef getState() const;
         int getHop() const;
