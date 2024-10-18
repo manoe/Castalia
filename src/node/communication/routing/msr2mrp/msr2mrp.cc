@@ -1557,21 +1557,22 @@ std::string msr2mrp::pathidToStr(vector<int> pathid) {
     return str;
 }
 
-std::vector<msr2mrp_node_entry> msr2mrp::collectAllRoutes(vector<std::string> ev) {
+std::vector<msr2mrp_node_ext_entry> msr2mrp::collectAllRoutes(vector<std::string> ev) {
     trace()<<"[info] collectAllRoutes()";
-    std::vector<msr2mrp_node_entry> rt;
+    std::vector<msr2mrp_node_ext_entry> rt;
     for(auto e: ev) {
         trace()<<"[info] Processing engine/sink: "<<e;
         for(auto r: engine_table[e]->getRoutingTable()) {
             trace()<<"[info] Processing pathid: "<<pathidToStr(r.second.pathid)<<", next hop: "<<r.second.nw_address;
-            rt.push_back(r.second);
+            msr2mrp_node_ext_entry r_ext(r.second,e);
+            rt.push_back(r_ext);
         }
     }
     return rt;
 }
 
 
-double msr2mrp::sumCostValues(std::vector<msr2mrp_node_entry> rt) {
+double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt) {
     trace()<<"[info] sumCostValues()";
     double ret_val = 0.0;
     for(auto r: rt) {
@@ -1579,6 +1580,10 @@ double msr2mrp::sumCostValues(std::vector<msr2mrp_node_entry> rt) {
     }
     trace()<<"[info] sum: "<<ret_val;
     return ret_val;
+}
+
+msr2mrp_node_ext_entry msr2mrp::getCfbpRe(std::vector<msr2mrp_node_ext_entry> rt, double rnd_val) {
+    trace()<<"[info] getCfbpRe(rt,rnd_val="<<rnd_val<<")";
 }
 
 
@@ -2182,9 +2187,10 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             }
             case msr2mrpLbMechDef::CFBP: {
                 trace()<<"[info] Cost function-based probability";
-                auto rt=collectAllRoutes(ev);
+                auto rt = collectAllRoutes(ev);
                 auto sum_cost = sumCostValues(rt);
                 auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
+                auto re = getCfbpRe(rt,rnd_val);
 
                 break;
             }
