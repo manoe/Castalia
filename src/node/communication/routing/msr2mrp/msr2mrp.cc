@@ -1574,12 +1574,17 @@ std::vector<msr2mrp_node_ext_entry> msr2mrp::collectAllRoutes(vector<std::string
 
 double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt) {
     trace()<<"[info] sumCostValues()";
-    double ret_val = 0.0;
+    double sum_ret_val = 0.0;
     for(auto r: rt) {
-        ret_val += 1.0/calculateCostFunction(r);
+        auto ret_val = 1.0/calculateCostFunction(r);
+        if(ret_val > 0) {
+            sum_ret_val+=ret_val;
+        } else {
+            sum_ret_val += 1.0;
+        }
     }
-    trace()<<"[info] sum: "<<ret_val;
-    return ret_val;
+    trace()<<"[info] sum: "<<sum_ret_val;
+    return sum_ret_val;
 }
 
 
@@ -1588,7 +1593,13 @@ msr2mrp_node_ext_entry msr2mrp::getCfbpRe(std::vector<msr2mrp_node_ext_entry> rt
     double s_cv = 0;
     
     for(auto r: rt) {
-        auto cv = 1.0/calculateCostFunction(r);
+        auto ret_val = calculateCostFunction(r);
+        double cv = 0.0;
+        if(ret_val>0) {
+            cv = 1.0/ ret_val;
+        } else {
+            cv = 1.0;
+        }
         if(s_cv <= rnd_val && s_cv+cv > rnd_val) {
             return r;
         }
