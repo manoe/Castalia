@@ -184,6 +184,29 @@ struct msr2mrp_node_entry {
     int reroute_count = 0;
 };
 
+struct msr2mrp_node_ext_entry : msr2mrp_node_entry {
+    msr2mrp_node_ext_entry(msr2mrp_node_entry ne,std::string sink) {
+        this->nw_address = ne.nw_address;
+        this->pathid        =  ne.pathid       ;
+        this->hop           =  ne.hop          ;
+        this->rresp         =  ne.rresp        ;
+        this->interf        =  ne.interf       ;
+        this->emerg         =  ne.emerg        ;
+        this->used          =  ne.used         ;
+        this->round         =  ne.round        ;
+        this->pkt_count     =  ne.pkt_count    ;
+        this->ack_count     =  ne.ack_count    ;
+        this->fail_count    =  ne.fail_count   ;
+        this->fail          =  ne.fail         ;
+        this->local         =  ne.local        ;
+        this->secl          =  ne.secl         ;
+        this->nmas          =  ne.nmas         ;
+        this->reroute_count =  ne.reroute_count; 
+        this->sink = sink;
+    }
+    std::string sink;
+};
+
 struct msr2mrp_state_chng_entry {
     int node;
     double timestamp;
@@ -592,8 +615,9 @@ class msr2mrp: public VirtualRouting {
         std::string pathidToStr(vector<msr2mrp_pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
 
-        std::vector<msr2mrp_node_entry> collectAllRoutes(std::vector<string>);
-        double sumCostValues(std::vector<msr2mrp_node_entry>);
+        std::vector<msr2mrp_node_ext_entry> collectAllRoutes(std::vector<string>);
+        double sumCostValues(std::vector<msr2mrp_node_ext_entry>);
+        msr2mrp_node_ext_entry getCfbpRe(std::vector<msr2mrp_node_ext_entry>, double);
 
 
         std::string getNextHop(int);
