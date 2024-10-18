@@ -1571,6 +1571,17 @@ std::vector<msr2mrp_node_entry> msr2mrp::collectAllRoutes(vector<std::string> ev
 }
 
 
+double msr2mrp::sumCostValues(std::vector<msr2mrp_node_entry> rt) {
+    trace()<<"[info] sumCostValues()";
+    double ret_val = 0.0;
+    for(auto r: rt) {
+        ret_val += 1.0/calculateCostFunction(r);
+    }
+    trace()<<"[info] sum: "<<ret_val;
+    return ret_val;
+}
+
+
 std::string msr2mrp::getNextHop(int pathid) {
     extTrace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
     msr2mrp_node_entry next_hop;
@@ -2172,6 +2183,9 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             case msr2mrpLbMechDef::CFBP: {
                 trace()<<"[info] Cost function-based probability";
                 auto rt=collectAllRoutes(ev);
+                auto sum_cost = sumCostValues(rt);
+                auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
+
                 break;
             }
             case msr2mrpLbMechDef::UN_DEF: {
