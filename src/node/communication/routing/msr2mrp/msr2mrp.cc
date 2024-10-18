@@ -2202,7 +2202,7 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 auto sum_cost = sumCostValues(rt);
                 auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
                 auto re = getCfbpRe(rt,rnd_val);
-
+                engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
                 break;
             }
             case msr2mrpLbMechDef::UN_DEF: {

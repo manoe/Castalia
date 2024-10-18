@@ -217,7 +217,7 @@ class msr2mrp_engine {
         void setSecL(int pathid, bool flag);
         void pushSecLPathid(int);
         int  popSecLPathid();
-        int getSecLPathid();
+        int  getSecLPathid();
         bool isSecLPathidEmpty();
         bool secLPerformed(int round, int pathid);
         bool getSecL(int pathid);
