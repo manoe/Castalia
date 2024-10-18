@@ -1582,8 +1582,19 @@ double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt) {
     return ret_val;
 }
 
+
 msr2mrp_node_ext_entry msr2mrp::getCfbpRe(std::vector<msr2mrp_node_ext_entry> rt, double rnd_val) {
     trace()<<"[info] getCfbpRe(rt,rnd_val="<<rnd_val<<")";
+    double s_cv = 0;
+    
+    for(auto r: rt) {
+        auto cv = 1.0/calculateCostFunction(r);
+        if(s_cv <= rnd_val && s_cv+cv > rnd_val) {
+            return r;
+        }
+        s_cv+=cv;
+    }
+    throw no_available_entry("No entry in ext routing table");
 }
 
 
