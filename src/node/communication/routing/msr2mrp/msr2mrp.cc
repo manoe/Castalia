@@ -82,6 +82,7 @@ void msr2mrp::startup() {
     fp.t_start           = par("t_start");
     fp.single_network    = par("f_single_network");
     fp.rinv_pathid       = strToRinvPathidDef(par("f_rinv_pathid").stringValue());
+    fp.lb_mechanism      = strToLbMech(par("f_lb_mechanism").stringValue());
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
@@ -359,7 +360,7 @@ msr2mrpRinvTblAdminDef msr2mrp::strToRinvTblAdmin(string str) const {
 }
 
 
-msr2mrpLbMechDef msr2mrp::strtoLbMech(string str) const {
+msr2mrpLbMechDef msr2mrp::strToLbMech(string str) const {
     if("rnd" == str) {
         return msr2mrpLbMechDef::RND;
     } else if("cfbp" == str) {
@@ -1556,6 +1557,31 @@ std::string msr2mrp::pathidToStr(vector<int> pathid) {
     return str;
 }
 
+std::vector<msr2mrp_node_entry> msr2mrp::collectAllRoutes(vector<std::string> ev) {
+    trace()<<"[info] collectAllRoutes()";
+    std::vector<msr2mrp_node_entry> rt;
+    for(auto e: ev) {
+        trace()<<"[info] Processing engine/sink: "<<e;
+        for(auto r: engine_table[e]->getRoutingTable()) {
+            trace()<<"[info] Processing pathid: "<<pathidToStr(r.second.pathid)<<", next hop: "<<r.second.nw_address;
+            rt.push_back(r.second);
+        }
+    }
+    return rt;
+}
+
+
+double msr2mrp::sumCostValues(std::vector<msr2mrp_node_entry> rt) {
+    trace()<<"[info] sumCostValues()";
+    double ret_val = 0.0;
+    for(auto r: rt) {
+        ret_val += 1.0/calculateCostFunction(r);
+    }
+    trace()<<"[info] sum: "<<ret_val;
+    return ret_val;
+}
+
+
 std::string msr2mrp::getNextHop(int pathid) {
     extTrace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
     msr2mrp_node_entry next_hop;
@@ -2148,8 +2174,30 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
 
         trace()<<"[info] Engine vector size: "<<ev.size();
 
-        engine_table[ev[getRNG(0)->intRand(ev.size())]]->fromApplicationLayer(pkt,destination);
+        switch (fp.lb_mechanism) {
+            case msr2mrpLbMechDef::RND: {
+                trace()<<"[info] Random stack selection";
+                engine_table[ev[getRNG(0)->intRand(ev.size())]]->fromApplicationLayer(pkt,destination);
+                break;
+            }
+            case msr2mrpLbMechDef::CFBP: {
+                trace()<<"[info] Cost function-based probability";
+                auto rt=collectAllRoutes(ev);
+                auto sum_cost = sumCostValues(rt);
+                auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
 
+                break;
+            }
+            case msr2mrpLbMechDef::UN_DEF: {
+                trace()<<"[error] Undefined LB mechanism";
+                throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
+                break;
+            }
+            default: {
+                trace()<<"[error] State not allowed, non-matching LB mechanism";
+                throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
+            }
+        }
         updateTimer();
 
     }

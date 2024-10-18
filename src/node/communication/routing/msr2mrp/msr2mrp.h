@@ -192,6 +192,12 @@ struct msr2mrp_state_chng_entry {
     double total_energy;
 };
 
+enum msr2mrpLbMechDef {
+    UN_DEF  = 0,
+    RND     = 1,
+    CFBP    = 2
+};
+
 struct msr2mrp_feat_par {
     int    ring_radius;
     double t_l;
@@ -242,17 +248,13 @@ struct msr2mrp_feat_par {
     double t_start;
     bool   single_network;
     msr2mrpRinvPathidDef rinv_pathid;
+    msr2mrpLbMechDef lb_mechanism;
 };
 
 class msr2mrp;
 
 #include "node/communication/routing/msr2mrp/msr2mrp_engine.h"
 
-enum msr2mrpLbMechDef {
-    UN_DEF  = 0,
-    RND     = 1,
-    CFBP    = 2
-};
 
 
 ////enum hdmrpRoleDef {
@@ -511,7 +513,7 @@ class msr2mrp: public VirtualRouting {
 
         msr2mrpRinvTblAdminDef strToRinvTblAdmin(string) const; 
         msr2mrpCostFuncDef strToCostFunc(string) const;
-        msr2mrpLbMechDef strtoLbMech(string) const;
+        msr2mrpLbMechDef strToLbMech(string) const;
         msr2mrpSecLParDef strToSecLPar(string) const; 
         msr2mrpRinvPathidDef strToRinvPathidDef(string) const;
 
@@ -589,6 +591,10 @@ class msr2mrp: public VirtualRouting {
         std::vector<int> selectAllPathid(int);
         std::string pathidToStr(vector<msr2mrp_pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
+
+        std::vector<msr2mrp_node_entry> collectAllRoutes(std::vector<string>);
+        double sumCostValues(std::vector<msr2mrp_node_entry>);
+
 
         std::string getNextHop(int);
         std::string getNextHop(int, bool);

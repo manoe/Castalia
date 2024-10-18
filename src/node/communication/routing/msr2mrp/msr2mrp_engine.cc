@@ -2066,6 +2066,28 @@ void msr2mrp_engine::timerFiredCallback(int index) {
     }
 }
 
+
+void msr2mrp_engine::sendViaPathid(cPacket *pkt, int pathid) {
+    extTrace()<<"[info] sendViaPathid(pkt, pathid="<<pathid<<")";
+    std::string next_hop;
+
+    if(msr2mrpRingDef::EXTERNAL==getRingStatus()) {
+        next_hop=getNextHop(pathid);
+    } else {
+        next_hop=getNextHop(pathid,fp.rand_ring_hop);
+    }
+
+    incPktCountInRoutingTable(next_hop);
+    if(fp.e2e_qos_pdr > 0.0) {
+        schedulePkt(pkt, next_hop, pathid);
+    }
+    else {
+        sendData(pkt,next_hop,pathid);
+    }
+   
+}
+
+
 void msr2mrp_engine::fromApplicationLayer(cPacket * pkt, const char *destination) {
         // Shouldn't we buffer?
         extTrace()<<"[info] fromApplicationLayer()";
@@ -2076,21 +2098,7 @@ void msr2mrp_engine::fromApplicationLayer(cPacket * pkt, const char *destination
         }
 
         auto pathid=selectPathid(false,false);
-        std::string next_hop;
-
-        if(msr2mrpRingDef::EXTERNAL==getRingStatus()) {
-            next_hop=getNextHop(pathid.pathid);
-        } else {
-            next_hop=getNextHop(pathid.pathid,fp.rand_ring_hop);
-        }
-
-        incPktCountInRoutingTable(next_hop);
-        if(fp.e2e_qos_pdr > 0.0) {
-            schedulePkt(pkt, next_hop, pathid.pathid);
-        }
-        else {
-            sendData(pkt,next_hop,pathid.pathid);
-        }
+        sendViaPathid(pkt,pathid.pathid);
 }
 
 void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lqi) {
