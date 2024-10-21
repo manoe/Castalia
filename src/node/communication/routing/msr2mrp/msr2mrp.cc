@@ -1591,6 +1591,25 @@ double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt) {
     return sum_ret_val;
 }
 
+double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt, double (*cost_func)(msr2mrp_node_entry)) {
+    trace()<<"[info] sumCostValues(rt, cost_func)";
+    double sum_ret_val = 0.0;
+    for(auto r: rt) {
+        auto ret_val = 1.0/cost_func(r);
+        if(ret_val > 0) {
+            sum_ret_val+=ret_val;
+        } else {
+            sum_ret_val += 1.0;
+        }
+    }
+    trace()<<"[info] sum: "<<sum_ret_val;
+    return sum_ret_val;
+}
+
+double msr2mrp::calculateInvPkt(msr2mrp_node_entry re) {
+    return 1.0/static_cast<double>(re.pkt_count);
+}
+
 
 msr2mrp_node_ext_entry msr2mrp::getCfbpRe(std::vector<msr2mrp_node_ext_entry> rt, double rnd_val) {
     trace()<<"[info] getCfbpRe(rt,rnd_val="<<rnd_val<<")";
@@ -1598,6 +1617,27 @@ msr2mrp_node_ext_entry msr2mrp::getCfbpRe(std::vector<msr2mrp_node_ext_entry> rt
     
     for(auto r: rt) {
         auto ret_val = calculateCostFunction(r);
+        double cv = 0.0;
+        if(ret_val>0) {
+            cv = 1.0/ ret_val;
+        } else {
+            cv = 1.0;
+        }
+        if(s_cv <= rnd_val && s_cv+cv > rnd_val) {
+            return r;
+        }
+        s_cv+=cv;
+    }
+    throw no_available_entry("No entry in ext routing table");
+}
+
+
+msr2mrp_node_ext_entry msr2mrp::getPbRe(std::vector<msr2mrp_node_ext_entry> rt, double rnd_val, double (*cost_func)(msr2mrp_node_entry)) {
+    trace()<<"[info] getPbRe(rt,rnd_val="<<rnd_val<<",cost_func)";
+    double s_cv = 0;
+    
+    for(auto r: rt) {
+        auto ret_val = cost_func(r);
         double cv = 0.0;
         if(ret_val>0) {
             cv = 1.0/ ret_val;
@@ -1628,10 +1668,6 @@ msr2mrp_node_ext_entry msr2mrp::getMinTRe(std::vector<msr2mrp_node_ext_entry> rt
     }
     return mint_re;
 }
-
-msr2mrp_node_ext_entry msr2mrp::getTbipRe(std::vector<msr2mrp_node_ext_entry> rt) {
-}
-
 
 
 std::string msr2mrp::getNextHop(int pathid) {
@@ -2251,7 +2287,9 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
             case msr2mrpLbMechDef::TBIP: {
                 trace()<<"[info] Traffic-based inverse probability";
                 auto rt = collectAllRoutes(ev);
-                auto re = getTbipRe(rt);
+                auto sum_cost = sumCostValues(rt,calculateInvPkt);
+                auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
+                auto re = getPbRe(rt,rnd_val,calculateInvPkt);
                 engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
                 break;
 
