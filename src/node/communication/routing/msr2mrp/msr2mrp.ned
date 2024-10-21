@@ -112,6 +112,7 @@ simple msr2mrp like node.communication.routing.iRouting
     string f_lb_mechanism     = default("rnd"); // rnd      - Random stack selection
                                                 // cfbp     - Select path based on cost function (1/CF(r))
                                                 // mint     - Select path based on Minimal traffic
+                                                // tbip     - Select path based on inverse traffic probability
 
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
