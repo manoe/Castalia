@@ -218,7 +218,8 @@ struct msr2mrp_state_chng_entry {
 enum msr2mrpLbMechDef {
     UN_DEF  = 0,
     RND     = 1,
-    CFBP    = 2
+    CFBP    = 2,
+    MINT    = 3
 };
 
 struct msr2mrp_feat_par {
