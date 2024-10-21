@@ -1607,7 +1607,10 @@ double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt, double (*c
 }
 
 double msr2mrp::calculateInvPkt(msr2mrp_node_entry re) {
-    return 1.0/static_cast<double>(re.pkt_count);
+    if(re.pkt_count > 0) {
+        return 1.0/static_cast<double>(re.pkt_count);
+    }
+    return 1;
 }
 
 
@@ -1638,6 +1641,7 @@ msr2mrp_node_ext_entry msr2mrp::getPbRe(std::vector<msr2mrp_node_ext_entry> rt, 
     
     for(auto r: rt) {
         auto ret_val = cost_func(r);
+        trace()<<"[info] ret_val="<<ret_val;
         double cv = 0.0;
         if(ret_val>0) {
             cv = 1.0/ ret_val;
