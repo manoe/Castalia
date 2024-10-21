@@ -618,7 +618,9 @@ class msr2mrp: public VirtualRouting {
 
         std::vector<msr2mrp_node_ext_entry> collectAllRoutes(std::vector<string>);
         double sumCostValues(std::vector<msr2mrp_node_ext_entry>);
+
         msr2mrp_node_ext_entry getCfbpRe(std::vector<msr2mrp_node_ext_entry>, double);
+        msr2mrp_node_ext_entry getMinTRe(std::vector<msr2mrp_node_ext_entry>);
 
 
         std::string getNextHop(int);

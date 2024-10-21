@@ -1611,6 +1611,23 @@ msr2mrp_node_ext_entry msr2mrp::getCfbpRe(std::vector<msr2mrp_node_ext_entry> rt
 }
 
 
+msr2mrp_node_ext_entry msr2mrp::getMinTRe(std::vector<msr2mrp_node_ext_entry> rt) {
+    trace()<<"[info] getMinTRe(rt)";
+    if(rt.empty()) {
+        trace()<<"[error] No entry in routing table";
+        throw no_available_entry("No entry in ext routing table");
+    }
+    auto mint_re = rt.front();
+    for(auto re: rt) {
+        if(re.pkt_count < mint_re.pkt_count) {
+            trace()<<"[info] Entry "<<re.nw_address<<" sink "<<re.sink<< "with pkt count "<<re.pkt_count<<" is the new candidate";
+            mint_re = re;
+        }
+    }
+    return mint_re;
+}
+
+
 std::string msr2mrp::getNextHop(int pathid) {
     extTrace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
     msr2mrp_node_entry next_hop;
@@ -2215,6 +2232,13 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 auto sum_cost = sumCostValues(rt);
                 auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
                 auto re = getCfbpRe(rt,rnd_val);
+                engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
+                break;
+            }
+            case msr2mrpLbMechDef::MINT: {
+                trace()<<"[info] Minimum-traffic path selection";
+                auto rt = collectAllRoutes(ev);
+                auto re = getMinTRe(rt);
                 engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
                 break;
             }
