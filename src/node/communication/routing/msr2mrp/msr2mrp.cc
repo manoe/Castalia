@@ -367,6 +367,8 @@ msr2mrpLbMechDef msr2mrp::strToLbMech(string str) const {
         return msr2mrpLbMechDef::CFBP;
     } else if("mint" == str) {
         return msr2mrpLbMechDef::MINT;
+    } else if("tbip" == str) {
+        return msr2mrpLbMechDef::TBIP;
     }
     throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
     return msr2mrpLbMechDef::UN_DEF;
@@ -1627,6 +1629,10 @@ msr2mrp_node_ext_entry msr2mrp::getMinTRe(std::vector<msr2mrp_node_ext_entry> rt
     return mint_re;
 }
 
+msr2mrp_node_ext_entry msr2mrp::getTbipRe(std::vector<msr2mrp_node_ext_entry> rt) {
+}
+
+
 
 std::string msr2mrp::getNextHop(int pathid) {
     extTrace()<<"[info] Entering getNextHop(pathid="<<pathid<<")";
@@ -2241,6 +2247,14 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 auto re = getMinTRe(rt);
                 engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
                 break;
+            }
+            case msr2mrpLbMechDef::TBIP: {
+                trace()<<"[info] Traffic-based inverse probability";
+                auto rt = collectAllRoutes(ev);
+                auto re = getTbipRe(rt);
+                engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
+                break;
+
             }
             case msr2mrpLbMechDef::UN_DEF: {
                 trace()<<"[error] Undefined LB mechanism";

@@ -219,7 +219,8 @@ enum msr2mrpLbMechDef {
     UN_DEF  = 0,
     RND     = 1,
     CFBP    = 2,
-    MINT    = 3
+    MINT    = 3,
+    TBIP    = 4
 };
 
 struct msr2mrp_feat_par {
@@ -621,7 +622,7 @@ class msr2mrp: public VirtualRouting {
 
         msr2mrp_node_ext_entry getCfbpRe(std::vector<msr2mrp_node_ext_entry>, double);
         msr2mrp_node_ext_entry getMinTRe(std::vector<msr2mrp_node_ext_entry>);
-
+        msr2mrp_node_ext_entry getTbipRe(std::vector<msr2mrp_node_ext_entry> rt);
 
         std::string getNextHop(int);
         std::string getNextHop(int, bool);
