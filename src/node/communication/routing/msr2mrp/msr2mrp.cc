@@ -365,6 +365,8 @@ msr2mrpLbMechDef msr2mrp::strToLbMech(string str) const {
         return msr2mrpLbMechDef::RND;
     } else if("cfbp" == str) {
         return msr2mrpLbMechDef::CFBP;
+    } else if("mint" == str) {
+        return msr2mrpLbMechDef::MINT;
     }
     throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
     return msr2mrpLbMechDef::UN_DEF;
