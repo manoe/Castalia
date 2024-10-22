@@ -111,10 +111,11 @@ simple msr2mrp like node.communication.routing.iRouting
                                                 // min_count - select pathid with minimal count
     string f_lb_mechanism     = default("rnd"); // rnd      - Random stack selection
                                                 // cfbp     - Select path based on cost function (1/CF(r))
-                                                // mint     - Select path based on Minimal traffic
+                                                // mint     - Select path based on Minimum traffic
                                                 // tbip     - Select path based on inverse traffic probability
                                                 // tbp      - Select path based on traffic probabilty
-
+                                                // maxt     - Select path based on maximum traffic
+                                                // hbip     - Select path based on hop based inverse probability
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
