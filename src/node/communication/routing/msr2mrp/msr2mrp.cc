@@ -369,7 +369,10 @@ msr2mrpLbMechDef msr2mrp::strToLbMech(string str) const {
         return msr2mrpLbMechDef::MINT;
     } else if("tbip" == str) {
         return msr2mrpLbMechDef::TBIP;
+    } else if("tbp" == str) {
+        return msr2mrpLbMechDef::TBP;
     }
+    
     throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
     return msr2mrpLbMechDef::UN_DEF;
 }
@@ -1595,7 +1598,7 @@ double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt, double (*c
     trace()<<"[info] sumCostValues(rt, cost_func)";
     double sum_ret_val = 0.0;
     for(auto r: rt) {
-        auto ret_val = 1.0/cost_func(r);
+        auto ret_val = cost_func(r);
         if(ret_val > 0) {
             sum_ret_val+=ret_val;
         } else {
@@ -1609,6 +1612,14 @@ double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt, double (*c
 double msr2mrp::calculateInvPkt(msr2mrp_node_entry re) {
     if(re.pkt_count > 0) {
         return 1.0/static_cast<double>(re.pkt_count);
+    }
+    return 1;
+}
+
+
+double msr2mrp::calculatePkt(msr2mrp_node_entry re) {
+    if(re.pkt_count > 0) {
+        return static_cast<double>(re.pkt_count);
     }
     return 1;
 }
@@ -1644,7 +1655,7 @@ msr2mrp_node_ext_entry msr2mrp::getPbRe(std::vector<msr2mrp_node_ext_entry> rt, 
         trace()<<"[info] ret_val="<<ret_val;
         double cv = 0.0;
         if(ret_val>0) {
-            cv = 1.0/ ret_val;
+            cv = ret_val;
         } else {
             cv = 1.0;
         }
@@ -2297,6 +2308,15 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
                 break;
 
+            }
+            case msr2mrpLbMechDef::TBP: {
+                trace()<<"[info] Traffic-based inverse probability";
+                auto rt = collectAllRoutes(ev);
+                auto sum_cost = sumCostValues(rt,calculatePkt);
+                auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
+                auto re = getPbRe(rt,rnd_val,calculatePkt);
+                engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
+                break;
             }
             case msr2mrpLbMechDef::UN_DEF: {
                 trace()<<"[error] Undefined LB mechanism";

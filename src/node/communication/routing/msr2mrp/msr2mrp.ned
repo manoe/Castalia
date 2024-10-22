@@ -113,6 +113,7 @@ simple msr2mrp like node.communication.routing.iRouting
                                                 // cfbp     - Select path based on cost function (1/CF(r))
                                                 // mint     - Select path based on Minimal traffic
                                                 // tbip     - Select path based on inverse traffic probability
+                                                // tbp      - Select path based on traffic probabilty
 
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
