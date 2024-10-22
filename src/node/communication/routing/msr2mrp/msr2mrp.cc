@@ -371,6 +371,10 @@ msr2mrpLbMechDef msr2mrp::strToLbMech(string str) const {
         return msr2mrpLbMechDef::TBIP;
     } else if("tbp" == str) {
         return msr2mrpLbMechDef::TBP;
+    } else if("hbip" == str) {
+        return msr2mrpLbMechDef::HBIP;
+    } else if("maxt" == str) {
+        return msr2mrpLbMechDef::MAXT;
     }
     
     throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
@@ -1610,10 +1614,7 @@ double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt, double (*c
 }
 
 double msr2mrp::calculateInvPkt(msr2mrp_node_entry re) {
-    if(re.pkt_count > 0) {
-        return 1.0/static_cast<double>(re.pkt_count);
-    }
-    return 1;
+    return 1.0/(1.0 + static_cast<double>(re.pkt_count));
 }
 
 
@@ -1623,6 +1624,11 @@ double msr2mrp::calculatePkt(msr2mrp_node_entry re) {
     }
     return 1;
 }
+
+double msr2mrp::calculateInvHop(msr2mrp_node_entry re) {
+    return 1.0/(1.0 + static_cast<double>(re.hop));
+}
+
 
 
 msr2mrp_node_ext_entry msr2mrp::getCfbpRe(std::vector<msr2mrp_node_ext_entry> rt, double rnd_val) {
@@ -1682,6 +1688,23 @@ msr2mrp_node_ext_entry msr2mrp::getMinTRe(std::vector<msr2mrp_node_ext_entry> rt
         }
     }
     return mint_re;
+}
+
+
+msr2mrp_node_ext_entry msr2mrp::getMaxTRe(std::vector<msr2mrp_node_ext_entry> rt) {
+    trace()<<"[info] getMaxTRe(rt)";
+    if(rt.empty()) {
+        trace()<<"[error] No entry in routing table";
+        throw no_available_entry("No entry in ext routing table");
+    }
+    auto maxt_re = rt.front();
+    for(auto re: rt) {
+        if(re.pkt_count > maxt_re.pkt_count) {
+            trace()<<"[info] Entry "<<re.nw_address<<" sink "<<re.sink<< "with pkt count "<<re.pkt_count<<" is the new candidate";
+            maxt_re = re;
+        }
+    }
+    return maxt_re;
 }
 
 
@@ -2299,6 +2322,13 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
                 break;
             }
+            case msr2mrpLbMechDef::MAXT: {
+                trace()<<"[info] Maximum-traffic path selection";
+                auto rt = collectAllRoutes(ev);
+                auto re = getMaxTRe(rt);
+                engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
+                break;
+            }
             case msr2mrpLbMechDef::TBIP: {
                 trace()<<"[info] Traffic-based inverse probability";
                 auto rt = collectAllRoutes(ev);
@@ -2310,7 +2340,7 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
 
             }
             case msr2mrpLbMechDef::TBP: {
-                trace()<<"[info] Traffic-based inverse probability";
+                trace()<<"[info] Traffic-based probability";
                 auto rt = collectAllRoutes(ev);
                 auto sum_cost = sumCostValues(rt,calculatePkt);
                 auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
@@ -2318,6 +2348,16 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
                 break;
             }
+            case msr2mrpLbMechDef::HBIP: {
+                trace()<<"[info] Hop-based inverse probability";
+                auto rt = collectAllRoutes(ev);
+                auto sum_cost = sumCostValues(rt,calculateInvHop);
+                auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
+                auto re = getPbRe(rt,rnd_val,calculateInvHop);
+                engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
+                break;
+            }
+
             case msr2mrpLbMechDef::UN_DEF: {
                 trace()<<"[error] Undefined LB mechanism";
                 throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
