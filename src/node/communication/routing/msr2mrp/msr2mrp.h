@@ -182,6 +182,7 @@ struct msr2mrp_node_entry {
     bool secl  = false;
     int  nmas = 0;
     int reroute_count = 0;
+    int orig_pkt_count = 0;
 };
 
 struct msr2mrp_node_ext_entry : msr2mrp_node_entry {

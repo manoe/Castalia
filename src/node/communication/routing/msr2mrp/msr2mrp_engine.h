@@ -173,6 +173,8 @@ class msr2mrp_engine {
         std::string getNextHop(int);
         std::string getNextHop(int, bool);
         void incPktCountInRoutingTable(std::string);
+        void incOrigPktCountInRoutingTable(std::string);
+
         bool checkPathid(int);
         int  calculateRepeat(const char *);
         int  getRoutingTableSize() { return routing_table.size();};

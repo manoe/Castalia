@@ -2708,6 +2708,9 @@ void msr2mrp::serializeRoutingTable(std::map<std::string,msr2mrp_node_entry> tab
         y_out<<YAML::Value<<i.second.fail;
         y_out<<YAML::Key<<"secl";
         y_out<<YAML::Value<<i.second.secl;
+        y_out<<YAML::Key<<"orig_pkt_count";
+        y_out<<YAML::Value<<i.second.orig_pkt_count;
+
         y_out<<YAML::EndMap;
     }
     y_out<<YAML::EndSeq;

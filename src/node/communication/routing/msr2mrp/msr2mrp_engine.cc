@@ -1568,6 +1568,16 @@ void msr2mrp_engine::incPktCountInRoutingTable(std::string next_hop) {
     routing_table[next_hop].pkt_count++;
 }
 
+void msr2mrp_engine::incOrigPktCountInRoutingTable(std::string next_hop) {
+    extTrace()<<"[info] Entering incOrigPktCountInRoutingTable(next_hop="<<next_hop<<")";
+    if(routing_table.find(next_hop) == routing_table.end()) {
+        throw no_available_entry("[error] No available entry to update Pkt count"); 
+    }
+
+    routing_table[next_hop].orig_pkt_count++;
+}
+
+
 bool msr2mrp_engine::checkPathid(int pathid) {
     extTrace()<<"[info] Entering checkPathid(pathid="<<pathid<<")";
     for(auto ne: routing_table) {
@@ -2078,6 +2088,8 @@ void msr2mrp_engine::sendViaPathid(cPacket *pkt, int pathid) {
     }
 
     incPktCountInRoutingTable(next_hop);
+    incOrigPktCountInRoutingTable(next_hop);
+
     if(fp.e2e_qos_pdr > 0.0) {
         schedulePkt(pkt, next_hop, pathid);
     }
