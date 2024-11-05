@@ -224,7 +224,8 @@ enum msr2mrpLbMechDef {
     TBIP    = 4,
     TBP     = 5,
     MAXT    = 6,
-    HBIP    = 7
+    HBIP    = 7,
+    ALL     = 8
 };
 
 struct msr2mrp_feat_par {

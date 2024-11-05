@@ -375,6 +375,8 @@ msr2mrpLbMechDef msr2mrp::strToLbMech(string str) const {
         return msr2mrpLbMechDef::HBIP;
     } else if("maxt" == str) {
         return msr2mrpLbMechDef::MAXT;
+    } else if("all"  == str) {
+        return msr2mrpLbMechDef::ALL;
     }
     
     throw std::invalid_argument("[error] Unknown f_lb_mechanism parameter");
@@ -2355,6 +2357,14 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 auto rnd_val = getRNG(0)->doubleRand() * sum_cost;
                 auto re = getPbRe(rt,rnd_val,calculateInvHop);
                 engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
+                break;
+            }
+            case msr2mrpLbMechDef::ALL: {
+                trace()<<"[info] Select all paths";
+                for(auto re: collectAllRoutes(ev)) {
+                    engine_table[re.sink]->sendViaPathid(pkt->dup(),re.pathid[0].pathid);
+                }
+                delete pkt;
                 break;
             }
 

@@ -116,6 +116,7 @@ simple msr2mrp like node.communication.routing.iRouting
                                                 // tbp      - Select path based on traffic probabilty
                                                 // maxt     - Select path based on maximum traffic
                                                 // hbip     - Select path based on hop based inverse probability
+                                                // all      - Distribute packet on all paths
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
