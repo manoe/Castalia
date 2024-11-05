@@ -280,6 +280,7 @@ struct msr2mrp_feat_par {
     msr2mrpRinvPathidDef rinv_pathid;
     msr2mrpLbMechDef lb_mechanism;
     bool   border_only;
+    bool   coll_pkt_at_border;
 };
 
 class msr2mrp;
@@ -678,6 +679,8 @@ class msr2mrp: public VirtualRouting {
         void serializeRecvTable();
         void serializeRecvTable(std::map<std::string,msr2mrp_node_entry>);
         void serializeRadioStats(PktBreakdown);
+
+        void serializeHopPktTable(std::map<int,int>);
 
         std::string StateToString(msr2mrpStateDef);
 

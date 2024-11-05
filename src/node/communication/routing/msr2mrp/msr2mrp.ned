@@ -118,6 +118,7 @@ simple msr2mrp like node.communication.routing.iRouting
                                                 // hbip     - Select path based on hop based inverse probability
                                                 // all      - Distribute packet on all paths
     bool f_border_only       = default(false);  // Do not accept RINV from new sink, if border node
+    bool f_coll_pkt_at_border= default(false);  // Collect DATA pkt stat at border
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ

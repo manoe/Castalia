@@ -1098,6 +1098,7 @@ void msr2mrp_engine::sendData(cPacket *pkt, std::string dest, int pathid) {
     data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
     data_pkt->setDestination(dest.c_str());
     data_pkt->setPathid(pathid);
+    data_pkt->setHop(getHop(pathid));
     data_pkt->setReroute(0);
     data_pkt->setSequenceNumber(currentSequenceNumber++);
     data_pkt->encapsulate(pkt);
@@ -2540,7 +2541,13 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                     extTrace()<<"[error] Routing table empty, giving up";
                     break;
                 }
-
+                if(fp.coll_pkt_at_border) {
+                    if(hop_pkt_table.find(data_pkt->getHop()) != hop_pkt_table.end()) {
+                        hop_pkt_table[data_pkt->getHop()]++;
+                    } else {
+                        hop_pkt_table[data_pkt->getHop()]=1;
+                    }
+                }
                 incPktCountInRoutingTable(next_hop);
                 forwardData(data_pkt->dup(),next_hop,reroute);
             }

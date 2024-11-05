@@ -84,6 +84,7 @@ void msr2mrp::startup() {
     fp.rinv_pathid       = strToRinvPathidDef(par("f_rinv_pathid").stringValue());
     fp.lb_mechanism      = strToLbMech(par("f_lb_mechanism").stringValue());
     fp.border_only       = par("f_border_only");
+    fp.coll_pkt_at_border= par("f_coll_pkt_at_border");
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
@@ -2752,7 +2753,7 @@ void msr2mrp::serializeRecvTable(std::map<std::string,msr2mrp_node_entry> table)
             y_out<<YAML::Value<<p.pathid;
             y_out<<YAML::Key<<"nmas";
             y_out<<YAML::Value<<p.nmas;
-            y_out<<YAML::EndMap;;
+            y_out<<YAML::EndMap;
 
         }
         y_out<<YAML::EndSeq;
@@ -2787,6 +2788,19 @@ void msr2mrp::serializeRadioStats(PktBreakdown stats) {
     y_out<<YAML::Key<<"buffer_overflow";
     y_out<<YAML::Value<<stats.bufferOverflow;
     y_out<<YAML::EndMap;
+}
+
+void msr2mrp::serializeHopPktTable(std::map<int,int> hop_pkt_table) {
+    y_out<<YAML::BeginSeq;
+    for(auto hp: hop_pkt_table) {
+        y_out<<YAML::BeginMap;
+        y_out<<YAML::Key<<"hop";
+        y_out<<YAML::Value<<hp.first;
+        y_out<<YAML::Key<<"pkt_count";
+        y_out<<YAML::Value<<hp.second;
+        y_out<<YAML::EndMap;
+    }
+    y_out<<YAML::EndSeq;
 }
 
 
@@ -2846,6 +2860,16 @@ void msr2mrp::finishSpecific() {
                     serializeRoutingTable(table);
                 } catch (exception &e) {
                     extTrace()<<"[error] No rinv table: "<<e.what();
+                }
+                if(fp.coll_pkt_at_border && msr2mrpRingDef::BORDER == it->second->getRingStatus()) {
+                    try {
+                        auto table=it->second->getHopPktTable();
+                        y_out<<YAML::Key<<"hop_pkt_table";
+                        y_out<<YAML::Value;
+                        serializeHopPktTable(table);
+                    } catch (exception &e) {
+                        extTrace()<<"[error] No hop-pkt table: "<<e.what();
+                    }
                 }
                 y_out<<YAML::Key<<"round";
                 y_out<<YAML::Value<<it->second->getRound();
