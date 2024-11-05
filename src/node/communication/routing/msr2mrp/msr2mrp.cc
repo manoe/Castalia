@@ -83,6 +83,7 @@ void msr2mrp::startup() {
     fp.single_network    = par("f_single_network");
     fp.rinv_pathid       = strToRinvPathidDef(par("f_rinv_pathid").stringValue());
     fp.lb_mechanism      = strToLbMech(par("f_lb_mechanism").stringValue());
+    fp.border_only       = par("f_border_only");
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
@@ -2416,6 +2417,10 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
                 trace()<<"[info] Node already assigned to sink "<<engine_table.begin()->first;
                 return;
             }
+            if(fp.border_only && std::any_of(engine_table.cbegin(), engine_table.cend(), [](auto e) { return e.second->getRingStatus() == msr2mrpRingDef::BORDER ; })) {
+               trace()<<"[info] A border node already active, no other is created";
+               return;
+            } 
             extTrace()<<"[info] RINV_PACKET received, creating engine";
             engine_table[net_pkt->getSink()]=new msr2mrp_engine(this,
                                                               isSink(),
