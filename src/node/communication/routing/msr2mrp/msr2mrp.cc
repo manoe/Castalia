@@ -83,6 +83,7 @@ void msr2mrp::startup() {
     fp.single_network    = par("f_single_network");
     fp.rinv_pathid       = strToRinvPathidDef(par("f_rinv_pathid").stringValue());
     fp.lb_mechanism      = strToLbMech(par("f_lb_mechanism").stringValue());
+    fp.border_only       = par("f_border_only");
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;

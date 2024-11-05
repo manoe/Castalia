@@ -279,6 +279,7 @@ struct msr2mrp_feat_par {
     bool   single_network;
     msr2mrpRinvPathidDef rinv_pathid;
     msr2mrpLbMechDef lb_mechanism;
+    bool   border_only;
 };
 
 class msr2mrp;
