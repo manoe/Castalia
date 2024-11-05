@@ -335,31 +335,7 @@ void ForestFire::fromNetworkLayer(ApplicationPacket * rcvPacket,
                 yp_out<<YAML::Value<<getAverageSpentEnergy();
                 yp_out<<YAML::EndMap;
             }
-
-            // this is report packet which contains sensor reading information
-            // NOTE that data field is used to store source address instead of using char *source
-            // this is done because some routing and flooding is done on the application layer
-            // and source address will not always correctly represent the author of the sensed data
-            //		trace() << "Received report from " << (int)data;
-            //		if (updateReportTable((int)data, sequenceNumber)) {
-            //			// forward the packet only if we broadcast reports and this is a new (unseen) report
-            //			// updateReportTable returns 0 for duplicate packets
-            //			if (!isSink) {
-            //				trace() << "Forwarding report packet from node " << (int)data;
-            //				toNetworkLayer(rcvPacket->dup(), reportDestination.c_str());
-            //			}
-            //		}
-
-        }// else if (packetName.compare(REPROGRAM_PACKET_NAME) == 0) {
-         // this is version (reprogramming) packet
-         //		if (!isSink && updateVersionTable(data, sequenceNumber)) {
-         // forward the packet only if not sink and its a new packet
-         // updateVersionTable returns 0 for duplicate packets
-         //			toNetworkLayer(rcvPacket->dup(), BROADCAST_NETWORK_ADDRESS);
-         //		}
-
-         //	}
-        else    if(0==packetName.compare(EVENT_PACKET_NAME)) {
+        } else if(0==packetName.compare(EVENT_PACKET_NAME)) {
             collectOutput("Event packet","Received");
             eventRecv[atoi(source)]++;
 
