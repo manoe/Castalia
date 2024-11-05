@@ -1098,6 +1098,7 @@ void msr2mrp_engine::sendData(cPacket *pkt, std::string dest, int pathid) {
     data_pkt->setOrigin(SELF_NETWORK_ADDRESS);
     data_pkt->setDestination(dest.c_str());
     data_pkt->setPathid(pathid);
+    data_pkt->setHop(getHop(pathid));
     data_pkt->setReroute(0);
     data_pkt->setSequenceNumber(currentSequenceNumber++);
     data_pkt->encapsulate(pkt);
