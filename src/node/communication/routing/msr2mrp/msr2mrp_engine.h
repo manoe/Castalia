@@ -70,6 +70,7 @@ class msr2mrp_engine {
         std::map<std::string,msr2mrp_node_entry> backup_rreq_table;
         std::list<msr2mrpDataPacket *> pkt_list;
         std::map<std::string,msr2mrp_node_entry> traffic_table;
+        std::map<int,int>                        hop_pkt_table;
 
         YAML::Emitter y_out;
 
@@ -283,6 +284,10 @@ class msr2mrp_engine {
         std::map<std::string,msr2mrp_node_entry> getTrafficTable() {
             return traffic_table;
         };
+
+        std::map<int,int> getHopPktTable() {
+            return hop_pkt_table;
+        }
 
         double getEnergyValue();
         double getEmergencyValue();

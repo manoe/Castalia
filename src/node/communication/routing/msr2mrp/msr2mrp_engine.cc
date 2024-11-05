@@ -2541,7 +2541,13 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                     extTrace()<<"[error] Routing table empty, giving up";
                     break;
                 }
-
+                if(fp.coll_pkt_at_border) {
+                    if(hop_pkt_table.find(data_pkt->getHop()) != hop_pkt_table.end()) {
+                        hop_pkt_table[data_pkt->getHop()]++;
+                    } else {
+                        hop_pkt_table[data_pkt->getHop()]=1;
+                    }
+                }
                 incPktCountInRoutingTable(next_hop);
                 forwardData(data_pkt->dup(),next_hop,reroute);
             }
