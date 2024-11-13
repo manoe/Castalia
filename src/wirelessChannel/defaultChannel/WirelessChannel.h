@@ -93,6 +93,7 @@ class WirelessChannel: public CastaliaModule {
 
 	bool temporalModelDefined;
 	channelTemporalModel *temporalModel;
+    bool serializePathLossData;
 
  protected:
 	virtual void initialize(int);

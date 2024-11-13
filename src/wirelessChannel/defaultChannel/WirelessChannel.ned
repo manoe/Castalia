@@ -46,6 +46,7 @@ simple WirelessChannel like wirelessChannel.iWirelessChannel {
 												// threshold in dBm above which, wireless channel module
 												// is delivering signal messages to radio modules of 
 												// individual nodes
+    bool serializePathLossData = default(false);// Serialize path loss data to yaml file
 
  gates:
  	output toNode[];

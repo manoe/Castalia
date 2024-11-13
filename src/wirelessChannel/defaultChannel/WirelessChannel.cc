@@ -496,10 +496,11 @@ void WirelessChannel::finishSpecific()
 	}
 	delete[]pathLoss;	// the delete[] operator releases memory allocated with new []
     y_out<<YAML::EndSeq;
-
-    ofstream avg_pl_file("avg_pl.yaml");
-    avg_pl_file<<y_out.c_str();
-    avg_pl_file.close();
+    if(serializePathLossData) {
+        ofstream avg_pl_file("avg_pl.yaml");
+        avg_pl_file<<y_out.c_str();
+        avg_pl_file.close();
+    }
 
 	/* delete nodesAffectedByTransmitter */
 	delete[]nodesAffectedByTransmitter;	// the delete[] operator releases memory allocated with new []
@@ -542,7 +543,7 @@ void WirelessChannel::readIniFileParameters(void)
 	zCellSize = par("zCellSize");
 
 	maxTxPower = 0.0;
-
+    serializePathLossData = par("serializePathLossData");
 }				// readIniParameters
 
 /* Parsing of custom pathloss map from a file,
