@@ -746,6 +746,12 @@ class msr2mrp: public VirtualRouting {
         };
 
         std::map<std::string,msr2mrp_engine*> getEngineTable() {return engine_table;};
+
+        std::map<std::string,msr2mrp_node_entry> getPktTable() {
+            return pkt_table;
+        };
+        
+
         void destroyEngines();
 
         double getEnergyValue();
