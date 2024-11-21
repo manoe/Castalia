@@ -2936,11 +2936,27 @@ void msr2mrp::finishSpecific() {
                 y_out<<YAML::EndMap;
             }
             y_out<<YAML::EndSeq;
+
+            y_out<<YAML::Key<<"pkt_table";
+            y_out<<YAML::Value;
+            y_out<<YAML::BeginSeq;
+            for(auto ne: msr2mrp_instance->getPktTable()) {
+                y_out<<YAML::BeginMap;
+                y_out<<YAML::Key<<"node";
+                y_out<<YAML::Value<<ne.first;
+                y_out<<YAML::Key<<"pkt_count";
+                y_out<<YAML::Value<<ne.second.pkt_count;
+                y_out<<YAML::Key<<"ack_count";
+                y_out<<YAML::Value<<ne.second.ack_count;
+                y_out<<YAML::Key<<"fail_count";
+                y_out<<YAML::Value<<ne.second.fail_count;
+                y_out<<YAML::EndMap;
+            }
+            y_out<<YAML::EndSeq;
+
             y_out<<YAML::Key<<"forw_data_pkt_count";
             y_out<<YAML::Value<<msr2mrp_instance->getForwDataPkt();
             y_out<<YAML::EndMap;
-
-            // seek back one character
 
         }
         y_out<<YAML::EndSeq;
@@ -3004,7 +3020,43 @@ void msr2mrp::handleMacControlMessage(cMessage *msg) {
             trace()<<"[info] Node present in engine's routing table";
             re.second->handleMacControlMessage(mac_msg);
         }
-    } 
+    }
+
+    switch (mac_msg->getMacControlMessageKind()) {
+        case MacControlMessage_type::ACK_RECV: {
+            extTrace()<<"[info] ACK_RECV received.";
+            if(pkt_table.find(nw_address) != pkt_table.end()) {
+                pkt_table[nw_address].ack_count++;
+            }
+            else {
+                pkt_table[nw_address].nw_address=nw_address;
+                pkt_table[nw_address].ack_count=1;
+            }
+            break;
+        }
+        case MacControlMessage_type::PKT_FAIL: {
+            extTrace()<<"[info] PKT_FAIL received.";
+            if(pkt_table.find(nw_address) != pkt_table.end()) {
+                pkt_table[nw_address].fail_count++;
+            } else {
+                pkt_table[nw_address].nw_address=nw_address;
+                pkt_table[nw_address].fail_count=1;
+            }
+            break;
+        }
+        case MacControlMessage_type::PKT_SENT: {
+            extTrace()<<"[info] PKT_FAIL received.";
+            if(pkt_table.find(nw_address) != pkt_table.end()) {
+                pkt_table[nw_address].pkt_count++;
+            } else {
+                pkt_table[nw_address].nw_address=nw_address;
+                pkt_table[nw_address].pkt_count=1;
+            }
+            break;
+
+        }
+    }
+
     delete msg;
 }
 

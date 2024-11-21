@@ -519,6 +519,7 @@ class msr2mrp: public VirtualRouting {
         std::map<std::string,msr2mrp_node_entry> backup_rreq_table;
         std::list<msr2mrpDataPacket *> pkt_list;
         std::map<std::string,msr2mrp_node_entry> traffic_table;
+        std::map<std::string,msr2mrp_node_entry> pkt_table;
 
         YAML::Emitter y_out;
 
@@ -745,6 +746,12 @@ class msr2mrp: public VirtualRouting {
         };
 
         std::map<std::string,msr2mrp_engine*> getEngineTable() {return engine_table;};
+
+        std::map<std::string,msr2mrp_node_entry> getPktTable() {
+            return pkt_table;
+        };
+        
+
         void destroyEngines();
 
         double getEnergyValue();
