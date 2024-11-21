@@ -2958,7 +2958,6 @@ void msr2mrp::finishSpecific() {
             y_out<<YAML::Value<<msr2mrp_instance->getForwDataPkt();
             y_out<<YAML::EndMap;
 
-            // seek back one character
         }
         y_out<<YAML::EndSeq;
         ofstream loc_pdr_file("loc_pdr.yaml");
