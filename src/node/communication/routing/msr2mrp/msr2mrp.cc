@@ -3004,7 +3004,43 @@ void msr2mrp::handleMacControlMessage(cMessage *msg) {
             trace()<<"[info] Node present in engine's routing table";
             re.second->handleMacControlMessage(mac_msg);
         }
-    } 
+    }
+
+    switch (mac_msg->getMacControlMessageKind()) {
+        case MacControlMessage_type::ACK_RECV: {
+            extTrace()<<"[info] ACK_RECV received.";
+            if(pkt_table.find(nw_address) != pkt_table.end()) {
+                pkt_table[nw_address].ack_count++;
+            }
+            else {
+                pkt_table[nw_address].nw_address=nw_address;
+                pkt_table[nw_address].ack_count=1;
+            }
+            break;
+        }
+        case MacControlMessage_type::PKT_FAIL: {
+            extTrace()<<"[info] PKT_FAIL received.";
+            if(routing_table.find(nw_address) != routing_table.end()) {
+                routing_table[nw_address].fail_count++;
+            } else {
+                pkt_table[nw_address].nw_address=nw_address;
+                pkt_table[nw_address].fail_count=1;
+            }
+            break;
+        }
+        case MacControlMessage_type::PKT_SENT: {
+            extTrace()<<"[info] PKT_FAIL received.";
+            if(routing_table.find(nw_address) != routing_table.end()) {
+                routing_table[nw_address].pkt_count++;
+            } else {
+                pkt_table[nw_address].nw_address=nw_address;
+                pkt_table[nw_address].pkt_count=1;
+            }
+            break;
+
+        }
+    }
+
     delete msg;
 }
 
