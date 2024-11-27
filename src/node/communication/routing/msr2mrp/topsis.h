@@ -17,7 +17,7 @@
 using namespace arma;
 
 struct ps_alt {
-    int sink;
+    std::string sink;
     int pathid;
     double rank;
 };
