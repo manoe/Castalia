@@ -104,6 +104,7 @@ class TopsisEngine {
             weights=w_arr;
         };
         std::vector<ps_alt> getRanking() {
+            std::vector<ps_alt> res;
             auto n_table=normalizeMatrix();
             auto n_w_table=applyWeights(n_table);
             auto v_best=calculateIdealBest(n_w_table);
