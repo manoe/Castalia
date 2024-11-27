@@ -104,18 +104,14 @@ class TopsisEngine {
             weights=w_arr;
         };
         std::vector<ps_alt> getRanking() {
-            std::vector<ps_alt> res;
             auto n_table=normalizeMatrix();
-            std::cout<<n_table;
             auto n_w_table=applyWeights(n_table);
-            std::cout<<n_w_table;
             auto v_best=calculateIdealBest(n_w_table);
             auto v_worst=calculateIdealWorst(n_w_table);
             auto id_pos_sep=calculateSeparation(n_w_table,v_best);
             auto id_neg_sep=calculateSeparation(n_w_table,v_worst);
             auto closeness=calculateCloseness(id_pos_sep,id_neg_sep);
             uvec index=sort_index(closeness,"descend");
-            std::cout<<index;
             for(auto it=index.begin() ; it != index.end() ; ++it) {
                 ps_alt e=alts[*it];
                 e.rank=closeness[*it];
