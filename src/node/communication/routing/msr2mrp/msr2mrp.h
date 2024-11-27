@@ -31,6 +31,7 @@
 #include "node/application/ForestFire/forest_fire_message_m.h"
 #include "node/application/ForestFire/forest_fire.h"
 #include "node/communication/routing/msr2mrp/stimer.h"
+#include "node/communication/routing/msr2mrp/topsis.h"
 
 
 enum msr2mrpStateDef {
@@ -225,7 +226,8 @@ enum msr2mrpLbMechDef {
     TBP     = 5,
     MAXT    = 6,
     HBIP    = 7,
-    ALL     = 8
+    TOPSIS  = 8,
+    ALL     = 9,
 };
 
 struct msr2mrp_feat_par {

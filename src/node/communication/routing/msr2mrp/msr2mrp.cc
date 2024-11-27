@@ -377,6 +377,8 @@ msr2mrpLbMechDef msr2mrp::strToLbMech(string str) const {
         return msr2mrpLbMechDef::HBIP;
     } else if("maxt" == str) {
         return msr2mrpLbMechDef::MAXT;
+    } else if("topsis" == str) {
+        return msr2mrpLbMechDef::TOPSIS;
     } else if("all"  == str) {
         return msr2mrpLbMechDef::ALL;
     }
