@@ -2363,6 +2363,23 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 engine_table[re.sink]->sendViaPathid(pkt,re.pathid[0].pathid);
                 break;
             }
+            case msr2mrpLbMechDef::TOPSIS: {
+                trace()<<"[info] TOPSIS-rank based selection";
+                auto rt = collectAllRoutes(ev);
+                trace()<<"[info] Available routes: "<<rt.size();
+                if(!rt.size()) {
+                    trace()<<"[error] No route available";
+                    delete pkt;
+                    break;
+                }
+                TopsisEngine te(rt.size());
+                for(auto re: rt) {
+                    te.addAlternative({re.sink,re.pathid[0].pathid},re.hop,static_cast<double>(pkt_table[re.nw_address].ack_count)/static_cast<double>(pkt_table[re.nw_address].pkt_count), re.pathid[0].enrgy ,re.pathid[0].emerg);
+                }
+                auto res=te.getRanking();
+                engine_table[res[0].sink]->sendViaPathid(pkt,res[0].pathid);
+                break;
+            }
             case msr2mrpLbMechDef::ALL: {
                 trace()<<"[info] Select all paths";
                 for(auto re: collectAllRoutes(ev)) {

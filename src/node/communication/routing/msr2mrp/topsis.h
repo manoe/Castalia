@@ -17,7 +17,7 @@
 using namespace arma;
 
 struct ps_alt {
-    int sink;
+    std::string sink;
     int pathid;
     double rank;
 };
@@ -36,7 +36,11 @@ class TopsisEngine {
             mat norm_table = table;
             rowvec norm(table.n_cols,fill::zeros);
             for(int i=0; i < table.n_cols ; ++i) {
-                norm(i)=sum(pow_table.col(i));
+                if(sum(pow_table.col(i)) == 0.0) {
+                    norm(i)=1;
+                } else {
+                    norm(i)=sum(pow_table.col(i));
+                }
             }
             norm=sqrt(norm);
             for(int i=0; i < table.n_rows ; ++i) {
@@ -81,7 +85,16 @@ class TopsisEngine {
             return c;
         };
         colvec calculateCloseness(colvec id_pos_sep, colvec id_neg_sep) {
-            return id_neg_sep / (id_neg_sep+id_pos_sep);
+            colvec res(id_pos_sep.n_rows, fill::zeros);
+            for(int i=0 ; i < id_neg_sep.n_rows; ++i) {
+                if(id_neg_sep[0] == 0.0) {
+                    res[i]=0;
+                } else {
+                    res[i]= id_neg_sep[i] / (id_neg_sep[i]+id_pos_sep[i]);
+                }
+                
+            }
+            return res;
         };
 
     public:
@@ -114,9 +127,8 @@ class TopsisEngine {
             auto closeness=calculateCloseness(id_pos_sep,id_neg_sep);
             uvec index=sort_index(closeness,"descend");
             for(auto it=index.begin() ; it != index.end() ; ++it) {
-                ps_alt e=alts[*it];
-                e.rank=closeness[*it];
-                res.push_back(e);
+                alts[*it].rank = closeness[*it];
+                res.push_back(alts[*it]);
             }
             return res;
         };
