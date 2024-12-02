@@ -163,8 +163,8 @@ struct msr2mrp_pathid_entry {
     double enrgy   = 0;
     double emerg   = 0;
     double pdr     = 0;
-    double b_enrgy = 0;
     int origin     = 0;
+    double b_enrgy = 0;
 };
 
 struct msr2mrp_node_entry {

@@ -684,7 +684,7 @@ void msr2mrp::sendRinvBasedOnHop() {
     } else if(getHop() == fp.ring_radius) {
         extTrace()<<"[info] Node at mesh ring border";
         // With this the master/sensor node capabilities inside the ring won't matter
-        sendRinv(getRound(), std::vector<msr2mrp_pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0,atoi(getSinkAddress().c_str())}) );
+        sendRinv(getRound(), std::vector<msr2mrp_pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  getEnergyValue(), getEmergencyValue(),1.0,atoi(getSinkAddress().c_str()),getEnergyValue()}) );
     } else {
         extTrace()<<"[info] Node outside mesh ring";
         std::vector<msr2mrp_pathid_entry> pathid;
