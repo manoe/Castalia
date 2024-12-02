@@ -160,10 +160,11 @@ struct msr2mrp_pathid_entry {
     bool secl;
     bool secl_performed;
     bool used;
-    double enrgy = 0;
-    double emerg = 0;
-    double pdr   = 0;
-    int origin   = 0;
+    double enrgy   = 0;
+    double emerg   = 0;
+    double pdr     = 0;
+    double b_enrgy = 0;
+    int origin     = 0;
 };
 
 struct msr2mrp_node_entry {

@@ -484,6 +484,7 @@ void msr2mrp_engine::sendRinv(int round, std::vector<msr2mrp_pathid_entry> pathi
         p_id.enrgy  = pathid[i].enrgy;
         p_id.emerg  = pathid[i].emerg;
         p_id.pdr    = pathid[i].pdr;
+        p_id.b_enrgy= pathid[i].b_enrgy;
         rinv_pkt->setPathid(i, p_id);
     }
     try {
