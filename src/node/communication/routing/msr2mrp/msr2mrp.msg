@@ -43,6 +43,7 @@ struct msr2mrpPathDef {
     double enrgy;
     double emerg;    // 1 byte
     double pdr;
+    double b_enrgy;
 }
 
 // RREQ = { R, S, P, len, nmas }

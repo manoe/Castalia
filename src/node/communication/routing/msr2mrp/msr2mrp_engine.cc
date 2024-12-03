@@ -484,6 +484,7 @@ void msr2mrp_engine::sendRinv(int round, std::vector<msr2mrp_pathid_entry> pathi
         p_id.enrgy  = pathid[i].enrgy;
         p_id.emerg  = pathid[i].emerg;
         p_id.pdr    = pathid[i].pdr;
+        p_id.b_enrgy= pathid[i].b_enrgy;
         rinv_pkt->setPathid(i, p_id);
     }
     try {
@@ -523,7 +524,7 @@ void msr2mrp_engine::sendRinvBasedOnHop() {
     } else if(getHop() == fp.ring_radius) {
         extTrace()<<"[info] Node at mesh ring border";
         // With this the master/sensor node capabilities inside the ring won't matter
-        sendRinv(getRound(), std::vector<msr2mrp_pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  nw_layer->getEnergyValue(), nw_layer->getEmergencyValue(),1.0,atoi(getSinkAddress().c_str())}) );
+        sendRinv(getRound(), std::vector<msr2mrp_pathid_entry>(1,{resolveNetworkAddress(SELF_NETWORK_ADDRESS),static_cast<int>(isMaster()),false,false,false,  nw_layer->getEnergyValue(), nw_layer->getEmergencyValue(),1.0,atoi(getSinkAddress().c_str()), nw_layer->getEnergyValue()}) );
     } else {
         extTrace()<<"[info] Node outside mesh ring";
         std::vector<msr2mrp_pathid_entry> pathid;
@@ -549,7 +550,7 @@ void msr2mrp_engine::sendRinvBasedOnHop() {
                             pe.emerg  = nw_layer->getEmergencyValue(); // select min
                             pe.pdr    = static_cast<double>(rreq_table[ne.first].ack_count)/static_cast<double>(rreq_table[ne.first].pkt_count);
                             pe.origin = p.origin;
-
+                            pe.b_enrgy = p.b_enrgy;
                             pathid.push_back(pe);
                         }
                     }
@@ -594,6 +595,8 @@ void msr2mrp_engine::addToRinvTable(msr2mrpRinvPacket *rinv_pkt) {
         pe.enrgy          = rinv_pkt->getPathid(i).enrgy;
         pe.emerg          = rinv_pkt->getPathid(i).emerg;
         pe.pdr            = rinv_pkt->getPathid(i).pdr;
+        pe.b_enrgy        = rinv_pkt->getPathid(i).b_enrgy;
+        extTrace()<<"[info] b_enrgy:"<<pe.b_enrgy;
         ne.pathid.push_back(pe);
     }
     extTrace()<<"[info] Pathid added: "<<pathidToStr(ne.pathid);
