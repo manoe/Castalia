@@ -2374,12 +2374,12 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                     delete pkt;
                     break;
                 }
-                TopsisEngine te(rt.size());
-                for(auto re: rt) {
-                    te.addAlternative({re.sink,re.pathid[0].pathid},re.hop,static_cast<double>(pkt_table[re.nw_address].ack_count)/static_cast<double>(pkt_table[re.nw_address].pkt_count), re.pathid[0].enrgy ,re.pathid[0].emerg);
+                TopsisEngine te(rt.size(),4);
+                for(int i=0 ; i < rt.size(); ++i) {
+                    te.addAlternative({i,0.0},{rt[i].hop,static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].enrgy ,rt[i].pathid[0].emerg});
                 }
                 auto res=te.getRanking();
-                engine_table[res[0].sink]->sendViaPathid(pkt,res[0].pathid);
+                engine_table[rt[res[0].id].sink]->sendViaPathid(pkt,res[0].id);
                 break;
             }
             case msr2mrpLbMechDef::ALL: {
