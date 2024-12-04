@@ -409,6 +409,8 @@ msr2mrpRinvPathidDef msr2mrp::strToRinvPathidDef(std::string str) const {
          return msr2mrpRinvPathidDef::INV_PROB;
     } else if("min_count" == str) {
         return msr2mrpRinvPathidDef::MIN_COUNT;
+    } else if("topsis"    == str) {
+        return msr2mrpRinvPathidDef::TOPSIS;
     }
     throw std::invalid_argument("[error] Unknown RINV pathid parameter");
     return msr2mrpRinvPathidDef::EVEN;
