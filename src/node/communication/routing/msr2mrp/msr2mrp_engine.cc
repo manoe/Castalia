@@ -1453,6 +1453,7 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool rinv_gen) {
                     }
                 }
             }
+            break;
         }
         case msr2mrpRinvPathidDef::MIN_COUNT: {
             extTrace()<<"[info] Performing minimum count pathid selection";
@@ -1473,6 +1474,11 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool rinv_gen) {
                     }
                 }
             }
+            break;
+        }
+
+        case msr2mrpRinvPathidDef::TOPSIS: {
+            break;
         }
 
     }

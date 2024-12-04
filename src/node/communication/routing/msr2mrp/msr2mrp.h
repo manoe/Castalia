@@ -100,10 +100,11 @@ enum msr2mrpSecLParDef {
     UNICAST        = 2
 };
 
-enum msr2mrpRinvPathidDef {
+enum class msr2mrpRinvPathidDef {
     EVEN           = 0,
     INV_PROB       = 1,
-    MIN_COUNT      = 2
+    MIN_COUNT      = 2,
+    TOPSIS         = 3
 };
 
 
