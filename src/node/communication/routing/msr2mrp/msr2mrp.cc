@@ -2376,10 +2376,11 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 }
                 TopsisEngine te(rt.size(),4);
                 for(int i=0 ; i < rt.size(); ++i) {
+                    trace()<<"[info] Adding entry with sink="<<rt[i].sink<<" , pathid="<<rt[i].pathid[0].pathid;
                     te.addAlternative({i,0.0},{static_cast<double>(rt[i].hop),static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].enrgy ,rt[i].pathid[0].emerg});
                 }
                 auto res=te.getRanking();
-                engine_table[rt[res[0].id].sink]->sendViaPathid(pkt,res[0].id);
+                engine_table[rt[res[0].id].sink]->sendViaPathid(pkt,rt[res[0].id].pathid[0].pathid);
                 break;
             }
             case msr2mrpLbMechDef::ALL: {
