@@ -2376,7 +2376,7 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 }
                 TopsisEngine te(rt.size(),4);
                 for(int i=0 ; i < rt.size(); ++i) {
-                    te.addAlternative({i,0.0},{rt[i].hop,static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].enrgy ,rt[i].pathid[0].emerg});
+                    te.addAlternative({i,0.0},{static_cast<double>(rt[i].hop),static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].enrgy ,rt[i].pathid[0].emerg});
                 }
                 auto res=te.getRanking();
                 engine_table[rt[res[0].id].sink]->sendViaPathid(pkt,res[0].id);
