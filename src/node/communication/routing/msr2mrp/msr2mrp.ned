@@ -109,6 +109,7 @@ simple msr2mrp like node.communication.routing.iRouting
                                                 // even      - original random
                                                 // inv_prob  - inverse probability
                                                 // min_count - select pathid with minimal count
+                                                // topsis    - select pathid based on topsis
     string f_lb_mechanism     = default("rnd"); // rnd      - Random stack selection
                                                 // cfbp     - Select path based on cost function (1/CF(r))
                                                 // mint     - Select path based on Minimum traffic

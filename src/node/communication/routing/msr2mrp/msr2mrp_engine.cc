@@ -1445,14 +1445,7 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool rinv_gen) {
                     break;
                 }
             }
-            for(auto r: routing_table) {
-                for(auto p: r.second.pathid) {
-                    if(p.pathid == pathid) {
-                        ret_val = p;
-                        break;
-                    }
-                }
-            }
+            ret_val = getPathidFromRt(pathid);
             break;
         }
         case msr2mrpRinvPathidDef::MIN_COUNT: {
@@ -1465,28 +1458,38 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool rinv_gen) {
                 }
             }
             extTrace()<<"[info] Selected pathid: "<<min.first<<" with count: "<<min.second;
-            auto pathid = min.first;
-            for(auto r: routing_table) {
-                for(auto p: r.second.pathid) {
-                    if(p.pathid == pathid) {
-                        ret_val = p;
-                        break;
-                    }
-                }
-            }
+            ret_val = getPathidFromRt(min.first);
             break;
         }
 
         case msr2mrpRinvPathidDef::TOPSIS: {
             extTrace()<<"[info] Performing TOPSIS-based pathid selection";
-            TopsisEngine te(1,1);
-
+            auto alts = getPathIdWithTsVector();
+            TopsisEngine te(alts.size() ,3);
+            for(auto alt=alts.begin() ; alt != alts.end() ; ++alt) {
+                te.addAlternative({alt->first,0},alt->second);
+            }
+            te.addBenefits({false,true,false});
+            auto ranks = te.getRanking();
+            ret_val = getPathidFromRt(ranks[0].id);
             break;
         }
 
     }
     return ret_val;
 }
+
+msr2mrp_pathid_entry msr2mrp_engine::getPathidFromRt(int pathid) {
+    for(auto r: routing_table) {
+        for(auto p: r.second.pathid) {
+            if(p.pathid == pathid) {
+                return p;
+            }
+        }
+    }
+    throw no_available_entry("Pathid not present in routing table"); 
+}
+
 
 std::map<int,int> msr2mrp_engine::getPathIdWithNum() {
     extTrace()<<"Entering getPathIdWithNum()";
@@ -1508,7 +1511,26 @@ std::map<int,int> msr2mrp_engine::getPathIdWithNum() {
         }
     }
     return pathid_num;
-} 
+}
+
+std::map<int,std::vector<double>> msr2mrp_engine::getPathIdWithTsVector() {
+    extTrace()<<"Entering getPathIdWithTsVector()";
+    auto p_w_num = getPathIdWithNum();
+    std::map<int,std::vector<double>> res;
+    for(auto r: routing_table) {
+        for(auto p: r.second.pathid) {
+            auto pkt_table = nw_layer->getPktTable();
+            int sent_pkt;
+            if(pkt_table.find(r.first) != pkt_table.end()) {
+                sent_pkt = pkt_table[r.first].pkt_count;
+            } else {
+                sent_pkt = 0;
+            }
+            res[p.pathid]={static_cast<double>(p_w_num[p.pathid]), static_cast<double>(p.b_enrgy), static_cast<double>(sent_pkt)};
+        }
+    }
+    return res;
+}
 
 std::string msr2mrp_engine::pathidToStr(vector<msr2mrp_pathid_entry> pathid) {
     std::string str;
