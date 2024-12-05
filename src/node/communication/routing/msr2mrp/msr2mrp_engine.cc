@@ -1478,6 +1478,9 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool rinv_gen) {
         }
 
         case msr2mrpRinvPathidDef::TOPSIS: {
+            extTrace()<<"[info] Performing TOPSIS-based pathid selection";
+            TopsisEngine te(1,1);
+
             break;
         }
 
