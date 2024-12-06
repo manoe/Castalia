@@ -118,8 +118,13 @@ simple msr2mrp like node.communication.routing.iRouting
                                                 // maxt     - Select path based on maximum traffic
                                                 // hbip     - Select path based on hop based inverse probability
                                                 // all      - Distribute packet on all paths
+                                                // topsis   - Topsis-based LB
     bool f_border_only       = default(false);  // Do not accept RINV from new sink, if border node
     bool f_coll_pkt_at_border= default(false);  // Collect DATA pkt stat at border
+    string f_lb_ts_weights   = default("");     // TOPSIS weights -- LB
+    string f_rinv_ts_weights = default("");     // TOPSIS weights -- RINV
+    string f_lb_ts_cb        = default("");     // TOPSIS Cost/Benefit -- LB
+    string f_rinv_ts_cb      = default("");     // TOPSIS Cost/Benefit -- RINV
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ

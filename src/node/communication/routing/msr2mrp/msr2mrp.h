@@ -285,6 +285,10 @@ struct msr2mrp_feat_par {
     msr2mrpLbMechDef lb_mechanism;
     bool   border_only;
     bool   coll_pkt_at_border;
+    std::vector<double> lb_ts_weights;
+    std::vector<double> rinv_ts_weights;
+    std::vector<bool>  lb_ts_cb;
+    std::vector<bool>  rinv_ts_cb;
 };
 
 class msr2mrp;
@@ -553,6 +557,8 @@ class msr2mrp: public VirtualRouting {
         msr2mrpLbMechDef strToLbMech(string) const;
         msr2mrpSecLParDef strToSecLPar(string) const; 
         msr2mrpRinvPathidDef strToRinvPathidDef(string) const;
+        std::vector<double> strToWeights(string);
+        std::vector<bool> strToCostBenefit(string);
 
         bool isSink() const;
         void setSinkAddress(std::string);

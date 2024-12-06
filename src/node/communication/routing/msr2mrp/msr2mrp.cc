@@ -85,6 +85,11 @@ void msr2mrp::startup() {
     fp.lb_mechanism      = strToLbMech(par("f_lb_mechanism").stringValue());
     fp.border_only       = par("f_border_only");
     fp.coll_pkt_at_border= par("f_coll_pkt_at_border");
+    fp.lb_ts_weights     = strToWeights(par("f_lb_ts_weights").stringValue());
+    fp.lb_ts_cb          = strToCostBenefit(par("f_lb_ts_cb").stringValue());
+    fp.rinv_ts_weights   = strToWeights(par("f_rinv_ts_weights").stringValue());
+    fp.rinv_ts_cb        = strToCostBenefit(par("f_rinv_ts_cb").stringValue());
+
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
@@ -414,6 +419,39 @@ msr2mrpRinvPathidDef msr2mrp::strToRinvPathidDef(std::string str) const {
     }
     throw std::invalid_argument("[error] Unknown RINV pathid parameter");
     return msr2mrpRinvPathidDef::EVEN;
+}
+
+
+std::vector<double> msr2mrp::strToWeights(string str) {
+    std::vector<double> ret_val;
+    if(str.empty()) {
+        return ret_val;
+    }
+    auto iss = std::istringstream{str};
+    auto token = std::string{};
+
+    while (iss >> token) {
+        trace()<<"[info] Weight: "<<token;
+        ret_val.push_back(stod(token));
+    }
+    return ret_val;
+}
+
+
+std::vector<bool> msr2mrp::strToCostBenefit(string str) {
+    std::vector<bool> ret_val;
+    if(str.empty()) {
+        return ret_val;
+    }
+    auto iss = std::istringstream{str};
+    auto token = std::string{};
+
+    while (iss >> token) {
+        trace()<<"[info] Cost/benefit: "<<token;
+        ret_val.push_back(token == "b");
+    }
+    return ret_val;
+
 }
 
 
