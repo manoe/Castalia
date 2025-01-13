@@ -289,6 +289,7 @@ struct msr2mrp_feat_par {
     std::vector<double> rinv_ts_weights;
     std::vector<bool>  lb_ts_cb;
     std::vector<bool>  rinv_ts_cb;
+    bool   lb_rbp;
 };
 
 class msr2mrp;

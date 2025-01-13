@@ -89,7 +89,7 @@ void msr2mrp::startup() {
     fp.lb_ts_cb          = strToCostBenefit(par("f_lb_ts_cb").stringValue());
     fp.rinv_ts_weights   = strToWeights(par("f_rinv_ts_weights").stringValue());
     fp.rinv_ts_cb        = strToCostBenefit(par("f_rinv_ts_cb").stringValue());
-
+    fp.lb_rbp            = par("f_lb_rbp");
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
@@ -2450,7 +2450,12 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 }
                 te.addBenefits({ false,true,true,true });
                 auto res=te.getRanking();
-                engine_table[rt[res[0].id].sink]->sendViaPathid(pkt,rt[res[0].id].pathid[0].pathid);
+                if(fp.lb_rbp) {
+                    auto alt = getTbp(res, getRNG(0)->doubleRand());  
+                    engine_table[rt[alt.id].sink]->sendViaPathid(pkt,rt[alt.id].pathid[0].pathid);
+                } else {
+                    engine_table[rt[res[0].id].sink]->sendViaPathid(pkt,rt[res[0].id].pathid[0].pathid);
+                }
                 break;
             }
             case msr2mrpLbMechDef::ALL: {
