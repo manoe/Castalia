@@ -1628,6 +1628,20 @@ std::vector<msr2mrp_node_ext_entry> msr2mrp::collectAllRoutes(vector<std::string
     return rt;
 }
 
+std::vector<string> msr2mrp::getWorkingEngineNames() {
+    trace()<<"[info] getWorkingEngineNames()";
+    vector<std::string> ev;
+    for(auto ee: engine_table) {
+        if(msr2mrpStateDef::WORK == ee.second->getState() || msr2mrpStateDef::S_ESTABLISH == ee.second->getState() ) {
+            trace()<<"[info] Adding engine "<<ee.first;
+            ev.push_back(ee.first);
+        }
+    }
+    return ev;
+
+}
+
+
 
 double msr2mrp::sumCostValues(std::vector<msr2mrp_node_ext_entry> rt) {
     trace()<<"[info] sumCostValues()";
@@ -1695,6 +1709,23 @@ msr2mrp_node_ext_entry msr2mrp::getCfbpRe(std::vector<msr2mrp_node_ext_entry> rt
         s_cv+=cv;
     }
     throw no_available_entry("No entry in ext routing table");
+}
+
+alt msr2mrp::getTbp(std::vector<alt> alts, double rnd_val) {
+    trace()<<"[info] getTbp(alts, rnd_val="<<rnd_val<<")";
+    double norm = 0;
+    double s_rv = 0;
+    for(auto alt: alts) {
+       norm+=alt.rank;
+    }
+    for(auto alt: alts) {
+       if(s_rv/norm < rnd_val && (s_rv+alt.rank)/norm >= rnd_val) {
+           trace()<<"[info] Entry "<<alt.id<<" selected";
+           return alt;
+       }   
+       s_rv+=alt.rank;
+    }
+    throw no_available_entry("No entry in alternatives");
 }
 
 
@@ -2415,7 +2446,7 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 TopsisEngine te(rt.size(),4);
                 for(int i=0 ; i < rt.size(); ++i) {
                     trace()<<"[info] Adding entry with sink="<<rt[i].sink<<" , pathid="<<rt[i].pathid[0].pathid;
-                    te.addAlternative({i,0.0},{static_cast<double>(rt[i].hop),static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].enrgy ,rt[i].pathid[0].emerg});
+                    te.addAlternative({i,0.0},{static_cast<double>(rt[i].hop),static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].b_enrgy ,rt[i].pathid[0].emerg});
                 }
                 te.addBenefits({ false,true,true,true });
                 auto res=te.getRanking();

@@ -635,7 +635,6 @@ class msr2mrp: public VirtualRouting {
         std::string pathidToStr(vector<msr2mrp_pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
 
-        std::vector<msr2mrp_node_ext_entry> collectAllRoutes(std::vector<string>);
         double sumCostValues(std::vector<msr2mrp_node_ext_entry>);
         double sumCostValues(std::vector<msr2mrp_node_ext_entry>, double (*cost_func)(msr2mrp_node_entry));
         msr2mrp_node_ext_entry getPbRe(std::vector<msr2mrp_node_ext_entry> rt, double rnd_val, double (*cost_func)(msr2mrp_node_entry)); 
@@ -708,6 +707,9 @@ class msr2mrp: public VirtualRouting {
 
         void incPktCountInTrafficTable(std::string, int, int);
 
+
+        alt getTbp(std::vector<alt>, double);
+
     public:
         msr2mrp() : g_hop(std::numeric_limits<int>::max()),
                   g_round(0),
@@ -763,7 +765,8 @@ class msr2mrp: public VirtualRouting {
         
 
         void destroyEngines();
-
+        std::vector<msr2mrp_node_ext_entry> collectAllRoutes(std::vector<string>);
+        std::vector<string> getWorkingEngineNames();
         double getEnergyValue();
         double getEmergencyValue();
 
