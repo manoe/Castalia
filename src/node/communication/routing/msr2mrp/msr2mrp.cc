@@ -1716,7 +1716,11 @@ alt msr2mrp::getTbp(std::vector<alt> alts, double rnd_val) {
     trace()<<"[info] getTbp(alts, rnd_val="<<rnd_val<<")";
     double norm = 0;
     double s_rv = 0;
-    for(auto alt: alts) {
+    for(auto &&alt: alts) {
+        trace()<<"[info] Rank: "<<alt.rank;
+        if(alt.rank == 0) {
+            alt.rank = 0.01;
+        }
        norm+=alt.rank;
     }
     for(auto alt: alts) {
