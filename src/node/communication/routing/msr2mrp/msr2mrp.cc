@@ -1628,18 +1628,23 @@ std::vector<msr2mrp_node_ext_entry> msr2mrp::collectAllRoutes(vector<std::string
     }
     return rt;
 }
-
-std::vector<string> msr2mrp::getWorkingEngineNames() {
-    trace()<<"[info] getWorkingEngineNames()";
+std::vector<string> msr2mrp::getWorkingEngineNames(std::string ex) {
+    trace()<<"[info] getWorkingEngineNames(ex="<<ex<<")";
     vector<std::string> ev;
     for(auto ee: engine_table) {
-        if(msr2mrpStateDef::WORK == ee.second->getState() || msr2mrpStateDef::S_ESTABLISH == ee.second->getState() ) {
+        if((msr2mrpStateDef::WORK == ee.second->getState() || msr2mrpStateDef::S_ESTABLISH == ee.second->getState()) && ee.first != ex ) {
             trace()<<"[info] Adding engine "<<ee.first;
             ev.push_back(ee.first);
         }
     }
     return ev;
 
+
+}
+
+std::vector<string> msr2mrp::getWorkingEngineNames() {
+    trace()<<"[info] getWorkingEngineNames()";
+    return msr2mrp::getWorkingEngineNames("DEADBEEF");
 }
 
 
