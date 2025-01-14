@@ -90,6 +90,7 @@ void msr2mrp::startup() {
     fp.rinv_ts_weights   = strToWeights(par("f_rinv_ts_weights").stringValue());
     fp.rinv_ts_cb        = strToCostBenefit(par("f_rinv_ts_cb").stringValue());
     fp.lb_rbp            = par("f_lb_rbp");
+    fp.excl_nd_node      = par("f_excl_nd_node");
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;

@@ -125,7 +125,9 @@ simple msr2mrp like node.communication.routing.iRouting
     string f_rinv_ts_weights = default("");     // TOPSIS weights -- RINV
     string f_lb_ts_cb        = default("");     // TOPSIS Cost/Benefit -- LB
     string f_rinv_ts_cb      = default("");     // TOPSIS Cost/Benefit -- RINV
-    bool f_lb_rbp            = default(false);  // Handle rank as weight for probability 
+    bool f_lb_rbp            = default(false);  // Handle rank as weight for probability
+    bool f_excl_nd_node      = default(false);  // Exclude node already in any routing table to avoid non-disjointness
+
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ

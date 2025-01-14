@@ -2167,22 +2167,23 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                 extTrace()<<"[info] RINV_PACKET discarded by Sink";
                 break;
             }
-            auto ev=nw_layer->getWorkingEngineNames();
-            bool alr_used=false;
-            if(ev.size() !=0) {
-                auto rt=nw_layer->collectAllRoutes(ev);
-                for(auto r: rt) {
-                    if(std::string(net_pkt->getSource()) == r.nw_address) {
-                        extTrace()<<"[info] Already communicating with node via pathid "<<pathidToStr(r.pathid)<<" and sink "<<r.sink<<" discarding packet.";
-                        alr_used=true;
+            if(fp.excl_nd_node) {
+                auto ev=nw_layer->getWorkingEngineNames();
+                bool alr_used=false;
+                if(ev.size() !=0) {
+                    auto rt=nw_layer->collectAllRoutes(ev);
+                    for(auto r: rt) {
+                        if(std::string(net_pkt->getSource()) == r.nw_address) {
+                            extTrace()<<"[info] Already communicating with node via pathid "<<pathidToStr(r.pathid)<<" and sink "<<r.sink<<" discarding packet.";
+                            alr_used=true;
+                            break;
+                        }
+                    }
+                    if(alr_used) {
                         break;
                     }
                 }
-                if(alr_used) {
-                    break;
-                }
             }
-
             if(rinv_pkt->getRound() > getRound()) {
                 setRound(rinv_pkt->getRound());
                 setHop(std::numeric_limits<int>::max());
