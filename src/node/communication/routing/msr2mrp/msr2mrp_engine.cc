@@ -2168,7 +2168,7 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                 break;
             }
             if(fp.excl_nd_node) {
-                auto ev=nw_layer->getWorkingEngineNames();
+                auto ev=nw_layer->getWorkingEngineNames(g_sink_addr);
                 bool alr_used=false;
                 if(ev.size() !=0) {
                     auto rt=nw_layer->collectAllRoutes(ev);
