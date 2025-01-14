@@ -121,6 +121,7 @@ class TopsisEngine {
 
         void addWeights(const std::vector<double> &w_arr) {
             weights=w_arr;
+            weights=weights/sum(weights);
         };
 
         void addBenefits(const std::vector<bool> &b_arr) {

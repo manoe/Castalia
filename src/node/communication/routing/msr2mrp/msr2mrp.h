@@ -285,6 +285,12 @@ struct msr2mrp_feat_par {
     msr2mrpLbMechDef lb_mechanism;
     bool   border_only;
     bool   coll_pkt_at_border;
+    std::vector<double> lb_ts_weights;
+    std::vector<double> rinv_ts_weights;
+    std::vector<bool>  lb_ts_cb;
+    std::vector<bool>  rinv_ts_cb;
+    bool   lb_rbp;
+    bool   excl_nd_node;
 };
 
 class msr2mrp;
@@ -553,6 +559,8 @@ class msr2mrp: public VirtualRouting {
         msr2mrpLbMechDef strToLbMech(string) const;
         msr2mrpSecLParDef strToSecLPar(string) const; 
         msr2mrpRinvPathidDef strToRinvPathidDef(string) const;
+        std::vector<double> strToWeights(string);
+        std::vector<bool> strToCostBenefit(string);
 
         bool isSink() const;
         void setSinkAddress(std::string);
@@ -629,7 +637,6 @@ class msr2mrp: public VirtualRouting {
         std::string pathidToStr(vector<msr2mrp_pathid_entry> pathid);
         std::string pathidToStr(vector<int> pathid);
 
-        std::vector<msr2mrp_node_ext_entry> collectAllRoutes(std::vector<string>);
         double sumCostValues(std::vector<msr2mrp_node_ext_entry>);
         double sumCostValues(std::vector<msr2mrp_node_ext_entry>, double (*cost_func)(msr2mrp_node_entry));
         msr2mrp_node_ext_entry getPbRe(std::vector<msr2mrp_node_ext_entry> rt, double rnd_val, double (*cost_func)(msr2mrp_node_entry)); 
@@ -702,6 +709,9 @@ class msr2mrp: public VirtualRouting {
 
         void incPktCountInTrafficTable(std::string, int, int);
 
+
+        alt getTbp(std::vector<alt>, double);
+
     public:
         msr2mrp() : g_hop(std::numeric_limits<int>::max()),
                   g_round(0),
@@ -757,7 +767,8 @@ class msr2mrp: public VirtualRouting {
         
 
         void destroyEngines();
-
+        std::vector<msr2mrp_node_ext_entry> collectAllRoutes(std::vector<string>);
+        std::vector<string> getWorkingEngineNames();
         double getEnergyValue();
         double getEmergencyValue();
 
