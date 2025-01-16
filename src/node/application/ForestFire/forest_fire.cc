@@ -446,6 +446,8 @@ void ForestFire::serializeEnergy() {
         yn_out<<YAML::Value<<i;
         yn_out<<YAML::Key<<"energy";
         yn_out<<YAML::Value<<rm->getRemainingEnergy();
+        yn_out<<YAML::Key<<"consumed_energy";
+        yn_out<<YAML::Value<<rm->getSpentEnergy();
         yn_out<<YAML::Key<<"state";
         yn_out<<YAML::Value<<(rm->isDead()?"dead":"live");
         yn_out<<YAML::Key<<"report_sent";
