@@ -2459,6 +2459,9 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                     te.addAlternative({i,0.0},{static_cast<double>(rt[i].hop),static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].b_enrgy ,rt[i].pathid[0].emerg,static_cast<double>(rt[i].pkt_count)});
                 }
                 te.addBenefits({ false,true,true,true,false });
+                if(fp.lb_ts_weights.size()) {
+                    te.addWeights(fp.lb_ts_weights);
+                }
                 auto res=te.getRanking();
                 if(fp.lb_rbp) {
                     auto alt = getTbp(res, getRNG(0)->doubleRand());  
