@@ -2453,12 +2453,17 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                     delete pkt;
                     break;
                 }
-                TopsisEngine te(rt.size(),4);
+                TopsisEngine te(rt.size(),5);
                 for(int i=0 ; i < rt.size(); ++i) {
                     trace()<<"[info] Adding entry with sink="<<rt[i].sink<<" , pathid="<<rt[i].pathid[0].pathid;
-                    te.addAlternative({i,0.0},{static_cast<double>(rt[i].hop),static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].b_enrgy ,rt[i].pathid[0].emerg});
+                    te.addAlternative({i,0.0},{static_cast<double>(rt[i].hop),static_cast<double>(pkt_table[rt[i].nw_address].ack_count)/static_cast<double>(pkt_table[rt[i].nw_address].pkt_count), rt[i].pathid[0].b_enrgy ,rt[i].pathid[0].emerg,static_cast<double>(rt[i].pkt_count)});
                 }
-                te.addBenefits({ false,true,true,true });
+                te.addBenefits({ false,true,true,true,false });
+                if(fp.lb_ts_weights.size() == 5) {
+                    te.addWeights(fp.lb_ts_weights);
+                } else {
+                    trace()<<"[info] Not applying custom weights to TOPSIS";
+                }
                 auto res=te.getRanking();
                 if(fp.lb_rbp) {
                     auto alt = getTbp(res, getRNG(0)->doubleRand());  
@@ -3152,7 +3157,7 @@ void msr2mrp::handleMacControlMessage(cMessage *msg) {
             break;
         }
         case MacControlMessage_type::PKT_SENT: {
-            extTrace()<<"[info] PKT_FAIL received.";
+            extTrace()<<"[info] PKT_SENT received.";
             if(pkt_table.find(nw_address) != pkt_table.end()) {
                 pkt_table[nw_address].pkt_count++;
             } else {
