@@ -1470,6 +1470,9 @@ msr2mrp_pathid_entry msr2mrp_engine::selectPathid(bool rinv_gen) {
                 te.addAlternative({alt->first,0},alt->second);
             }
             te.addBenefits({false,true,false});
+            if(fp.rinv_ts_weights.size() == 3) {
+                te.addWeights(fp.rinv_ts_weights);
+            }
             auto ranks = te.getRanking();
             ret_val = getPathidFromRt(ranks[0].id);
             break;
@@ -2414,7 +2417,7 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                             extTrace()<<"[error] "<<e.what();
                         }
 
-  
+ 
                         handleLinkFailure(rwarn_pkt->getPathid());
                     } else if(rreqEntryExists(std::string(rwarn_pkt->getSource()))) {
                         removeRreqEntry(std::string(rwarn_pkt->getSource()));
