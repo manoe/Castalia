@@ -1650,6 +1650,14 @@ int msr2mrp::getForwPkt() {
 }
 
 
+std::string msr2mrp::getRole() {
+    if(engine_table.size() !=0) {
+        return ringToStr(engine_table.begin()->second->getRingStatus());
+    }
+    return "none";
+}
+
+
 std::vector<string> msr2mrp::getWorkingEngineNames(std::string ex) {
     trace()<<"[info] getWorkingEngineNames(ex="<<ex<<")";
     vector<std::string> ev;

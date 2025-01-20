@@ -479,6 +479,8 @@ void ForestFire::serializeEnergy() {
             pkt_count = 0;
         }
         yn_out<<YAML::Value<<pkt_count;
+        yn_out<<YAML::Key<<"role";
+        yn_out<<YAML::Value<<routing->getRole();
         yn_out<<YAML::EndMap;
     }
     yn_out<<YAML::EndSeq;
