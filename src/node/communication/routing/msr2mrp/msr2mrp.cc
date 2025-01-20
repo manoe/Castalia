@@ -1628,6 +1628,28 @@ std::vector<msr2mrp_node_ext_entry> msr2mrp::collectAllRoutes(vector<std::string
     }
     return rt;
 }
+
+
+int msr2mrp::getForwPkt() {
+    vector<std::string> ev;
+    for(auto ee: engine_table) {
+        if(msr2mrpStateDef::WORK == ee.second->getState() || msr2mrpStateDef::S_ESTABLISH == ee.second->getState() ) {
+            trace()<<"[info] Adding engine "<<ee.first;
+            ev.push_back(ee.first);
+        }
+    }
+    if(ev.size() == 0) {
+        return 0;
+    }
+    auto rt = collectAllRoutes(ev);
+    int pkt_count = 0;
+    for(auto r: rt) {
+        pkt_count += r.pkt_count;
+    }
+    return pkt_count;
+}
+
+
 std::vector<string> msr2mrp::getWorkingEngineNames(std::string ex) {
     trace()<<"[info] getWorkingEngineNames(ex="<<ex<<")";
     vector<std::string> ev;

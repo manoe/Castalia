@@ -75,6 +75,8 @@ class VirtualRouting: public CastaliaModule, public TimerService {
 	virtual void handleMacControlMessage(cMessage *);
 	virtual void handleRadioControlMessage(cMessage *);
 	virtual void handleNetworkControlCommand(cMessage *) { }
+ public:
+    virtual int getForwPkt() { return 0;}
 };
 
 #endif				//_VIRTUALROUTING_H_
