@@ -77,6 +77,8 @@ class VirtualRouting: public CastaliaModule, public TimerService {
 	virtual void handleNetworkControlCommand(cMessage *) { }
  public:
     virtual int getForwPkt() { return 0;}
+    virtual std::string getRole() { return "none";}
+
 };
 
 #endif				//_VIRTUALROUTING_H_

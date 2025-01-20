@@ -22,6 +22,7 @@ do
     for s in ${SEED_SET}
     do
         ./gen.sh omnetpp.ini qos_pdr=0.6,non_square,short_sim,fivekall ${s} ${PROTO}_map_scale_${i}_pdr.yaml
+        exit
 #        borders=(`yq '.[] | select(.engines[].role == "border")| .node' loc_pdr.yaml`)
 #        b_len=${#borders[@]}
 #        echo length: ${b_len}
@@ -40,6 +41,9 @@ do
         cp nrg.yaml nrg_topsis_w.yaml
         ./gen.sh omnetpp.ini qos_pdr=0.6,non_square,long_sim,e_border ${s} ${PROTO}_map_scale_${i}_pdr.yaml
         cp nrg.yaml nrg_topsis.yaml
+        ./gen.sh omnetpp.ini qos_pdr=0.6,non_square,long_sim,e_border,topsis_ne ${s} ${PROTO}_map_scale_${i}_pdr.yaml
+        cp nrg.yaml nrg_topsis_ne.yaml
+
         ./gen.sh omnetpp.ini qos_pdr=0.6,non_square,long_sim,e_border,rnd_routing ${s} ${PROTO}_map_scale_${i}_pdr.yaml
         cp nrg.yaml nrg_rnd.yaml
 

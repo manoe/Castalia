@@ -768,7 +768,10 @@ class msr2mrp: public VirtualRouting {
 
         void destroyEngines();
         std::vector<msr2mrp_node_ext_entry> collectAllRoutes(std::vector<string>);
+
         int getForwPkt();
+        std::string getRole();
+
         std::vector<string> getWorkingEngineNames();
         std::vector<string> getWorkingEngineNames(std::string);
         double getEnergyValue();
