@@ -16,6 +16,7 @@
 #include "node/resourceManager/ResourceManager.h"
 #include "node/mobilityManager/MobilityManagerMessage_m.h"
 #include "physicalProcess/WildFirePhysicalProcess/WildFirePhysicalProcess.h"
+#include "node/communication/routing/VirtualRouting.h"
 #include <yaml-cpp/yaml.h>
 
 #define REPORT_PACKET_NAME "Wildfire report"

@@ -468,6 +468,17 @@ void ForestFire::serializeEnergy() {
         } else {
             yn_out<<YAML::Value<<0;
         }
+
+        yn_out<<YAML::Key<<"pkt_forw";
+        auto routing = dynamic_cast<VirtualRouting *>(topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+        int pkt_count = 0;
+        try {
+            pkt_count = routing->getForwPkt();
+        } catch (exception &e) {
+            trace()<<"[error] "<<e.what();
+            pkt_count = 0;
+        }
+        yn_out<<YAML::Value<<pkt_count;
         yn_out<<YAML::EndMap;
     }
     yn_out<<YAML::EndSeq;
