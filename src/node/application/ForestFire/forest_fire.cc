@@ -428,6 +428,33 @@ double ForestFire::getAverageSpentEnergy() {
     return nrg;
 }
 
+
+std::map<int,int> ForestFire::getRecvPktSum(bool event=false) {
+    std::vector<map<int,int>> recvs;
+    std::vector<map<int,set<int>>> pkts;
+    int numNodes = getParentModule()->getParentModule()->par("numNodes");
+        cTopology *topo;	// temp variable to access packets received by other nodes
+        topo = new cTopology("topo");
+        topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
+
+    for (int i = 0 ; i < numNodes ; i++) {
+        ForestFire *appModule = dynamic_cast<ForestFire*>
+            (topo->getNode(i)->getModule()->getSubmodule("Application"));
+        if (appModule && ( appModule->hasPar("isSink") ? appModule->par("isSink") : false)) {
+            if(event) {
+                recvs.push_back(appModule->getEventRecv());
+                pkts.push_back(appModule->getEventPacketsSeen());
+            } else {
+                recvs.push_back(appModule->getReportRecv());
+                pkts.push_back(appModule->getReportPacketsSeen());
+            }
+        }
+    }
+    delete topo;
+    return summarizeSentPkts(pkts);
+}
+
+
 void ForestFire::serializeEnergy() {
     int numNodes = getParentModule()->getParentModule()->par("numNodes");
     cTopology *topo;	// temp variable to access packets received by other nodes
@@ -438,6 +465,8 @@ void ForestFire::serializeEnergy() {
     yn_out<<YAML::Value<<simTime().dbl();
     yn_out<<YAML::Key<<"nodes";
     yn_out<<YAML::BeginSeq;
+    auto report_recvs = getRecvPktSum(false);
+    auto event_recvs = getRecvPktSum(true);
     for (int i = 0; i < numNodes; i++) {
         auto *rm = dynamic_cast<ResourceManager*>
             (topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
@@ -457,14 +486,14 @@ void ForestFire::serializeEnergy() {
         yn_out<<YAML::Key<<"event_sent";
         yn_out<<YAML::Value<<app->getEventSent();
         yn_out<<YAML::Key<<"report_recv";
-        if(reportRecv.find(i) != reportRecv.end()) {
-            yn_out<<YAML::Value<<reportRecv[i];
+        if(report_recvs.find(i) != report_recvs.end()) {
+            yn_out<<YAML::Value<<report_recvs[i];
         } else {
             yn_out<<YAML::Value<<0;
         }
         yn_out<<YAML::Key<<"event_recv";
-        if(eventRecv.find(i) != eventRecv.end()) {
-            yn_out<<YAML::Value<<eventRecv[i];
+        if(event_recvs.find(i) != event_recvs.end()) {
+            yn_out<<YAML::Value<<event_recvs[i];
         } else {
             yn_out<<YAML::Value<<0;
         }
