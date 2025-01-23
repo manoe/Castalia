@@ -123,6 +123,7 @@ class ForestFire : public VirtualApplication {
     map<int,int> summarizeSentPkts(std::vector<map<int,set<int>>>);
     void handleMobility(cMessage *);
     void notifySensorManager(int);
+    std::map<int,int> getRecvPktSum(bool);
  public:
     int getReportSent();
     int getEventSent();
