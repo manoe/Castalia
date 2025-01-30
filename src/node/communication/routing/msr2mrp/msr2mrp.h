@@ -291,6 +291,7 @@ struct msr2mrp_feat_par {
     std::vector<bool>  rinv_ts_cb;
     bool   lb_rbp;
     bool   excl_nd_node;
+    bool   stay_border;
 };
 
 class msr2mrp;
