@@ -2189,6 +2189,11 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
             }
             if(rinv_pkt->getRound() > getRound()) {
                 setRound(rinv_pkt->getRound());
+                if(fp.stay_border && getRingStatus() == msr2mrpRingDef::BORDER) {
+                    extTrace()<<"Node stays border after new round";
+                    sendRinvBasedOnHop();
+                    break;
+                }
                 setHop(std::numeric_limits<int>::max());
                 switch (getState()) {
                     case msr2mrpStateDef::LEARN: {
