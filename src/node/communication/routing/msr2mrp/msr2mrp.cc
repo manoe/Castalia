@@ -3014,6 +3014,31 @@ void msr2mrp::finishSpecific() {
                         extTrace()<<"[error] No hop-pkt table: "<<e.what();
                     }
                 }
+                y_out<<YAML::Key<<"traffic_table";
+                y_out<<YAML::Value;
+                y_out<<YAML::BeginSeq;
+                for(auto ne: it->second->getTrafficTable()) {
+                    y_out<<YAML::BeginMap;
+                    y_out<<YAML::Key<<"node";
+                    y_out<<YAML::Value<<ne.first;
+                    y_out<<YAML::Key<<"pkt";
+                    y_out<<YAML::Value<<ne.second.pkt_count;
+                    y_out<<YAML::Key<<"pathid";
+                    y_out<<YAML::Value;
+                    y_out<<YAML::BeginSeq;
+                    for(auto p: ne.second.pathid) {
+                        y_out<<YAML::BeginMap;
+                        y_out<<YAML::Key<<"pathid";
+                        y_out<<YAML::Value<<p.pathid;
+                        y_out<<YAML::EndMap;
+                    }
+                    y_out<<YAML::EndSeq;
+                    y_out<<YAML::Key<<"reroute_count";
+                    y_out<<YAML::Value<<ne.second.reroute_count;
+                    y_out<<YAML::EndMap;
+                }
+                y_out<<YAML::EndSeq;
+
                 y_out<<YAML::Key<<"round";
                 y_out<<YAML::Value<<it->second->getRound();
                 y_out<<YAML::Key<<"second_learn";
