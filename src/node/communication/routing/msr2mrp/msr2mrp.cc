@@ -3030,6 +3030,8 @@ void msr2mrp::finishSpecific() {
                         y_out<<YAML::BeginMap;
                         y_out<<YAML::Key<<"pathid";
                         y_out<<YAML::Value<<p.pathid;
+                        y_out<<YAML::Key<<"pkt";
+                        y_out<<YAML::Value<<p.pkt_count;
                         y_out<<YAML::EndMap;
                     }
                     y_out<<YAML::EndSeq;
