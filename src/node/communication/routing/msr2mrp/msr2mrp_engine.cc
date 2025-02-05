@@ -3095,18 +3095,25 @@ void msr2mrp_engine::incPktCountInTrafficTable(std::string node, int pathid, int
         traffic_table[node].nw_address=node;
         traffic_table[node].pkt_count=1;
         traffic_table[node].reroute_count=reroute;
-        traffic_table[node].pathid.push_back({pathid,0});
+        msr2mrp_pathid_entry pe;
+        pe.pathid = pathid;
+        pe.pkt_count = 1;
+        traffic_table[node].pathid.push_back(pe);
     } else {
         ++(traffic_table[node].pkt_count);
         traffic_table[node].reroute_count+=reroute;
         bool add=true;
-        for(auto ne: traffic_table[node].pathid) {
-            if(ne.pathid==pathid) {
+        for(auto pe: traffic_table[node].pathid) {
+            if(pe.pathid==pathid) {
+                ++(pe.pkt_count);
                 add=false;
             }
         }
         if(add) {
-            traffic_table[node].pathid.push_back({pathid,0});
+            msr2mrp_pathid_entry pe;
+            pe.pathid = pathid;
+            pe.pkt_count = 1;
+            traffic_table[node].pathid.push_back(pe);
         }
     }
 }
