@@ -3103,7 +3103,7 @@ void msr2mrp_engine::incPktCountInTrafficTable(std::string node, int pathid, int
         ++(traffic_table[node].pkt_count);
         traffic_table[node].reroute_count+=reroute;
         bool add=true;
-        for(auto pe: traffic_table[node].pathid) {
+        for(auto &&pe: traffic_table[node].pathid) {
             if(pe.pathid==pathid) {
                 ++(pe.pkt_count);
                 add=false;
