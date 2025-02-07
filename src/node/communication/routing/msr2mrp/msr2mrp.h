@@ -59,7 +59,8 @@ enum msr2mrpTimerDef {
     T_SEC_L_START    = 8,
     T_SEND_PKT       = 9,
     T_RESTART        = 10,
-    T_SERIAL         = 11
+    T_SERIAL         = 11,
+    T_PKT_RESET      = 12
 };
 
 enum msr2mrpRingDef {
@@ -293,6 +294,9 @@ struct msr2mrp_feat_par {
     bool   lb_rbp;
     bool   excl_nd_node;
     bool   stay_border;
+    bool   reset_pkt_count;
+    double pkt_reset_timer;
+
 };
 
 class msr2mrp;
