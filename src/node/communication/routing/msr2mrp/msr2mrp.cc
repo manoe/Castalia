@@ -114,10 +114,6 @@ void msr2mrp::startup() {
         updateTimer();
         setHop(0);
         initPongTableSize();
-        if(fp.reset_pkt_count) {
-            trace()<<"[info] PKT_RESET timer active";
-            setTimer(msr2mrpTimerDef::T_PKT_RESET,fp.pkt_reset_timer);
-        }
 //        setTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
 //        if(fp.second_learn != msr2mrpSecLParDef::OFF) {
 //            setTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
@@ -127,6 +123,10 @@ void msr2mrp::startup() {
     }
     setRound(0);
     forw_pkt_count=0;
+        if(fp.reset_pkt_count) {
+            trace()<<"[info] PKT_RESET timer active";
+            setTimer(msr2mrpTimerDef::T_PKT_RESET,fp.pkt_reset_timer);
+        }
 
 
     updateTimer();
