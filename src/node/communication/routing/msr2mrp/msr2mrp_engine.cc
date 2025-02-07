@@ -3136,4 +3136,13 @@ void msr2mrp_engine::handleLinkFailure(int p) {
 }
 
 
-
+void msr2mrp_engine::resetPktCounts() {
+    for(auto &&te: traffic_table) {
+        te.second.orig_pkt_count=0;
+    }
+    for(auto &&re: routing_table) {
+        for(auto &&pe: re.second.pathid) {
+            pe.pkt_count = 0;
+        }
+    }
+}

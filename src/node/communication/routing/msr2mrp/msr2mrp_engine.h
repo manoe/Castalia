@@ -293,6 +293,7 @@ class msr2mrp_engine {
         double getEnergyValue();
         double getEmergencyValue();
 
+        void resetPktCounts();
 
         std::ostream & extTrace();
         void SetTimer(int index, simtime_t time);

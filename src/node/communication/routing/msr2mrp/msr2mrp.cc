@@ -92,6 +92,9 @@ void msr2mrp::startup() {
     fp.lb_rbp            = par("f_lb_rbp");
     fp.excl_nd_node      = par("f_excl_nd_node");
     fp.stay_border       = par("f_stay_border");
+    fp.reset_pkt_count   = par("f_reset_pkt_count");
+    fp.pkt_reset_timer   = par("f_pkt_reset_timer");
+
 
     stimer = new SerialTimer(extTrace(),getClock());
     nw_layer = this;
@@ -111,6 +114,10 @@ void msr2mrp::startup() {
         updateTimer();
         setHop(0);
         initPongTableSize();
+        if(fp.reset_pkt_count) {
+            trace()<<"[info] PKT_RESET timer active";
+            setTimer(msr2mrpTimerDef::T_PKT_RESET,fp.pkt_reset_timer);
+        }
 //        setTimer(msr2mrpTimerDef::T_SINK_START,par("t_start"));
 //        if(fp.second_learn != msr2mrpSecLParDef::OFF) {
 //            setTimer(msr2mrpTimerDef::T_SEC_L_START,fp.t_sec_l_start);
@@ -2385,6 +2392,13 @@ void msr2mrp::timerFiredCallback(int index) {
             }
             
 
+            break;
+        }
+        case msr2mrpTimerDef::T_PKT_RESET: {
+            extTrace()<<"[info] timer T_PKT_RESET expired";
+            for(auto it=engine_table.begin() ; it != engine_table.end() ; ++it) {
+                it->second->resetPktCounts();
+            }
             break;
         } 
 

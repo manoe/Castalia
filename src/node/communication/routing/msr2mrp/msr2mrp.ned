@@ -127,13 +127,16 @@ simple msr2mrp like node.communication.routing.iRouting
     string f_rinv_ts_cb      = default("");     // TOPSIS Cost/Benefit -- RINV
     bool f_lb_rbp            = default(false);  // Handle rank as weight for probability
     bool f_excl_nd_node      = default(false);  // Exclude node already in any routing table to avoid non-disjointness
-    bool f_stay_border       = default(false);  // Border node stays border node even after new round_
+    bool f_stay_border       = default(false);  // Border node stays border node even after new round
+    bool f_reset_pkt_count   = default(false);  // Reset pkt counts to have correct measurement
+    double f_pkt_reset_timer   = default(0.0);  // When to reset
 
     int t_rreq = default (10); // Trreq timer, default 10 sec
         double min_rreq_rssi = default(-100.0); // Minimum RSSI to accept a (S)RREQ
     int t_pkt_hist  = default (5); // keep pkt history entry at least this long
     double t_rsnd = default(1); // Resend timer
     int rep_limit = default(3); // give after rep_limit and send path failure // give after rep_limit and send path failure
+
     int report_ack_period = default(10);
     int event_ack_req_period = default (10);
     bool send_path_failure = default(true);
