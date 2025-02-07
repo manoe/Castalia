@@ -196,6 +196,27 @@ bool ForestFire::isPacketSeen(int source, int sn, std::string name) {
     return true;
 }
 
+bool ForestFire::isPacketSeen(int source, ApplicationPacket *pkt) {
+    string name(pkt->getName());
+    int sn = pkt->getSequenceNumber();
+
+    map<int,set<int>>* ptr = nullptr;
+    if(name.compare(REPORT_PACKET_NAME)==0) {
+        ptr=&reportPacketsSeen;
+    } else if(name.compare(EVENT_PACKET_NAME)==0) {
+        ptr=&eventPacketsSeen;
+    } else {
+        throw std::string("Unknown packet name");
+    }
+    if(ptr->find(source) == ptr->end()) {
+        return false;
+    }
+    if(ptr->at(source).find(sn) == ptr->at(source).end()) {
+        return false;
+    }
+    return true;
+}
+
 
 void ForestFire::timerFiredCallback(int timer)
 {

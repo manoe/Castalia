@@ -2498,8 +2498,10 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
             if(isSink() && 0==std::strcmp(data_pkt->getDestination(),SELF_NETWORK_ADDRESS)) {
                 extTrace()<<"[info] DATA packet arrived, forwarding to Application layer";
                 data_pkt->setSource(data_pkt->getOrigin());
+                if(!nw_layer->isPktSeen(data_pkt)) {
+                    incPktCountInTrafficTable(std::string(data_pkt->getOrigin()), data_pkt->getPathid(), data_pkt->getReroute());
+                }
                 nw_layer->extToApplicationLayer(decapsulatePacket(data_pkt));
-                incPktCountInTrafficTable(std::string(data_pkt->getOrigin()), data_pkt->getPathid(), data_pkt->getReroute());
                 break;
             } else if(0==std::strcmp(data_pkt->getDestination(), BROADCAST_NETWORK_ADDRESS)) {
                 extTrace()<<"[info] Broadcast packet, forwarding to Application layer";
@@ -3146,3 +3148,8 @@ void msr2mrp_engine::resetPktCounts() {
         }
     }
 }
+
+bool msr2mrp_engine::isSeen(msr2mrpDataPacket *data_pkt) {
+
+}
+

@@ -226,6 +226,8 @@ class msr2mrp_engine {
         bool secLPerformed(int round, int pathid);
         bool getSecL(int pathid);
 
+        bool isSeen(msr2mrpDataPacket *);
+
         void incPktCountInTrafficTable(std::string, int, int);
         int resolveNetworkAddress(const char*);
         cPacket* decapsulatePacket(cPacket * pkt);
