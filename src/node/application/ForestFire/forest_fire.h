@@ -133,6 +133,7 @@ class ForestFire : public VirtualApplication {
     map<int,set<int>> getEventPacketsSeen();
     double getEnergyValue();
     double getEmergencyValue();
+    bool isPacketSeen(int source, ApplicationPacket *pkt);
 };
 
 #endif				// _FOREST_FIRE_H_

@@ -789,7 +789,7 @@ class msr2mrp: public VirtualRouting {
         void updateTimer();
 
         cRNG* extGetRNG(int index);
-
+        bool isPktSeen(msr2mrpDataPacket *data_pkt);
         void extToMacLayer(cMessage *msg) { toMacLayer(msg); };
         void extToApplicationLayer(cMessage *msg) {toApplicationLayer(msg); };
         void extToMacLayer(cPacket *msg, int addr) { toMacLayer(msg,addr); };
