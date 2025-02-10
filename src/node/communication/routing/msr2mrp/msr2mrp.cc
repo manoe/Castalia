@@ -3402,8 +3402,7 @@ bool msr2mrp::isPktSeen(msr2mrpDataPacket *data_pkt) {
         return false;
     }
     auto data_dup_pkt=data_pkt->dup();
-    auto ret_val=ff_app->isPacketSeen(atoi(data_pkt->getOrigin()),
-           check_and_cast <ApplicationPacket*>(data_dup_pkt->decapsulate()));
+    auto ret_val=ff_app->isPacketSeen(atoi(data_pkt->getOrigin()), check_and_cast<ApplicationPacket*>(data_dup_pkt->decapsulate()));
 
     delete data_dup_pkt;
     extTrace()<<"[info] Packet seen: "<<ret_val;
