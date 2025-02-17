@@ -6,14 +6,24 @@
 # $4 sim time
 # $5 x or y square
 
+if [[ "$#" -ne 5 ]]; then
+    SEL=none
+else
+    SEL=${5}
+fi
+
 export CELL_SIZE=`echo ${3}`
 export SIM_TIME=`echo ${4}`
-if [ ${5} = x ]; then
+if [[ ${SEL} = x ]]; then
     export FIELD_X=`echo "${3} * (${1} - 1)"|bc `
     export FIELD_Y=`echo "${3} * (${1} - 1)"|bc `
-else
+elif [[ ${SEL} = y ]]; then
     export FIELD_X=`echo "${3} * (${2} - 1)"|bc `
     export FIELD_Y=`echo "${3} * (${2} - 1)"|bc `
+else
+    export FIELD_X=`echo "${3} * (${1} - 1)"|bc `
+    export FIELD_Y=`echo "${3} * (${2} - 1)"|bc `
+
 fi
 export NUM_NODES=`echo "${1} * ${2}"|bc `
 export NODES_X=$1
