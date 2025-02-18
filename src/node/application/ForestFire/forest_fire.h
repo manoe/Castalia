@@ -81,6 +81,9 @@ class ForestFire : public VirtualApplication {
     bool    srlz_pkt_arr;
     bool    srlz_nrg;
     double  t_srlz_nrg;
+    bool    srlz_plane; 
+    bool    srlz_routing;
+
 
 	int currentVersion;
 	int currentVersionPacket;
