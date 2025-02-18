@@ -24,6 +24,8 @@
 #include "node/resourceManager/ResourceManager.h"
 #include "node/communication/routing/RoutingPacket_m.h"
 #include "node/application/ApplicationPacket_m.h"
+#include <yaml-cpp/yaml.h>
+
 
 #define SELF_NETWORK_ADDRESS selfAddress.c_str()
 #define ROUTE_DEST_DELIMITER "#"
@@ -78,6 +80,7 @@ class VirtualRouting: public CastaliaModule, public TimerService {
  public:
     virtual int getForwPkt() { return 0;}
     virtual std::string getRole() { return "none";}
+    virtual void dumpRouting(YAML::Emitter &) {return;};
 
 };
 
