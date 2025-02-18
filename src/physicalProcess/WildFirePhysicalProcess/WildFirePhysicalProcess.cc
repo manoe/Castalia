@@ -436,6 +436,10 @@ void WildFirePhysicalProcess::signalTermination(std::vector<int> nodes) {
 }
 
 void WildFirePhysicalProcess::dumpPlane() {
+    dumpPlane(y_out);
+}
+
+void WildFirePhysicalProcess::dumpPlane(YAML::Emitter &out) {
     auto to_char = [](CellState s) -> std::string {
         switch(s) {
             case CellState::NO_FUEL: {
@@ -517,7 +521,6 @@ void WildFirePhysicalProcess::dumpPlane() {
         }
         y_out<<YAML::EndSeq;
         y_out<<YAML::EndMap;
-
     }
 }
 
