@@ -693,6 +693,8 @@ class msr2mrp: public VirtualRouting {
 
         void serializeRoutingTable();
         void serializeRoutingTable(std::map<std::string,msr2mrp_node_entry>);
+        void serializeRoutingTable(YAML::Emitter &, std::map<std::string,msr2mrp_node_entry>);
+
 
         void serializeRecvTable();
         void serializeRecvTable(std::map<std::string,msr2mrp_node_entry>);

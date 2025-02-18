@@ -2842,7 +2842,12 @@ std::string msr2mrp::ringToStr(msr2mrpRingDef pos) const {
 void msr2mrp::serializeRoutingTable() {
     serializeRoutingTable(routing_table);
 }
+
 void msr2mrp::serializeRoutingTable(std::map<std::string,msr2mrp_node_entry> table) {
+    serializeRoutingTable(y_out, table);
+}
+
+void msr2mrp::serializeRoutingTable(YAML::Emitter &y_out, std::map<std::string,msr2mrp_node_entry> table) {
     y_out<<YAML::BeginSeq;
     for(auto i : table) {
         y_out<<YAML::BeginMap;
