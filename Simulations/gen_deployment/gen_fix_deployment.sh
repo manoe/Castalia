@@ -5,25 +5,43 @@
 # $3 cell size
 # $4 sim time
 # $5 x or y square
+# $6 offset
 
-if [[ "$#" -ne 5 ]]; then
-    SEL=none
-else
-    SEL=${5}
+if [[ "$#" -lt 4 ]]; then
+    echo "Insufficient arguments" >> /dev/stderr
+    exit
 fi
+
+if [[ "$#" -ge 5 ]]; then
+    SEL=${5}
+else
+    SEL=none
+fi
+
+if [[ "$#" -ge 6 ]]; then
+    OFFSET=${6}
+else
+    OFFSET=0
+fi
+
 
 export CELL_SIZE=`echo ${3}`
 export SIM_TIME=`echo ${4}`
 if [[ ${SEL} = x ]]; then
-    export FIELD_X=`echo "${3} * (${1} - 1)"|bc `
+    export FIELD_X=`echo "${3} * (${1} - 1) + ${OFFSET}"|bc `
     export FIELD_Y=`echo "${3} * (${1} - 1)"|bc `
+    X_OFFSET=${OFFSET}
+    Y_OFFSET=0
 elif [[ ${SEL} = y ]]; then
     export FIELD_X=`echo "${3} * (${2} - 1)"|bc `
-    export FIELD_Y=`echo "${3} * (${2} - 1)"|bc `
+    export FIELD_Y=`echo "${3} * (${2} - 1) + ${OFFSET}"|bc `
+    Y_OFFSET=${OFFSET}
+    X_OFFSET=0
 else
     export FIELD_X=`echo "${3} * (${1} - 1)"|bc `
     export FIELD_Y=`echo "${3} * (${2} - 1)"|bc `
-
+    Y_OFFSET=0
+    X_OFFSET=0
 fi
 export NUM_NODES=`echo "${1} * ${2}"|bc `
 export NODES_X=$1
@@ -34,8 +52,8 @@ envsubst < deployment_fix.tmpl > deployment.ini
 for y in $(seq 0 $((${NODES_Y} - 1))); do
     for x in $(seq 0 $((${NODES_X} - 1))); do
         NODE_NUM=$((${x} + ${y} * ${NODES_X}))
-        echo SN.node[${NODE_NUM}].xCoor = $(echo "${x} * ${CELL_SIZE}"|bc ) >> deployment.ini
-        echo SN.node[${NODE_NUM}].yCoor = $(echo "${y} * ${CELL_SIZE}"|bc ) >> deployment.ini
+        echo SN.node[${NODE_NUM}].xCoor = $(echo "${x} * ${CELL_SIZE} + ${X_OFFSET} "|bc ) >> deployment.ini
+        echo SN.node[${NODE_NUM}].yCoor = $(echo "${y} * ${CELL_SIZE} + ${Y_OFFSET} "|bc ) >> deployment.ini
     done
 done
 
