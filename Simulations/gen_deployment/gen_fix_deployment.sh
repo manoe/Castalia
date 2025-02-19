@@ -18,8 +18,9 @@ else
     SEL=none
 fi
 
-if [[ "$#" -ge 6 ]]; then
-    OFFSET=${6}
+if [[ "$#" -ge 7 ]]; then
+    X_OFFSET=${6}
+    Y_OFFSET=${7}
 else
     OFFSET=0
 fi
@@ -28,20 +29,14 @@ fi
 export CELL_SIZE=`echo ${3}`
 export SIM_TIME=`echo ${4}`
 if [[ ${SEL} = x ]]; then
-    export FIELD_X=`echo "${3} * (${1} - 1) + ${OFFSET}"|bc `
-    export FIELD_Y=`echo "${3} * (${1} - 1)"|bc `
-    X_OFFSET=${OFFSET}
-    Y_OFFSET=0
+    export FIELD_X=`echo "${3} * (${1} - 1) + ${X_OFFSET}"|bc `
+    export FIELD_Y=`echo "${3} * (${1} - 1) + ${Y_OFFSET}"|bc `
 elif [[ ${SEL} = y ]]; then
-    export FIELD_X=`echo "${3} * (${2} - 1)"|bc `
-    export FIELD_Y=`echo "${3} * (${2} - 1) + ${OFFSET}"|bc `
-    Y_OFFSET=${OFFSET}
-    X_OFFSET=0
+    export FIELD_X=`echo "${3} * (${2} - 1) + ${X_OFFSET}"|bc `
+    export FIELD_Y=`echo "${3} * (${2} - 1) + ${Y_OFFSET}"|bc `
 else
     export FIELD_X=`echo "${3} * (${1} - 1)"|bc `
     export FIELD_Y=`echo "${3} * (${2} - 1)"|bc `
-    Y_OFFSET=0
-    X_OFFSET=0
 fi
 export NUM_NODES=`echo "${1} * ${2}"|bc `
 export NODES_X=$1
