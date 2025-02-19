@@ -3441,79 +3441,79 @@ void msr2mrp::dumpRouting(YAML::Emitter &out) {
                 out<<YAML::BeginMap;
                 out<<YAML::Key<<"engine";
                 out<<YAML::Value<<it->first;
-                try {
-                    auto table=it->second->getRecvTable();
-                    out<<YAML::Key<<"recv_table";
-                    out<<YAML::Value;
-                    serializeRecvTable(table);
-                } catch (exception &e) {
-                    extTrace()<<"[error] No recv table: "<<e.what();
-                }
+ //               try {
+ //                   auto table=it->second->getRecvTable();
+ //                   out<<YAML::Key<<"recv_table";
+ //                   out<<YAML::Value;
+ //                   serializeRecvTable(table);
+ //               } catch (exception &e) {
+ //                   extTrace()<<"[error] No recv table: "<<e.what();
+ //               }
                 try {
                     auto table=it->second->getRoutingTable();
                     out<<YAML::Key<<"routing_table";
                     out<<YAML::Value;
-                    serializeRoutingTable(table);
+                    serializeRoutingTable(out,table);
                 } catch (exception &e) {
                     extTrace()<<"[error] No routing table: "<<e.what();
                 }
-                try {
-                    auto table=it->second->getRreqTable();
-                    out<<YAML::Key<<"rreq_table";
-                    out<<YAML::Value;
-                    serializeRoutingTable(table);
-                } catch (exception &e) {
-                    extTrace()<<"[error] No rreq table: "<<e.what();
-                }
-                try {
-                    auto table=it->second->getRinvTable();
-                    out<<YAML::Key<<"rinv_table";
-                    out<<YAML::Value;
-                    serializeRoutingTable(table);
-                } catch (exception &e) {
-                    extTrace()<<"[error] No rinv table: "<<e.what();
-                }
-                if(fp.coll_pkt_at_border && msr2mrpRingDef::BORDER == it->second->getRingStatus()) {
-                    try {
-                        auto table=it->second->getHopPktTable();
-                        out<<YAML::Key<<"hop_pkt_table";
-                        out<<YAML::Value;
-                        serializeHopPktTable(table);
-                    } catch (exception &e) {
-                        extTrace()<<"[error] No hop-pkt table: "<<e.what();
-                    }
-                }
-                out<<YAML::Key<<"traffic_table";
-                out<<YAML::Value;
-                out<<YAML::BeginSeq;
-                for(auto ne: it->second->getTrafficTable()) {
-                    out<<YAML::BeginMap;
-                    out<<YAML::Key<<"node";
-                    out<<YAML::Value<<ne.first;
-                    out<<YAML::Key<<"pkt";
-                    out<<YAML::Value<<ne.second.pkt_count;
-                    out<<YAML::Key<<"pathid";
-                    out<<YAML::Value;
-                    out<<YAML::BeginSeq;
-                    for(auto p: ne.second.pathid) {
-                        out<<YAML::BeginMap;
-                        out<<YAML::Key<<"pathid";
-                        out<<YAML::Value<<p.pathid;
-                        out<<YAML::Key<<"pkt";
-                        out<<YAML::Value<<p.pkt_count;
-                        out<<YAML::EndMap;
-                    }
-                    out<<YAML::EndSeq;
-                    out<<YAML::Key<<"reroute_count";
-                    out<<YAML::Value<<ne.second.reroute_count;
-                    out<<YAML::EndMap;
-                }
-                out<<YAML::EndSeq;
-
-                out<<YAML::Key<<"round";
-                out<<YAML::Value<<it->second->getRound();
-                out<<YAML::Key<<"second_learn";
-                out<<YAML::Value<<it->second->getSecL();
+ //               try {
+ //                   auto table=it->second->getRreqTable();
+ //                   out<<YAML::Key<<"rreq_table";
+ //                   out<<YAML::Value;
+ //                   serializeRoutingTable(table);
+ //               } catch (exception &e) {
+ //                   extTrace()<<"[error] No rreq table: "<<e.what();
+ //               }
+ //               try {
+ //                   auto table=it->second->getRinvTable();
+ //                   out<<YAML::Key<<"rinv_table";
+ //                   out<<YAML::Value;
+ //                   serializeRoutingTable(table);
+ //               } catch (exception &e) {
+ //                   extTrace()<<"[error] No rinv table: "<<e.what();
+ //               }
+ //               if(fp.coll_pkt_at_border && msr2mrpRingDef::BORDER == it->second->getRingStatus()) {
+ //                   try {
+ //                       auto table=it->second->getHopPktTable();
+ //                       out<<YAML::Key<<"hop_pkt_table";
+ //                       out<<YAML::Value;
+ //                       serializeHopPktTable(table);
+ //                   } catch (exception &e) {
+ //                       extTrace()<<"[error] No hop-pkt table: "<<e.what();
+ //                   }
+ //               }
+ //               out<<YAML::Key<<"traffic_table";
+ //               out<<YAML::Value;
+ //               out<<YAML::BeginSeq;
+ //               for(auto ne: it->second->getTrafficTable()) {
+ //                   out<<YAML::BeginMap;
+ //                   out<<YAML::Key<<"node";
+ //                   out<<YAML::Value<<ne.first;
+ //                   out<<YAML::Key<<"pkt";
+ //                   out<<YAML::Value<<ne.second.pkt_count;
+ //                   out<<YAML::Key<<"pathid";
+ //                   out<<YAML::Value;
+ //                   out<<YAML::BeginSeq;
+ //                   for(auto p: ne.second.pathid) {
+ //                       out<<YAML::BeginMap;
+ //                       out<<YAML::Key<<"pathid";
+ //                       out<<YAML::Value<<p.pathid;
+ //                       out<<YAML::Key<<"pkt";
+ //                       out<<YAML::Value<<p.pkt_count;
+ //                       out<<YAML::EndMap;
+ //                   }
+ //                   out<<YAML::EndSeq;
+ //                   out<<YAML::Key<<"reroute_count";
+ //                   out<<YAML::Value<<ne.second.reroute_count;
+ //                   out<<YAML::EndMap;
+ //               }
+ //               out<<YAML::EndSeq;
+ //
+ //               out<<YAML::Key<<"round";
+ //               out<<YAML::Value<<it->second->getRound();
+ //               out<<YAML::Key<<"second_learn";
+ //               out<<YAML::Value<<it->second->getSecL();
                 out<<YAML::Key;
                 out<<"role";
                 out<<YAML::Value;
@@ -3534,10 +3534,10 @@ void msr2mrp::dumpRouting(YAML::Emitter &out) {
             out<<YAML::Key<<"master";
             out<<YAML::Value<<msr2mrp_instance->isMaster();
 
-            auto radio=dynamic_cast<Radio *>(topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Radio"));
-            out<<YAML::Key<<"radio";
-            out<<YAML::Value;
-            serializeRadioStats(radio->getStats());
+ //           auto radio=dynamic_cast<Radio *>(topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Radio"));
+ //           out<<YAML::Key<<"radio";
+ //           out<<YAML::Value;
+ //           serializeRadioStats(radio->getStats());
 
             
 
@@ -3551,50 +3551,50 @@ void msr2mrp::dumpRouting(YAML::Emitter &out) {
             out<<YAML::Value<<res_mgr->getRemainingEnergy();
             out<<YAML::Key<<"spent_energy";
             out<<YAML::Value<<res_mgr->getSpentEnergy();
-            out<<YAML::Key<<"traffic_table";
-            out<<YAML::Value;
-            out<<YAML::BeginSeq;
-            for(auto ne: msr2mrp_instance->getTrafficTable()) {
-                out<<YAML::BeginMap;
-                out<<YAML::Key<<"node";
-                out<<YAML::Value<<ne.first;
-                out<<YAML::Key<<"pkt";
-                out<<YAML::Value<<ne.second.pkt_count;
-                out<<YAML::Key<<"pathid";
-                out<<YAML::Value;
-                out<<YAML::BeginSeq;
-                for(auto p: ne.second.pathid) {
-                    out<<YAML::BeginMap;
-                    out<<YAML::Key<<"pathid";
-                    out<<YAML::Value<<p.pathid;
-                    out<<YAML::EndMap;
-                }
-                out<<YAML::EndSeq;
-                out<<YAML::Key<<"reroute_count";
-                out<<YAML::Value<<ne.second.reroute_count;
-                out<<YAML::EndMap;
-            }
-            out<<YAML::EndSeq;
+//            out<<YAML::Key<<"traffic_table";
+//            out<<YAML::Value;
+//            out<<YAML::BeginSeq;
+//            for(auto ne: msr2mrp_instance->getTrafficTable()) {
+//                out<<YAML::BeginMap;
+//                out<<YAML::Key<<"node";
+//                out<<YAML::Value<<ne.first;
+//                out<<YAML::Key<<"pkt";
+//                out<<YAML::Value<<ne.second.pkt_count;
+//                out<<YAML::Key<<"pathid";
+//                out<<YAML::Value;
+//                out<<YAML::BeginSeq;
+//                for(auto p: ne.second.pathid) {
+//                    out<<YAML::BeginMap;
+//                    out<<YAML::Key<<"pathid";
+//                    out<<YAML::Value<<p.pathid;
+//                    out<<YAML::EndMap;
+//                }
+//                out<<YAML::EndSeq;
+//                out<<YAML::Key<<"reroute_count";
+//                out<<YAML::Value<<ne.second.reroute_count;
+//                out<<YAML::EndMap;
+//            }
+//            out<<YAML::EndSeq;
 
-            out<<YAML::Key<<"pkt_table";
-            out<<YAML::Value;
-            out<<YAML::BeginSeq;
-            for(auto ne: msr2mrp_instance->getPktTable()) {
-                out<<YAML::BeginMap;
-                out<<YAML::Key<<"node";
-                out<<YAML::Value<<ne.first;
-                out<<YAML::Key<<"pkt_count";
-                out<<YAML::Value<<ne.second.pkt_count;
-                out<<YAML::Key<<"ack_count";
-                out<<YAML::Value<<ne.second.ack_count;
-                out<<YAML::Key<<"fail_count";
-                out<<YAML::Value<<ne.second.fail_count;
-                out<<YAML::EndMap;
-            }
-            out<<YAML::EndSeq;
-
-            out<<YAML::Key<<"forw_data_pkt_count";
-            out<<YAML::Value<<msr2mrp_instance->getForwDataPkt();
+//            out<<YAML::Key<<"pkt_table";
+//            out<<YAML::Value;
+//            out<<YAML::BeginSeq;
+//            for(auto ne: msr2mrp_instance->getPktTable()) {
+//                out<<YAML::BeginMap;
+//                out<<YAML::Key<<"node";
+//                out<<YAML::Value<<ne.first;
+//                out<<YAML::Key<<"pkt_count";
+//                out<<YAML::Value<<ne.second.pkt_count;
+//                out<<YAML::Key<<"ack_count";
+//                out<<YAML::Value<<ne.second.ack_count;
+//                out<<YAML::Key<<"fail_count";
+//                out<<YAML::Value<<ne.second.fail_count;
+//                out<<YAML::EndMap;
+//            }
+//            out<<YAML::EndSeq;
+//
+//            out<<YAML::Key<<"forw_data_pkt_count";
+//            out<<YAML::Value<<msr2mrp_instance->getForwDataPkt();
             out<<YAML::EndMap;
 
         }
