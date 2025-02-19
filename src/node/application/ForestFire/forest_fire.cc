@@ -540,6 +540,11 @@ void ForestFire::serializeEnergy() {
         yn_out<<YAML::Key<<"plane";
         wfphy_proc->dumpPlane(yn_out);
     }
+    if(srlz_routing) {
+        auto routing = dynamic_cast<VirtualRouting *>(topo->getNode(0)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
+        yn_out<<YAML::Key<<"routing";
+        routing->dumpRouting(yn_out);
+    }
     yn_out<<YAML::EndMap;
     delete topo;
 }
