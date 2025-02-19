@@ -17,6 +17,7 @@
 #include "node/mobilityManager/MobilityManagerMessage_m.h"
 #include "physicalProcess/WildFirePhysicalProcess/WildFirePhysicalProcess.h"
 #include "node/communication/routing/VirtualRouting.h"
+
 #include <yaml-cpp/yaml.h>
 
 #define REPORT_PACKET_NAME "Wildfire report"
@@ -68,6 +69,7 @@ class ForestFire : public VirtualApplication {
     bool emergency;
     ResourceManager *rm;
     WildFirePhysicalProcess *wfphy_proc;
+    
     double sense_and_mob_rad; 
     bool rest_dm_state;
     double rest_dm_timer;
@@ -81,6 +83,9 @@ class ForestFire : public VirtualApplication {
     bool    srlz_pkt_arr;
     bool    srlz_nrg;
     double  t_srlz_nrg;
+    bool    srlz_plane; 
+    bool    srlz_routing;
+
 
 	int currentVersion;
 	int currentVersionPacket;

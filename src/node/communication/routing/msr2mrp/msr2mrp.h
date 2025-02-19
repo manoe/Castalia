@@ -693,6 +693,8 @@ class msr2mrp: public VirtualRouting {
 
         void serializeRoutingTable();
         void serializeRoutingTable(std::map<std::string,msr2mrp_node_entry>);
+        void serializeRoutingTable(YAML::Emitter &, std::map<std::string,msr2mrp_node_entry>);
+
 
         void serializeRecvTable();
         void serializeRecvTable(std::map<std::string,msr2mrp_node_entry>);
@@ -794,6 +796,7 @@ class msr2mrp: public VirtualRouting {
         void extToApplicationLayer(cMessage *msg) {toApplicationLayer(msg); };
         void extToMacLayer(cPacket *msg, int addr) { toMacLayer(msg,addr); };
         std::ostream & extTrace() { return trace(); };
+        void dumpRouting(YAML::Emitter &out);
 };
 
 #endif // _MSR2MRP_H_

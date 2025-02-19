@@ -96,6 +96,7 @@ class WildFirePhysicalProcess: public CastaliaModule {
      vector<nodeRecord> collectCellsInsideRadius(double radius, vector<nodeRecord> points);
  public:
      vector<nodeRecord> collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord);
+     void dumpPlane(YAML::Emitter &out);
 };
 
 #endif /* _WILDFIREPHYSICALPROCESS_H_ */

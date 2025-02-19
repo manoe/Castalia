@@ -83,6 +83,8 @@ void ForestFire::startup()
     srlz_pkt_arr= par("srlz_pkt_arr");
     srlz_nrg    = par("srlz_nrg");
     t_srlz_nrg  = par("t_srlz_nrg");
+    srlz_plane  = par("srlz_plane"); 
+    srlz_routing= par("srlz_routing");
 
     if(srlz_pkt_arr) {
         yp_out<<YAML::BeginMap;
@@ -534,6 +536,10 @@ void ForestFire::serializeEnergy() {
         yn_out<<YAML::EndMap;
     }
     yn_out<<YAML::EndSeq;
+    if(srlz_plane) {
+        yn_out<<YAML::Key<<"plane";
+        wfphy_proc->dumpPlane(yn_out);
+    }
     yn_out<<YAML::EndMap;
     delete topo;
 }
