@@ -85,7 +85,7 @@ class ForestFire : public VirtualApplication {
     double  t_srlz_nrg;
     bool    srlz_plane; 
     bool    srlz_routing;
-
+    bool    srlz_per_timestamp; 
 
 	int currentVersion;
 	int currentVersionPacket;
@@ -107,6 +107,7 @@ class ForestFire : public VirtualApplication {
     map<int,int> eventRecv;
     YAML::Emitter yp_out;
     YAML::Emitter yn_out;
+    int ts_counter=0;
 
  protected:
 	virtual void startup();
