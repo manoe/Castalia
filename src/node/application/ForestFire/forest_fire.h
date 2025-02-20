@@ -107,6 +107,7 @@ class ForestFire : public VirtualApplication {
     map<int,int> eventRecv;
     YAML::Emitter yp_out;
     YAML::Emitter yn_out;
+    int ts_counter=0;
 
  protected:
 	virtual void startup();

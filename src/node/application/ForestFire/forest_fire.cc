@@ -92,10 +92,12 @@ void ForestFire::startup()
         yp_out<<YAML::BeginSeq;
     }
 
-    if(srlz_nrg && !srlz_per_timestamp) {
-        yn_out<<YAML::BeginMap;
-        yn_out<<YAML::Key<<"nrg_list";
-        yn_out<<YAML::BeginSeq;
+    if(srlz_nrg) {
+        if(!srlz_per_timestamp) {
+            yn_out<<YAML::BeginMap;
+            yn_out<<YAML::Key<<"nrg_list";
+            yn_out<<YAML::BeginSeq;
+        }
         setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
     }
 }
@@ -483,45 +485,51 @@ void ForestFire::serializeEnergy() {
     cTopology *topo;	// temp variable to access packets received by other nodes
     topo = new cTopology("topo");
     topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
-    yn_out<<YAML::BeginMap;
-    yn_out<<YAML::Key<<"timestamp";
-    yn_out<<YAML::Value<<simTime().dbl();
-    yn_out<<YAML::Key<<"nodes";
-    yn_out<<YAML::BeginSeq;
+    YAML::Emitter *y_out;
+    if(srlz_per_timestamp) {
+        y_out=new YAML::Emitter();
+    } else {
+        y_out=&yn_out;
+    }
+    *y_out<<YAML::BeginMap;
+    *y_out<<YAML::Key<<"timestamp";
+    *y_out<<YAML::Value<<simTime().dbl();
+    *y_out<<YAML::Key<<"nodes";
+    *y_out<<YAML::BeginSeq;
     auto report_recvs = getRecvPktSum(false);
     auto event_recvs = getRecvPktSum(true);
     for (int i = 0; i < numNodes; i++) {
         auto *rm = dynamic_cast<ResourceManager*>
             (topo->getNode(i)->getModule()->getSubmodule("ResourceManager"));
-        yn_out<<YAML::BeginMap;
-        yn_out<<YAML::Key<<"node";
-        yn_out<<YAML::Value<<i;
-        yn_out<<YAML::Key<<"energy";
-        yn_out<<YAML::Value<<rm->getRemainingEnergy();
-        yn_out<<YAML::Key<<"consumed_energy";
-        yn_out<<YAML::Value<<rm->getSpentEnergy();
-        yn_out<<YAML::Key<<"state";
-        yn_out<<YAML::Value<<(rm->isDead()?"dead":"live");
-        yn_out<<YAML::Key<<"report_sent";
+        *y_out<<YAML::BeginMap;
+        *y_out<<YAML::Key<<"node";
+        *y_out<<YAML::Value<<i;
+        *y_out<<YAML::Key<<"energy";
+        *y_out<<YAML::Value<<rm->getRemainingEnergy();
+        *y_out<<YAML::Key<<"consumed_energy";
+        *y_out<<YAML::Value<<rm->getSpentEnergy();
+        *y_out<<YAML::Key<<"state";
+        *y_out<<YAML::Value<<(rm->isDead()?"dead":"live");
+        *y_out<<YAML::Key<<"report_sent";
         auto app = dynamic_cast<ForestFire *>(topo->getNode(i)->getModule()->getSubmodule("Application"));
 
-        yn_out<<YAML::Value<<app->getReportSent();
-        yn_out<<YAML::Key<<"event_sent";
-        yn_out<<YAML::Value<<app->getEventSent();
-        yn_out<<YAML::Key<<"report_recv";
+        *y_out<<YAML::Value<<app->getReportSent();
+        *y_out<<YAML::Key<<"event_sent";
+        *y_out<<YAML::Value<<app->getEventSent();
+        *y_out<<YAML::Key<<"report_recv";
         if(report_recvs.find(i) != report_recvs.end()) {
-            yn_out<<YAML::Value<<report_recvs[i];
+            *y_out<<YAML::Value<<report_recvs[i];
         } else {
-            yn_out<<YAML::Value<<0;
+            *y_out<<YAML::Value<<0;
         }
-        yn_out<<YAML::Key<<"event_recv";
+        *y_out<<YAML::Key<<"event_recv";
         if(event_recvs.find(i) != event_recvs.end()) {
-            yn_out<<YAML::Value<<event_recvs[i];
+            *y_out<<YAML::Value<<event_recvs[i];
         } else {
-            yn_out<<YAML::Value<<0;
+            *y_out<<YAML::Value<<0;
         }
 
-        yn_out<<YAML::Key<<"pkt_forw";
+        *y_out<<YAML::Key<<"pkt_forw";
         auto routing = dynamic_cast<VirtualRouting *>(topo->getNode(i)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
         int pkt_count = 0;
         try {
@@ -530,22 +538,30 @@ void ForestFire::serializeEnergy() {
             trace()<<"[error] "<<e.what();
             pkt_count = 0;
         }
-        yn_out<<YAML::Value<<pkt_count;
-        yn_out<<YAML::Key<<"role";
-        yn_out<<YAML::Value<<routing->getRole();
-        yn_out<<YAML::EndMap;
+        *y_out<<YAML::Value<<pkt_count;
+        *y_out<<YAML::Key<<"role";
+        *y_out<<YAML::Value<<routing->getRole();
+        *y_out<<YAML::EndMap;
     }
-    yn_out<<YAML::EndSeq;
+    *y_out<<YAML::EndSeq;
     if(srlz_plane) {
-        yn_out<<YAML::Key<<"plane";
-        wfphy_proc->dumpPlane(yn_out);
+        *y_out<<YAML::Key<<"plane";
+        wfphy_proc->dumpPlane(*y_out);
     }
     if(srlz_routing) {
         auto routing = dynamic_cast<VirtualRouting *>(topo->getNode(0)->getModule()->getSubmodule("Communication")->getSubmodule("Routing"));
-        yn_out<<YAML::Key<<"routing";
-        routing->dumpRouting(yn_out);
+        *y_out<<YAML::Key<<"routing";
+        routing->dumpRouting(*y_out);
     }
-    yn_out<<YAML::EndMap;
+    *y_out<<YAML::EndMap;
+    if(srlz_per_timestamp) {
+        ofstream nrg_file("frame_"+std::to_string(ts_counter++)+"_nrg.yaml");
+        nrg_file<<y_out->c_str();
+        nrg_file<<std::endl;
+        nrg_file.close();
+        delete y_out;
+    }
+
     delete topo;
 }
 
@@ -659,7 +675,7 @@ void ForestFire::finishSpecific()
         pdr_file.close();
 
 
-        if(srlz_nrg) {
+        if(srlz_nrg && !srlz_per_timestamp) {
             yn_out<<YAML::EndSeq;
             yn_out<<YAML::EndMap;
             ofstream nrg_file("nrg.yaml");
