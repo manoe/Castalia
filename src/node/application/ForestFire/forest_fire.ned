@@ -65,6 +65,7 @@ simple ForestFire like node.application.iApplication {
     double  t_srlz_nrg   = default(10);    // srlz_nrg timer
     bool    srlz_plane   = default(false); // serialize plane with nrg
     bool    srlz_routing = default(false); // serialize routing with nrg
+    bool    srlz_per_timestamp = default(false); // serialize data in different files per each timestamp
 
 
  gates:

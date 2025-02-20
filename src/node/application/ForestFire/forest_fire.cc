@@ -76,23 +76,23 @@ void ForestFire::startup()
     report_sent=0;
     reportRecv.clear();
     eventRecv.clear();
-    pot_field   = par("pot_field"); 
-    d_max       = par("d_max");
-    d_high      = par("d_high");
-    d_gamma     = par("d_gamma");
-    srlz_pkt_arr= par("srlz_pkt_arr");
-    srlz_nrg    = par("srlz_nrg");
-    t_srlz_nrg  = par("t_srlz_nrg");
-    srlz_plane  = par("srlz_plane"); 
-    srlz_routing= par("srlz_routing");
-
+    pot_field          = par("pot_field"); 
+    d_max              = par("d_max");
+    d_high             = par("d_high");
+    d_gamma            = par("d_gamma");
+    srlz_pkt_arr       = par("srlz_pkt_arr");
+    srlz_nrg           = par("srlz_nrg");
+    t_srlz_nrg         = par("t_srlz_nrg");
+    srlz_plane         = par("srlz_plane"); 
+    srlz_routing       = par("srlz_routing");
+    srlz_per_timestamp = par("srlz_per_timestamp");
     if(srlz_pkt_arr) {
         yp_out<<YAML::BeginMap;
         yp_out<<YAML::Key<<"pkt_list";
         yp_out<<YAML::BeginSeq;
     }
 
-    if(srlz_nrg) {
+    if(srlz_nrg && !srlz_per_timestamp) {
         yn_out<<YAML::BeginMap;
         yn_out<<YAML::Key<<"nrg_list";
         yn_out<<YAML::BeginSeq;
