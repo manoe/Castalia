@@ -483,44 +483,44 @@ void WildFirePhysicalProcess::dumpPlane(YAML::Emitter &out) {
 
     auto plane=wf_ca->getPlane();
     if(yp_coding == "enum") {
-        y_out<<YAML::BeginMap;
-        y_out<<YAML::Key<<"timestamp";
-        y_out<<YAML::Value<<simTime().dbl();
-        y_out<<YAML::Key<<"plane";
-        y_out<<YAML::BeginSeq;
+        out<<YAML::BeginMap;
+        out<<YAML::Key<<"timestamp";
+        out<<YAML::Value<<simTime().dbl();
+        out<<YAML::Key<<"plane";
+        out<<YAML::BeginSeq;
         for(int x=0; x < wf_ca->getSizeX(); ++x) {
             for(int y=0; y < wf_ca->getSizeY(); ++y) {
-                y_out<<YAML::BeginMap;
-                y_out<<YAML::Key<<"x";
-                y_out<<YAML::Value<<x;
-                y_out<<YAML::Key<<"y";
-                y_out<<YAML::Value<<y;
-                y_out<<YAML::Key<<"state";
-                y_out<<YAML::Value<<to_str(plane[x][y].state);
-                y_out<<YAML::EndMap;
+                out<<YAML::BeginMap;
+                out<<YAML::Key<<"x";
+                out<<YAML::Value<<x;
+                out<<YAML::Key<<"y";
+                out<<YAML::Value<<y;
+                out<<YAML::Key<<"state";
+                out<<YAML::Value<<to_str(plane[x][y].state);
+                out<<YAML::EndMap;
             }
         }
-        y_out<<YAML::EndSeq;
-        y_out<<YAML::EndMap;
+        out<<YAML::EndSeq;
+        out<<YAML::EndMap;
     }
     if(yp_coding == "digit") {
-        y_out<<YAML::BeginMap;
-        y_out<<YAML::Key<<"timestamp";
-        y_out<<YAML::Value<<simTime().dbl();
-        y_out<<YAML::Key<<"plane";
-        y_out<<YAML::BeginSeq;
+        out<<YAML::BeginMap;
+        out<<YAML::Key<<"timestamp";
+        out<<YAML::Value<<simTime().dbl();
+        out<<YAML::Key<<"plane";
+        out<<YAML::BeginSeq;
         for(int y=0; y < wf_ca->getSizeY(); ++y) {
-            y_out<<YAML::BeginMap;
-            y_out<<YAML::Key<<"y";
+            out<<YAML::BeginMap;
+            out<<YAML::Key<<"y";
             std::string line;
             for(int x=0; x < wf_ca->getSizeX(); ++x) {
                 line+=to_char(plane[x][y].state);
             }
-            y_out<<YAML::Value<<line;
-            y_out<<YAML::EndMap;
+            out<<YAML::Value<<line;
+            out<<YAML::EndMap;
         }
-        y_out<<YAML::EndSeq;
-        y_out<<YAML::EndMap;
+        out<<YAML::EndSeq;
+        out<<YAML::EndMap;
     }
 }
 
