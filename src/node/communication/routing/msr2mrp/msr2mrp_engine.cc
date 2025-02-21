@@ -1287,14 +1287,24 @@ void msr2mrp_engine::constructRoutingTable(bool rresp_req, bool app_cf, double p
         auto p=c_ne.pathid[0];
         p.secl=update;
         c_ne.pathid.clear();
+        
         for(auto &&ne: routing_table) {
             for(auto it=ne.second.pathid.begin() ; it !=ne.second.pathid.end();) {
                 if(it->pathid==p.pathid) {
-                    extTrace()<<"Duplicate pathid found, erasing";
+                    extTrace()<<"[info] Duplicate pathid found, erasing";
                     it=ne.second.pathid.erase(it);
                 } else {
                     ++it;
                 }
+            }
+        }
+
+        for(auto it=routing_table.begin() ; it != routing_table.end();) {
+            if(it->second.pathid.size() != 0) {
+                ++it;
+            } else {
+                extTrace()<<"[info] Routing entry without pathid: "<<it->first;
+                it=routing_table.erase(it);
             }
         }
 
