@@ -1629,9 +1629,13 @@ std::vector<msr2mrp_node_ext_entry> msr2mrp::collectAllRoutes(vector<std::string
     for(auto e: ev) {
         trace()<<"[info] Processing engine/sink: "<<e;
         for(auto r: engine_table[e]->getRoutingTable()) {
-            trace()<<"[info] Processing pathid: "<<pathidToStr(r.second.pathid)<<", next hop: "<<r.second.nw_address;
-            msr2mrp_node_ext_entry r_ext(r.second,e);
-            rt.push_back(r_ext);
+            if(r.second.pathid.size() > 0) {
+                trace()<<"[info] Processing pathid: "<<pathidToStr(r.second.pathid)<<", next hop: "<<r.second.nw_address;
+                msr2mrp_node_ext_entry r_ext(r.second,e);
+                rt.push_back(r_ext);
+            } else {
+                trace()<<"[info] Pathid empty!";
+            }
         }
     }
     return rt;
