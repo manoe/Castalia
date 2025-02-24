@@ -2696,8 +2696,9 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
             if(isSink() && 0==std::strcmp(data_pkt->getDestination(),SELF_NETWORK_ADDRESS)) {
                 extTrace()<<"[info] DATA packet arrived, forwarding to Application layer";
                 data_pkt->setSource(data_pkt->getOrigin());
-                nw_layer->extToApplicationLayer(decapsulatePacket(data_pkt));
                 incPktCountInTrafficTable(std::string(data_pkt->getOrigin()), data_pkt->getPathid(), data_pkt->getReroute());
+                nw_layer->extToApplicationLayer(decapsulatePacket(data_pkt));
+
                 break;
             } else if(0==std::strcmp(data_pkt->getDestination(), BROADCAST_NETWORK_ADDRESS)) {
                 extTrace()<<"[info] Broadcast packet, forwarding to Application layer";
