@@ -1950,8 +1950,10 @@ void msr2mrp_engine::timerFiredCallback(int index) {
             extTrace()<<"[timer] T_ESTABLISH timer expired";
 
             if(isRreqTableEmpty()) {
-                extTrace()<<"[error] RREQ table empty, impossibru";
-                throw rreq_table_empty("[error] RREQ table empty");
+                extTrace()<<"[error] RREQ table empty, not that impossibru";
+                extTrace()<<"[info] Back to INIT state, hope for some miracle to happen";
+                setState(msr2mrpStateDef::INIT);
+                break;
             }
 
             if(fp.measure_w_rreq && (fp.meas_rreq_count > getRreqPktCount()) ) {
