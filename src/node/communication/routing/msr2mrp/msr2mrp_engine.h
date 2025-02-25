@@ -171,6 +171,7 @@ class msr2mrp_engine {
         std::map<int,int> getPathIdWithNum();
         std::map<int,std::vector<double>> getPathIdWithTsVector();
         msr2mrp_pathid_entry getPathidFromRt(int pathid);
+        void singleOutRoutingTable(msr2mrpRingDef);
 
         std::string getNextHop(int);
         std::string getNextHop(int, bool);
