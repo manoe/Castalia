@@ -1503,6 +1503,49 @@ msr2mrp_pathid_entry msr2mrp_engine::getPathidFromRt(int pathid) {
     throw no_available_entry("Pathid not present in routing table"); 
 }
 
+void msr2mrp_engine::singleOutRoutingTable(msr2mrpRingDef ring_def) {
+    extTrace()<<"[info] entering singleOutRoutingTable(ring_def="<<ring_def<<")";
+    switch (ring_def) {
+        case msr2mrpRingDef::BORDER: {
+            if(routing_table.size() > 1) {
+                extTrace()<<"[info] BORDER node with multiple routing entries.";
+                 for(auto it=routing_table.begin() ; it != routing_table.end();) {
+                     extTrace()<<"[info] Record "<<it->first<<" pathid: "<<pathidToStr(it->second.pathid);
+                     if(it->second.pathid.size() > 0 && it->second.pathid[0].pathid == 0) {
+                         extTrace()<<"Not erasing.";
+                         ++it;
+                     }
+                     else {
+                         extTrace()<<"Erasing";
+                         it=routing_table.erase(it);
+                     }
+                 }
+            } else {
+                extTrace()<<"Single routing entry, looks good.";
+            }
+            break;
+        }
+        case msr2mrpRingDef::INTERNAL: {
+            extTrace()<<"INTERNAL, not implemented";
+            break;
+        }
+        case msr2mrpRingDef::EXTERNAL: {
+            extTrace()<<"EXTERNAL, nothing to do.";
+            break;
+        }
+        case msr2mrpRingDef::CENTRAL: {
+            extTrace()<<"CENTRAL, not implemented";
+            break;
+        }
+        default: {
+            throw state_not_permitted("How did we get here?");
+            break;
+        }
+
+    }
+}
+
+
 
 std::map<int,int> msr2mrp_engine::getPathIdWithNum() {
     extTrace()<<"Entering getPathIdWithNum()";
@@ -2026,6 +2069,8 @@ void msr2mrp_engine::timerFiredCallback(int index) {
                     constructRoutingTable(fp.rresp_req);
                 }
                 setHop(calculateHopFromRoutingTable());
+                singleOutRoutingTable(getRingStatus());
+
             } catch (routing_table_empty &e) {
                 extTrace()<<e.what();
                 extTrace()<<"[info] Returning to LEARN state";
@@ -2399,10 +2444,14 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                     if(fp.rt_recalc_warn) {
                         try {
                             updateRreqEntryWithEmergency(rwarn_pkt->getSource(), rwarn_pkt->getEmerg(), rwarn_pkt->getEnrgy());
-                            if(fp.cf_after_rresp) {
-                                constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
+                            if(getRingStatus() != msr2mrpRingDef::EXTERNAL) {
+                                extTrace()<<"[info] No routing table update for non-external nodes";
                             } else {
-                                constructRoutingTable(fp.rresp_req);
+                                if(fp.cf_after_rresp) {
+                                    constructRoutingTable(fp.rresp_req, fp.cf_after_rresp, fp.qos_pdr, true /* update */);
+                                } else {
+                                    constructRoutingTable(fp.rresp_req);
+                                }
                             }
                         } catch (no_available_entry &e) {
                             extTrace()<<"[info] Entry not available (not a real error): "<<e.what();
@@ -2468,7 +2517,11 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                         } catch ( no_available_entry &e) {
                             extTrace()<<"[error] "<<e.what();
                         }
-                        handleLinkFailure(p[0].pathid);
+                        if(getRingStatus() != msr2mrpRingDef::EXTERNAL) {
+                            extTrace()<<"[info] Node not external, not touching routing table, let the sink solve";
+                        } else {
+                            handleLinkFailure(p[0].pathid);
+                        }
                     } else if(rreqEntryExists(std::string(rwarn_pkt->getSource()))) {
                         removeRreqEntry(std::string(rwarn_pkt->getSource()));
                         markRinvEntryFail(std::string(rwarn_pkt->getSource()));
