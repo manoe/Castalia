@@ -101,6 +101,8 @@ class ForestFire : public VirtualApplication {
 	string reportDestination;
     bool report_timer_offset;
 
+    bool mobility_performed;
+
     map<int,set<int>> reportPacketsSeen;
     map<int,set<int>> eventPacketsSeen;
     map<int,int> reportRecv;
