@@ -546,7 +546,7 @@ void ForestFire::serializeEnergy() {
         *y_out<<YAML::Key<<"role";
         *y_out<<YAML::Value<<routing->getRole();
         *y_out<<YAML::Key<<"mobility";
-        *y_out<<YAML::Value<<mobility_performed;
+        *y_out<<YAML::Value<<app->getMobilityPerformed();
         *y_out<<YAML::EndMap;
     }
     *y_out<<YAML::EndSeq;
