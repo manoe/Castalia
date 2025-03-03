@@ -142,6 +142,7 @@ class ForestFire : public VirtualApplication {
     double getEnergyValue();
     double getEmergencyValue();
     bool isPacketSeen(int source, ApplicationPacket *pkt);
+    bool getMobilityPerformed() { return mobility_performed;};
 };
 
 #endif				// _FOREST_FIRE_H_
