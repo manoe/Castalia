@@ -80,7 +80,7 @@ class VirtualRouting: public CastaliaModule, public TimerService {
  public:
     virtual int getForwPkt() { return 0;}
     virtual std::string getRole() { return "none";}
-    virtual void dumpRouting(YAML::Emitter &) {return;};
+    virtual void dumpRouting(YAML::Emitter &y_out) { y_out<<YAML::Value<<YAML::Null; return;};
 
 };
 
