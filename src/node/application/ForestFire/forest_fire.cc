@@ -98,8 +98,10 @@ void ForestFire::startup()
             yn_out<<YAML::Key<<"nrg_list";
             yn_out<<YAML::BeginSeq;
         }
+        mobility_performed = false;
         setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
     }
+
 }
 
 int ForestFire::getEventSent() {
@@ -252,6 +254,7 @@ void ForestFire::timerFiredCallback(int timer)
         case ForestFireTimers::SRLZ_NRG: {
             trace()<<"SRLZ_NRG timer expired";
             serializeEnergy();
+            mobility_performed=false;
             setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
             break;
         }
@@ -422,6 +425,7 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
         dm_msg->setKind(MobilityManagerMessageType::DISCRETE_MOBILITY);
         sendMobilityBroadcast(); 
         send(dm_msg,"toMobilityManager");
+        mobility_performed=true;
         return;
     }
     if(sensedValue >= emergency_threshold && !emergency) {
@@ -541,6 +545,8 @@ void ForestFire::serializeEnergy() {
         *y_out<<YAML::Value<<pkt_count;
         *y_out<<YAML::Key<<"role";
         *y_out<<YAML::Value<<routing->getRole();
+        *y_out<<YAML::Key<<"mobility";
+        *y_out<<YAML::Value<<mobility_performed;
         *y_out<<YAML::EndMap;
     }
     *y_out<<YAML::EndSeq;
