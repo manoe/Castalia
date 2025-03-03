@@ -140,6 +140,12 @@ string smrp::stateToStr(smrpStateDef state) const {
         case smrpStateDef::INIT: {
             return "INIT";
         }
+        case smrpStateDef::MOBILITY: {
+            return "MOBILITY";
+        }
+        case smrpStateDef::RE_LEARN: {
+            return "RE_LEARN";
+        }
     }
     return "UNKNOWN";
 }
@@ -270,6 +276,7 @@ void smrp::removeHelloEntry(std::string nw_address) {
     trace()<<"[info] Entering removeHelloEntry(nw_address="<<nw_address<<")";
     if(hello_table.find(nw_address) != hello_table.end()) {
         hello_table.erase(nw_address);
+        return;
     }
     throw std::runtime_error("No hello table entry present");
 }
@@ -408,7 +415,7 @@ void smrp::addRoutingEntry(std::string nw_address, sm_node_entry ne, int prio) {
 }
 
 void smrp::addRoutingEntry(std::string nw_address, sm_node_entry ne, int prio, smrpPathStatus status, double timestamp) {
-    trace()<<"[info] Entering addRoutingEntry(nw_address="<<nw_address<<", sm_node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<pathStatusToStr(status)<<", timestamp="<<timestamp;
+    trace()<<"[info] Entering addRoutingEntry(nw_address="<<nw_address<<", sm_node_entry.nw_address="<<ne.nw_address<<", prio="<<prio<<", status="<<pathStatusToStr(status)<<", timestamp="<<timestamp<<")";
     for(auto it=routing_table.begin() ; it != routing_table.end() ; ++it) {
         if(it->nw_address == nw_address && it->prio == prio) {
             std::string("[error] record with prio already exists"); // throw?
@@ -499,6 +506,9 @@ void smrp::removeRoutingEntry(std::string ne, int prio, bool noprio=false) {
 double smrp::calculateTargetValue() {
     trace()<<"[info] Entering calculateTargetValue()";
     sm_node_entry min_ne;
+    if(hello_table.empty()) {
+        throw std::runtime_error("Empty hello table");
+    }
     min_ne=hello_table.begin()->second;
     for(auto ne: hello_table) {
         if(ne.second.env < min_ne.env) {
@@ -987,8 +997,13 @@ void smrp::timerFiredCallback(int index) {
             trace()<<"[info] Sensor difference - abs("<<new_env_val<<"-"<<env_val<<")="<<abs(new_env_val-env_val);
             if(abs(new_env_val-env_val)>fp.gamma) {
                 trace()<<"[info] Sensor reading difference exceeds gamma - new_env_val: "<<new_env_val<<" env_val: "<<env_val;
-                sendAlarm(smrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,nrg_val, calculateTargetValue());
-                env_val=new_env_val;
+                try {
+                    sendAlarm(smrpAlarmDef::ENVIRONMENT_ALARM,new_env_val,nrg_val, calculateTargetValue());
+                    env_val=new_env_val;
+                }
+                catch (std::runtime_error &e) {
+                    trace()<<"[error] "<<e.what();
+                }
             }
             break;
         }
@@ -1023,6 +1038,9 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
         }
         case smrpStateDef::WORK: {
             trace()<<"[info] In WORK state, routing";
+            logRouting();
+            logField();
+
             if(numOfAvailPaths(SELF_NETWORK_ADDRESS,fp.a_paths,fp.c_dead)==0) {
                 trace()<<"[error] No route available";
                 break;
@@ -1038,7 +1056,7 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 }
                 trace()<<"[info] No path present with priority "<<pri<<".";
                 trace()<<"[info] Check query status";
-                if(queryCompleted(SELF_NETWORK_ADDRESS)) {
+                if(queryCompleted(SELF_NETWORK_ADDRESS, pri)) {
                     trace()<<"[info] Query completed";
                     sm_node_entry ne;
                     try {
@@ -1051,7 +1069,7 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                         break;
                     }
                     updateRoutingEntry(SELF_NETWORK_ADDRESS,ne,pri,smrpPathStatus::AVAILABLE);
-                } else if(queryStarted(SELF_NETWORK_ADDRESS)) {
+                } else if(queryStarted(SELF_NETWORK_ADDRESS, pri)) {
                     trace()<<"[info] Query ongoing.";
                 } else {
                     trace()<<"[info] No path with priority "<<pri<<" available.";
@@ -1068,7 +1086,12 @@ void smrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                 }
 
             }
-            sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+            try {
+                sendData(getPath(SELF_NETWORK_ADDRESS),pkt);
+            } catch (std::runtime_error &e) {
+                trace()<<"[error] sending failed: "<<e.what();
+                cancelAndDelete(pkt);
+            }
             break;
         }
         case smrpStateDef::MOBILITY: {
@@ -1325,7 +1348,19 @@ void smrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double lq
                 }
                 case smrpAlarmDef::RELEARN_ALARM: {
                     trace()<<"[info] RELERN_ALARM received, sending FIELD packet";
-                    sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue());
+                    if(isSink()) {
+                        sendField(getHop(), 1.0, 1.0, 1.0);
+                    } else if(getState() == smrpStateDef::MOBILITY) {
+                        trace()<<"[error] In MOBILITY state, cannot participate in RELEARN";
+                    }
+                    else {
+                        try {
+                            sendField(getHop(), ff_app->getEnergyValue(), ff_app->getEmergencyValue(), calculateTargetValue());
+                        }
+                        catch (std::runtime_error &e) {
+                            trace()<<"[error] Reason: "<<e.what();
+                        }
+                    }
                     break;
                 }
                 default: {
