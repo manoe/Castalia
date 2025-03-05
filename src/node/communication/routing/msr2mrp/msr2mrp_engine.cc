@@ -2575,8 +2575,14 @@ void msr2mrp_engine::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi,
                 extTrace()<<"[info] DATA packet at interim node, routing forward";
                 if(data_pkt->getOrigin() == std::string(SELF_NETWORK_ADDRESS)) {
                     extTrace()<<"[error] Loop detected at path: "<<data_pkt->getPathid();
-                    auto entry = getNextHop(data_pkt->getPathid());
-                    removeRoute(entry);
+                    std::string entry;
+                    try {
+                        entry = getNextHop(data_pkt->getPathid());
+                        removeRoute(entry);
+                    } catch (no_available_entry &e) {
+                        extTrace()<<"[error] "<<e.what()<<", no next hop, giving up";
+                        break;
+                    }
                     try { 
                         removeRreqEntry(entry);
                     } catch (no_available_entry &e) {
