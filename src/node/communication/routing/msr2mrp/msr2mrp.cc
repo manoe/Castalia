@@ -3291,6 +3291,7 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
             destroyEngines();
             delete stimer;
             stimer = new SerialTimer(extTrace(),getClock());
+            cancelTimer(msr2mrpTimerDef::T_SERIAL);
             updateTimer();
 
             if(!isSink()) {
