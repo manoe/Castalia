@@ -151,7 +151,6 @@ void msr2mrp::extCancelTimer(int machine, int index) {
     stimer->cancelTimer(machine,index,getClock());
 }
 
-
 void msr2mrp::updateTimer() {
     trace()<<"[timer] updateTimer()";
     if(stimer->timerChange()) {
@@ -1975,6 +1974,7 @@ void msr2mrp::destroyEngines() {
         delete e.second;
     }
     engine_table.clear();
+
 }
 
 
@@ -3289,6 +3289,10 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
             extTrace()<<"[info] Application preparing for mobility";
             sendRwarn(msr2mrpWarnDef::MOBILITY_EVENT,0);
             destroyEngines();
+            delete stimer;
+            stimer = new SerialTimer(extTrace(),getClock());
+            updateTimer();
+
             if(!isSink()) {
                 setState(msr2mrpStateDef::LOCK);
             }
@@ -3306,6 +3310,7 @@ void msr2mrp::handleNetworkControlCommand(cMessage *msg) {
                     throw state_not_permitted("No engine available for sink");
                 }
                 engine_table[SELF_NETWORK_ADDRESS]->handleNetworkControlCommand(msg);
+                updateTimer();
             }
             break;
         }

@@ -125,6 +125,8 @@ void SerialTimer::cancelTimer(int machine, int index, simtime_t current_time) {
     dumpTimers();
 }
 
+
+
 bool SerialTimer::timerChange() {
     // 
     return timer_change;

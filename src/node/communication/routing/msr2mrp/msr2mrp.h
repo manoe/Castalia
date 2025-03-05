@@ -796,7 +796,7 @@ class msr2mrp: public VirtualRouting {
         void extToApplicationLayer(cMessage *msg) {toApplicationLayer(msg); };
         void extToMacLayer(cPacket *msg, int addr) { toMacLayer(msg,addr); };
         std::ostream & extTrace() { return trace(); };
-        void dumpRouting(YAML::Emitter &out);
+        virtual void dumpRouting(YAML::Emitter &out);
 };
 
 #endif // _MSR2MRP_H_
