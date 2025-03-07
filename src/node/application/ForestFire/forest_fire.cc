@@ -98,10 +98,9 @@ void ForestFire::startup()
             yn_out<<YAML::Key<<"nrg_list";
             yn_out<<YAML::BeginSeq;
         }
-        mobility_performed = false;
-        setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
+                setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
     }
-
+    mobility_performed = false;
 }
 
 int ForestFire::getEventSent() {
@@ -254,7 +253,6 @@ void ForestFire::timerFiredCallback(int timer)
         case ForestFireTimers::SRLZ_NRG: {
             trace()<<"SRLZ_NRG timer expired";
             serializeEnergy();
-            mobility_performed=false;
             setTimer(ForestFireTimers::SRLZ_NRG, t_srlz_nrg);
             break;
         }
@@ -548,6 +546,7 @@ void ForestFire::serializeEnergy() {
         *y_out<<YAML::Value<<routing->getRole();
         *y_out<<YAML::Key<<"mobility";
         *y_out<<YAML::Value<<app->getMobilityPerformed();
+        app->clearMobilityPerformed();
         *y_out<<YAML::EndMap;
     }
     *y_out<<YAML::EndSeq;
