@@ -318,6 +318,7 @@ void ForestFire::handleMobility(cMessage *msg) {
             notifySensorManager(POSITION_UPDATE);
             trace()<<"[info] Resetting emergency state";
             emergency=false;
+            mobility_performed=true;
             break;
         }
         case MobilityManagerMessageType::DISCRETE_MOBILITY_NACK: {
@@ -425,7 +426,7 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
         dm_msg->setKind(MobilityManagerMessageType::DISCRETE_MOBILITY);
         sendMobilityBroadcast(); 
         send(dm_msg,"toMobilityManager");
-        mobility_performed=true;
+
         return;
     }
     if(sensedValue >= emergency_threshold && !emergency) {
