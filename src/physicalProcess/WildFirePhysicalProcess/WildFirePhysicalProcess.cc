@@ -124,7 +124,18 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             double value;
             if(spatial_sense) {
                 auto states=wf_ca->getStates(pos,sense_distance);
-                value=calculateSensorValue(states);
+                switch (sensing_model) {
+                    case sensingModel::SPATIAL_SENSE: {
+                        value=calculateSensorValue(states);
+                        break; 
+                    }
+                    case sensingModel::DISK_MODEL: {
+                        break;
+                    }
+                    case sensingModel::PROB_MODEL: {
+                        break;
+                    }
+                }
                 deleteCellStates(states);
             } else {
                 try {
@@ -241,7 +252,21 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     rad_res         = par("rad_res");
     sel_all_cell    = par("sel_all_cell");
     look_rad        = par("look_rad");
+    sensing_model   = strToSensingModel(par("sensing_model").stringValue());
 }
+
+sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {
+    if("spatial_sense" == str) {
+        return sensingModel::SPATIAL_SENSE; 
+    } else if("disk_model" == str) {
+        return sensingModel::DISK_MODEL;
+    } else if("prob_model" == str) {
+        return sensingModel::PROB_MODEL;
+    }
+    return sensingModel::UNKNOWN;
+}
+
+
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {
     std::ifstream is;

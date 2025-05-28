@@ -39,6 +39,8 @@ struct nodeRecord {
     int em_node;
 };
 
+enum class sensingModel { SPATIAL_SENSE, DISK_MODEL, PROB_MODEL, UNKNOWN };
+
 class WildFirePhysicalProcess: public CastaliaModule {
  private:
     int wf_start_x_coord;
@@ -68,6 +70,7 @@ class WildFirePhysicalProcess: public CastaliaModule {
     double rad_res;
     bool sel_all_cell;
     double look_rad;
+    sensingModel sensing_model;
 
  protected:
 	virtual void initialize();
@@ -93,7 +96,8 @@ class WildFirePhysicalProcess: public CastaliaModule {
     double calculateDistance(CellPosition x, CellPosition y);
     double calculateDistance(nodeRecord x, nodeRecord y);
     void dumpPlane();
-     vector<nodeRecord> collectCellsInsideRadius(double radius, vector<nodeRecord> points);
+    vector<nodeRecord> collectCellsInsideRadius(double radius, vector<nodeRecord> points);
+    sensingModel strToSensingModel(string);
  public:
      vector<nodeRecord> collectCellsInRadius(double radius, double x_sim_coord, double y_sim_coord);
      void dumpPlane(YAML::Emitter &out);
