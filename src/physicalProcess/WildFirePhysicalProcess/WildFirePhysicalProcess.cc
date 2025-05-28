@@ -103,6 +103,25 @@ double WildFirePhysicalProcess::calculateSensorValue(CellState** states) {
     return ret_val;
 }
 
+
+double WildFirePhysicalProcess::calculateDiskModelSensorValue(CellState **states) {
+    trace()<<"[info] calculateDiskModelSensorValue()";
+    for(int i=0 ; i < sense_distance*2+1 ; ++i) {
+        for(int j=0 ; j < sense_distance*2+1 ; ++j) {
+            if(states[i][j] == CellState::BURNING && calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance)) <= sense_distance) {
+                return 8;
+            }
+        }
+    }
+    return 0;
+
+}
+
+
+double WildFirePhysicalProcess::calculateProbModelSensorValue(CellState **states) {
+    trace()<<"[info] calculateProbModelSensorValue()";
+}
+
 void WildFirePhysicalProcess::deleteCellStates(CellState** states) {
     for(int i=0 ; i < sense_distance*2+1 ; ++i) {
         delete states[i];
@@ -130,9 +149,11 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                         break; 
                     }
                     case sensingModel::DISK_MODEL: {
+                        value=calculateDiskModelSensorValue(states);
                         break;
                     }
                     case sensingModel::PROB_MODEL: {
+                        value=calculateProbModelSensorValue(states);
                         break;
                     }
                 }
@@ -256,11 +277,15 @@ void WildFirePhysicalProcess::readIniFileParameters() {
 }
 
 sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {
+    trace()<<"[info] strToSensingModel("<<str<<")";
     if("spatial_sense" == str) {
+        trace()<<"[info] SPATIAL_SENSE selected";
         return sensingModel::SPATIAL_SENSE; 
     } else if("disk_model" == str) {
+        trace()<<"[info] DISK_MODEL selected";
         return sensingModel::DISK_MODEL;
     } else if("prob_model" == str) {
+        trace()<<"[info] PROB_MODEL selected";
         return sensingModel::PROB_MODEL;
     }
     return sensingModel::UNKNOWN;
