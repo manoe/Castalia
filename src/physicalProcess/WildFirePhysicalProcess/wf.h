@@ -115,17 +115,21 @@ struct GridCell {
     Density         den;
     VegetationType  veg;
     float           elevation;
+    float           mois;
     GridCell() : GridCell(CellState::NOT_IGNITED,
                           Density::NORMAL,
                           VegetationType::PINE,
+                          0.0,
                           0.0) {};
     GridCell(CellState state,
              Density den,
              VegetationType veg,
-             float elevation) : state(state),
+             float elevation,
+             float mois) : state(state),
                                 den(den),
                                 veg(veg),
-                                elevation(elevation) {};
+                                elevation(elevation),
+                                mois(mois) {};
 
     bool canBurn() { return CellState::NOT_IGNITED==state && Density::EMPTY!=den && VegetationType::NO_VEGETATION!=veg; };
 };
@@ -140,6 +144,7 @@ struct WildFireParams {
           l;    // - l   - cell's side length, m
     bool  sp=false;   // - sp  - fire spotting enabled/disabled
     int   seed=0;
+    float mois=0;
 };
 
 class WildFireCA {
@@ -324,6 +329,9 @@ class WildFireCA {
             plane=new GridCell*[x_size];
             for(int i=0 ; i < x_size ; ++i) {
                 plane[i]=new GridCell[y_size];
+               for(int j=0 ; j < y_size ; ++j) {
+                    plane[i][j].mois=params.mois;
+               }
             }
             if(params.seed==0) {
                 gen=std::mt19937(rd());

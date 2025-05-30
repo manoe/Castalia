@@ -263,7 +263,8 @@ void WildFirePhysicalProcess::readIniFileParameters() {
                          static_cast<float>( (double)par("w_s")),
                          static_cast<float>( (double)par("l")),
                          par("sp"),
-                         par("seed")};
+                         par("seed"),
+                         static_cast<float>( (double)par("p_mois"))};
     spatial_sense   = par("spatial_sense");
     sense_distance  = par("sense_distance");
     sense_attn      = par("sense_attn");
