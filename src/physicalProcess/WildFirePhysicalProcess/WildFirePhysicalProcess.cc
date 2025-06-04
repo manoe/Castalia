@@ -103,6 +103,42 @@ double WildFirePhysicalProcess::calculateSensorValue(CellState** states) {
     return ret_val;
 }
 
+
+double WildFirePhysicalProcess::calculateDiskModelSensorValue(CellState **states) {
+    trace()<<"[info] calculateDiskModelSensorValue()";
+    for(int i=0 ; i < sense_distance*2+1 ; ++i) {
+        for(int j=0 ; j < sense_distance*2+1 ; ++j) {
+            if(states[i][j] == CellState::BURNING && calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance)) <= sense_distance) {
+                return 8;
+            }
+        }
+    }
+    return 0;
+
+}
+
+double WildFirePhysicalProcess::calculateProbModelSensorValue(CellState **states) {
+    trace()<<"[info] calculateProbModelSensorValue()";
+    double min_dist = sense_distance;
+    bool valid = false;
+    for(int i=0 ; i < sense_distance*2+1 ; ++i) {
+        for(int j=0 ; j < sense_distance*2+1 ; ++j) {
+            if(states[i][j] == CellState::BURNING && calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance)) <= sense_distance) {
+                valid = true;
+                if(min_dist > calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance))) {
+                    min_dist = calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance));
+                }
+            }
+        }
+    }
+    if(valid) {
+        // ide matek exp - meg minden
+        return min_dist;
+    } else {
+        return 0.0;
+    }
+}
+
 void WildFirePhysicalProcess::deleteCellStates(CellState** states) {
     for(int i=0 ; i < sense_distance*2+1 ; ++i) {
         delete states[i];
@@ -124,7 +160,23 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
             double value;
             if(spatial_sense) {
                 auto states=wf_ca->getStates(pos,sense_distance);
-                value=calculateSensorValue(states);
+                switch (sensing_model) {
+                    case sensingModel::SPATIAL_SENSE: {
+                        value=calculateSensorValue(states);
+                        break; 
+                    }
+                    case sensingModel::PROB_SPATIAL_SENSE: {
+                        break;
+                    }
+                    case sensingModel::DISK_MODEL: {
+                        value=calculateDiskModelSensorValue(states);
+                        break;
+                    }
+                    case sensingModel::PROB_MODEL: {
+                        value=calculateProbModelSensorValue(states);
+                        break;
+                    }
+                }
                 deleteCellStates(states);
             } else {
                 try {
@@ -231,7 +283,8 @@ void WildFirePhysicalProcess::readIniFileParameters() {
                          static_cast<float>( (double)par("w_s")),
                          static_cast<float>( (double)par("l")),
                          par("sp"),
-                         par("seed")};
+                         par("seed"),
+                         static_cast<float>( (double)par("p_mois"))};
     spatial_sense   = par("spatial_sense");
     sense_distance  = par("sense_distance");
     sense_attn      = par("sense_attn");
@@ -241,7 +294,27 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     rad_res         = par("rad_res");
     sel_all_cell    = par("sel_all_cell");
     look_rad        = par("look_rad");
+    sensing_model   = strToSensingModel(par("sensing_model").stringValue());
+    r_u             = par("r_u"); 
+    lambda          = par("lambda");
+    gamma           = par("gamma"); }
+
+sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {
+    trace()<<"[info] strToSensingModel("<<str<<")";
+    if("spatial_sense" == str) {
+        trace()<<"[info] SPATIAL_SENSE selected";
+        return sensingModel::SPATIAL_SENSE; 
+    } else if("disk_model" == str) {
+        trace()<<"[info] DISK_MODEL selected";
+        return sensingModel::DISK_MODEL;
+    } else if("prob_model" == str) {
+        trace()<<"[info] PROB_MODEL selected";
+        return sensingModel::PROB_MODEL;
+    }
+    return sensingModel::UNKNOWN;
 }
+
+
 
 std::vector<unsigned char> WildFirePhysicalProcess::readMapFile() {
     std::ifstream is;
