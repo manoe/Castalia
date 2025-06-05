@@ -98,7 +98,7 @@ class WildFirePhysicalProcess: public CastaliaModule {
     double calculateSensorValue(CellState** states);
     double calculateDiskModelSensorValue(CellState **);
     double calculateProbModelSensorValue(CellState **);
- 
+    double calculateProbSpatialModelSensorValue(CellState **);
     void deleteCellStates(CellState** states);
     double calculateDistance(CellPosition x, CellPosition y);
     double calculateDistance(nodeRecord x, nodeRecord y);

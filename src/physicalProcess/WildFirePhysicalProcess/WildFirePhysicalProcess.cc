@@ -131,12 +131,27 @@ double WildFirePhysicalProcess::calculateProbModelSensorValue(CellState **states
             }
         }
     }
+    double prob;
     if(valid) {
+        prob = std::exp(std::pow(-lambda*(min_dist-r_u),gamma));
         // ide matek exp - meg minden
-        return min_dist;
     } else {
-        return 0.0;
+        prob = 0.0;
     }
+    if(getRNG(0)->doubleRand() < prob) {
+        return 8.0;
+    }
+    return 0.0;
+}
+
+double WildFirePhysicalProcess::calculateProbSpatialModelSensorValue(CellState **states) {
+    trace()<<"[info] calculateProbModelSensorValue()";
+    double value = calculateSensorValue(states);
+    double prob = std::exp(std::pow(-lambda*(value-8),gamma));
+    if(getRNG(0)->doubleRand() < prob) {
+        return value;
+    }
+    return 0.0;
 }
 
 void WildFirePhysicalProcess::deleteCellStates(CellState** states) {
@@ -166,10 +181,12 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                         break; 
                     }
                     case sensingModel::PROB_SPATIAL_SENSE: {
+                        value=calculateProbSpatialModelSensorValue(states);
                         break;
                     }
                     case sensingModel::DISK_MODEL: {
                         value=calculateDiskModelSensorValue(states);
+
                         break;
                     }
                     case sensingModel::PROB_MODEL: {
@@ -320,6 +337,9 @@ sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {
     } else if("prob_model" == str) {
         trace()<<"[info] PROB_MODEL selected";
         return sensingModel::PROB_MODEL;
+    } else if("prob_spatial_sense" == str) {
+        trace()<<"[info] PROB_SPATIAL_SENSE selected";
+       return sensingModel::PROB_SPATIAL_SENSE; 
     }
     return sensingModel::UNKNOWN;
 }
