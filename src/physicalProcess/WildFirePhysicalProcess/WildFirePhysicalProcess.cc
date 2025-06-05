@@ -260,7 +260,6 @@ void WildFirePhysicalProcess::finishSpecific()
     }
     if(plane_at_finish) {
         YAML::Emitter yplane_out;
-        yplane_out<<YAML::Key<<"plane";
         dumpPlane(yplane_out);
         ofstream plane_file("plane.yaml");
         plane_file<<yplane_out.c_str();
