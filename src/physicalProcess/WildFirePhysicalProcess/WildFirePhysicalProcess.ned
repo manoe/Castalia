@@ -51,6 +51,7 @@ parameters:
     double  r_u              = default(0);       // - R_u, uncertaininty radius
     double  lambda           = default(1);       // - lambda, for exp. probability
     double  gamma            = default(1);       // - gamma, for exp. probability
+    bool    plane_at_finish  = default(false);
 
  gates:
 	output toNode[];

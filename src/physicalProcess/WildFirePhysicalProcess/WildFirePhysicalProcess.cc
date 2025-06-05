@@ -258,6 +258,15 @@ void WildFirePhysicalProcess::finishSpecific()
         pdr_file<<y_out.c_str();
         pdr_file.close();
     }
+    if(plane_at_finish) {
+        YAML::Emitter yplane_out;
+        yplane_out<<YAML::Key<<"plane";
+        dumpPlane(yplane_out);
+        ofstream plane_file("plane.yaml");
+        plane_file<<yplane_out.c_str();
+        plane_file<<std::endl;
+        plane_file.close();
+    }
     delete wf_ca;
 }
 
@@ -297,7 +306,9 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     sensing_model   = strToSensingModel(par("sensing_model").stringValue());
     r_u             = par("r_u"); 
     lambda          = par("lambda");
-    gamma           = par("gamma"); }
+    gamma           = par("gamma");
+    plane_at_finish = par("plane_at_finish");
+}
 
 sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {
     trace()<<"[info] strToSensingModel("<<str<<")";
