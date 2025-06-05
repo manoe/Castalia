@@ -86,6 +86,8 @@ void ForestFire::startup()
     srlz_plane         = par("srlz_plane"); 
     srlz_routing       = par("srlz_routing");
     srlz_per_timestamp = par("srlz_per_timestamp");
+    srlz_plane_finish  = par("srlz_plane_finish");
+    
     if(srlz_pkt_arr) {
         yp_out<<YAML::BeginMap;
         yp_out<<YAML::Key<<"pkt_list";
@@ -688,6 +690,16 @@ void ForestFire::finishSpecific()
             nrg_file<<yn_out.c_str();
             nrg_file<<std::endl;
             nrg_file.close();
+        }
+
+        if(srlz_plane_finish) {
+            YAML::Emitter yplane_out;
+            yplane_out<<YAML::Key<<"plane";
+            wfphy_proc->dumpPlane(yplane_out);
+            ofstream plane_file("plane.yaml");
+            plane_file<<yplane_out.c_str();
+            plane_file<<std::endl;
+            plane_file.close();
         }
 
         if (isSink) {
