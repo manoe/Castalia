@@ -39,7 +39,7 @@ struct nodeRecord {
     int em_node;
 };
 
-enum class sensingModel { SPATIAL_SENSE, DISK_MODEL, PROB_MODEL, PROB_SPATIAL_SENSE, UNKNOWN };
+enum class sensingModel { SPATIAL_SENSE, DISK_MODEL, DISTANCE_DISK_MODEL, PROB_MODEL, PROB_SPATIAL_SENSE, UNKNOWN };
 
 class WildFirePhysicalProcess: public CastaliaModule {
  private:
@@ -97,6 +97,7 @@ class WildFirePhysicalProcess: public CastaliaModule {
 
     double calculateSensorValue(CellState** states);
     double calculateDiskModelSensorValue(CellState **);
+    double calculateDistanceDiskModelSensorValue(CellState **);
     double calculateProbModelSensorValue(CellState **);
     double calculateProbSpatialModelSensorValue(CellState **);
     void deleteCellStates(CellState** states);

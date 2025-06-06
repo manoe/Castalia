@@ -117,6 +117,24 @@ double WildFirePhysicalProcess::calculateDiskModelSensorValue(CellState **states
 
 }
 
+double WildFirePhysicalProcess::calculateDistanceDiskModelSensorValue(CellState **states) {
+    trace()<<"[info] calculateDistanceDiskModelSensorValue()";
+    double min_dist = sense_distance;
+    bool valid = false;
+    for(int i=0 ; i < sense_distance*2+1 ; ++i) {
+        for(int j=0 ; j < sense_distance*2+1 ; ++j) {
+            if(states[i][j] == CellState::BURNING && calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance)) <= sense_distance) {
+                valid = true;
+                if(min_dist > calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance))) {
+                    min_dist = calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance));
+                }
+            }
+        }
+    }
+    return 8.0/min_dist;
+}
+
+
 double WildFirePhysicalProcess::calculateProbModelSensorValue(CellState **states) {
     trace()<<"[info] calculateProbModelSensorValue()";
     double min_dist = sense_distance;
@@ -186,7 +204,10 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                     }
                     case sensingModel::DISK_MODEL: {
                         value=calculateDiskModelSensorValue(states);
-
+                        break;
+                    }
+                    case sensingModel::DISTANCE_DISK_MODEL: {
+                        calculateDistanceDiskModelSensorValue(states);
                         break;
                     }
                     case sensingModel::PROB_MODEL: {
@@ -334,6 +355,9 @@ sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {
     } else if("disk_model" == str) {
         trace()<<"[info] DISK_MODEL selected";
         return sensingModel::DISK_MODEL;
+    } else if("distance_disk_model" == str) {
+        trace()<<"[info] DISTANCE_DISK_MODEL selected";
+        return sensingModel::DISTANCE_DISK_MODEL; 
     } else if("prob_model" == str) {
         trace()<<"[info] PROB_MODEL selected";
         return sensingModel::PROB_MODEL;
