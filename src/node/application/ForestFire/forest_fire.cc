@@ -386,7 +386,6 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 {
     string sensType(sensorMsg->getSensorType());
     sensedValue = sensorMsg->getSensedValue();
-
     trace()<<"Sensed value: "<<sensedValue;
 
     if(sensedValue >= mobility_threshold && !rest_dm_state && dm_support) {
