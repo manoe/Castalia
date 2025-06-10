@@ -47,7 +47,8 @@ parameters:
     double  rad_res          = default(0.01);    // - radius resolution
     double  look_rad         = default(8);       // - radius looking 
     bool    sel_all_cell     = default(false);   // - how to select cells while looking around
-    string  sensing_model    = default("spatial_sense"); // spatial_sense, disk_model, prob_model, prob_spatial_sense
+    string  sensing_model    = default("spatial_sense"); // spatial_sense, disk_model, prob_model,
+                                                         // prob_spatial_sense, distance_disk_model
     double  r_u              = default(0);       // - R_u, uncertaininty radius
     double  lambda           = default(1);       // - lambda, for exp. probability
     double  gamma            = default(1);       // - gamma, for exp. probability

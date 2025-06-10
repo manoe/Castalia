@@ -207,7 +207,7 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                         break;
                     }
                     case sensingModel::DISTANCE_DISK_MODEL: {
-                        calculateDistanceDiskModelSensorValue(states);
+                        value=calculateDistanceDiskModelSensorValue(states);
                         break;
                     }
                     case sensingModel::PROB_MODEL: {
