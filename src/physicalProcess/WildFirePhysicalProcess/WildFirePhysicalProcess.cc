@@ -131,7 +131,10 @@ double WildFirePhysicalProcess::calculateDistanceDiskModelSensorValue(CellState 
             }
         }
     }
-    return 8.0/min_dist;
+    if(valid) {
+        return 8.0/min_dist;
+    }
+    return 0;
 }
 
 
