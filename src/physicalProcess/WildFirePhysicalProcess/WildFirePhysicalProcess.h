@@ -104,7 +104,7 @@ class WildFirePhysicalProcess: public CastaliaModule {
     void deleteCellStates(CellState** states);
     double calculateDistance(CellPosition x, CellPosition y);
     double calculateDistance(nodeRecord x, nodeRecord y);
-    double calculateWindFireAngle(CellPosition x);
+    double calculateWindFireAngle(CellPosition p);
     void dumpPlane();
     vector<nodeRecord> collectCellsInsideRadius(double radius, vector<nodeRecord> points);
     sensingModel strToSensingModel(string);
