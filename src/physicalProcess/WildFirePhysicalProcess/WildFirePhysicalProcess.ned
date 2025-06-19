@@ -53,6 +53,7 @@ parameters:
     double  lambda           = default(1);       // - lambda, for exp. probability
     double  gamma            = default(1);       // - gamma, for exp. probability
     bool    plane_at_finish  = default(false);
+    double  c_w              = default(0);       // - Influence of wind on sensing
 
  gates:
 	output toNode[];
