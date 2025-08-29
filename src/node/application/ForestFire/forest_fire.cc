@@ -54,6 +54,8 @@ void ForestFire::startup()
     emergency_broadcast=par("emergencyBroadcastPeriod");
     startup_delay=par("startup_delay");
 
+    sense_norm=par("sense_norm");
+
     rm=dynamic_cast<ResourceManager *>(getParentModule()->getSubmodule("ResourceManager"));
 
     wfphy_proc=dynamic_cast<WildFirePhysicalProcess *>(getParentModule()->getParentModule()->getSubmodule("physicalProcess",0));
@@ -387,8 +389,12 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
     string sensType(sensorMsg->getSensorType());
     sensedValue = sensorMsg->getSensedValue();
     trace()<<"Sensed value: "<<sensedValue;
+    double n_sensedValue=sensedValue;
+    n_sensedValue/=sense_norm;
+    trace()<<"Normalised sensed value: "<<n_sensedValue;
 
-    if(sensedValue >= mobility_threshold && !rest_dm_state && dm_support) {
+
+    if(n_sensedValue >= mobility_threshold && !rest_dm_state && dm_support) {
         trace()<<"[info] Mobility threshold reached";
         if(0 < dm_count) {
             dm_count--;
@@ -427,7 +433,7 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
 
         return;
     }
-    if(sensedValue >= emergency_threshold && !emergency) {
+    if(n_sensedValue >= emergency_threshold && !emergency) {
         trace()<<"Node enters emergency state based on sensor reading.";
         emergency=true;
         sendEvent();

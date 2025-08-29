@@ -53,7 +53,10 @@ parameters:
     double  lambda           = default(1);       // - lambda, for exp. probability
     double  gamma            = default(1);       // - gamma, for exp. probability
     bool    plane_at_finish  = default(false);
-    double  c_w              = default(0);       // - Influence of wind on sensing
+    double  c_w_a            = default(0);       // - Influence of wind on sensing, wind angle wise
+    double  c_w_s            = default(0);       // - influence of wind on sensing, wind speed wise
+    double  c_w_l            = default(0);       // - Wind speed in m/s, that must be exceeded to have effect
+    double  c_w_m            = default(0);       // - Maximum wind speed, that if exceeded, no additional change happen
 
  gates:
 	output toNode[];

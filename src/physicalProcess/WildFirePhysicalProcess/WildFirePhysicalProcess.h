@@ -75,7 +75,10 @@ class WildFirePhysicalProcess: public CastaliaModule {
     double lambda;
     double gamma;
     bool plane_at_finish;
-    double c_w;
+    double c_w_a;
+    double c_w_s;
+    double c_w_l;
+    double c_w_m;
 
  protected:
 	virtual void initialize();
