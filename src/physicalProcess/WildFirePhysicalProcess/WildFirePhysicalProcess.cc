@@ -81,6 +81,14 @@ double WildFirePhysicalProcess::calculateDistance(nodeRecord x, nodeRecord y) {
     return sqrt(pow(x.x - y.x,2) + pow(x.y - y.y,2));
 }
 
+double WildFirePhysicalProcess::calculateWindFireAngle(CellPosition p) {
+    trace()<<"[info] calculateWindFireAngle();";
+    double wind_x = cos(wf_params.w_a+M_PI/2);
+    double wind_y = sin(wf_params.w_a+M_PI/2);
+    
+    // a x b / |a| * | b | --- b's length is one in this case
+    return acos(wind_x*static_cast<double>(p.x)+wind_y*static_cast<double>(p.y)/sqrt(p.x*p.x+p.y*p.y));
+}
 
 
 double WildFirePhysicalProcess::calculateSensorValue(CellState** states) {
@@ -90,7 +98,8 @@ double WildFirePhysicalProcess::calculateSensorValue(CellState** states) {
         for(int j=0 ; j < sense_distance*2+1 ; ++j) {
             if(states[i][j] == CellState::BURNING) {
                 auto dist=calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance) );
-                auto val=pow(1/dist,sense_attn);
+                // the cos could be removed as the acos in calculateWindFireAngle
+                auto val=pow(1/dist,sense_attn)*(1/(1-c_w_a*cos(calculateWindFireAngle(CellPosition(i-sense_distance,j-sense_distance)))));
                 trace()<<"[info] Pos - x,y: "<<i<<", "<<j<<" - distance: "<<dist<<" - value: "<< val;
                 ret_val+=val;
             }
@@ -348,6 +357,7 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     lambda          = par("lambda");
     gamma           = par("gamma");
     plane_at_finish = par("plane_at_finish");
+    c_w_a           = par("c_w_a");
 }
 
 sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {

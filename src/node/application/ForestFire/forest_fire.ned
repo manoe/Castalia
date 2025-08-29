@@ -49,6 +49,7 @@ simple ForestFire like node.application.iApplication {
     bool    rnd_dm = default(false);        // Random discrete mobility during test
     bool    dm_support = default(false);    // Support discrete mobility or not
     double  sense_and_mob_rad = default(20);// radius of sensing and mobility
+    double  sense_norm = default(1);        // Norm all sensed value with this
 
 	int sampleSize = default (12);	// in bytes
 	int maxPayloadPacketSize = default (128);	// in bytes
