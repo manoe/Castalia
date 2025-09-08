@@ -2511,7 +2511,7 @@ void msr2mrp::fromApplicationLayer(cPacket * pkt, const char *destination) {
                     te.addBenefits(fp.lb_ts_cb);
                 }
                 else {
-                    te.addBenefits({ false,true,true,false,false });
+                    te.addBenefits({ false,true,true,true,false });
                 }
                 if(fp.lb_ts_weights.size() == 5) {
                     te.addWeights(fp.lb_ts_weights);
