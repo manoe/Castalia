@@ -407,6 +407,12 @@ void ForestFire::handleSensorReading(SensorReadingMessage * sensorMsg)
         auto pos = dynamic_cast<VirtualMobilityManager *>(getParentModule()->getSubmodule("MobilityManager"))->getLocation();
 
         auto res=wfphy_proc->collectCellsInRadius(sense_and_mob_rad,pos.x,pos.y);
+        if(res.size() == 0) {
+            trace()<<"[info] No place to move";
+            rest_dm_state=false;
+            dm_count=0;
+            return;
+        }
         trace()<<"[info] Results for cells";
         for(auto ps: res) {
             trace()<<"[info] X: "<<ps.x<<", Y: "<<ps.y<<", Node count: "<<ps.node<<", Emergency node count: "<<ps.em_node;
