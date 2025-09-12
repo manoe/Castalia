@@ -500,10 +500,16 @@ vector<nodeRecord> WildFirePhysicalProcess::collectCellsInRadius(double radius, 
     for(double i=0; i < 1 ; i+=rad_res) {
         double x=x_sim_coord+radius*std::cos(2*pi*i);
         double y=y_sim_coord+radius*std::sin(2*pi*i);
-        auto state = wf_ca->getState(getMapCoordinates(x, y));
-        if(CellState::NOT_IGNITED == state || CellState::NO_FUEL == state) {
-            v_pos.push_back({x,y,0,0});
+        try {
+            auto state = wf_ca->getState(getMapCoordinates(x, y));
+            if(CellState::NOT_IGNITED == state || CellState::NO_FUEL == state) {
+                v_pos.push_back({x,y,0,0});
+            }
         }
+        catch (std::string &e) {
+            trace()<<"[error]: "<<e;
+        }
+
     }
     return collectCellsInsideRadius(look_rad, v_pos);
 }
