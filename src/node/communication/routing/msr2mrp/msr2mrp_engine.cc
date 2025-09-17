@@ -2176,11 +2176,17 @@ void msr2mrp_engine::sendViaPathid(cPacket *pkt, int pathid) {
     extTrace()<<"[info] sendViaPathid(pkt, pathid="<<pathid<<")";
     std::string next_hop;
 
-    if(msr2mrpRingDef::EXTERNAL==getRingStatus()) {
-        next_hop=getNextHop(pathid);
-    } else {
-        next_hop=getNextHop(pathid,fp.rand_ring_hop);
+    try { 
+        if(msr2mrpRingDef::EXTERNAL==getRingStatus()) {
+            next_hop=getNextHop(pathid);
+        } else {
+            next_hop=getNextHop(pathid,fp.rand_ring_hop);
+        }
+    } catch (no_available_entry &e) {
+        extTrace()<<"[error] Cannot get next hop for "<<pathid<<" pathid: "<<e.what();
+        return;
     }
+    
 
     incPktCountInRoutingTable(next_hop);
     incOrigPktCountInRoutingTable(next_hop);
