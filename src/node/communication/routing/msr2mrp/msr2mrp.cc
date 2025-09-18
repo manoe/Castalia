@@ -2695,7 +2695,8 @@ void msr2mrp::fromMacLayer(cPacket * pkt, int srcMacAddress, double rssi, double
             break;
         }
         case msr2mrpPacketDef::DATA_PACKET: {
-            extTrace()<<"[info] DATA_PACKET received";
+            extTrace()<<"[info] DATA_PACKET received, not allowed state";
+            break;
             msr2mrpDataPacket *data_pkt=dynamic_cast<msr2mrpDataPacket *>(pkt);
             incPktCountInRecvTable(std::string(data_pkt->getSource()), data_pkt->getPathid(), getRound() );
             if(isSink() && 0==std::strcmp(data_pkt->getDestination(),SELF_NETWORK_ADDRESS)) {
