@@ -70,6 +70,9 @@ void WildFirePhysicalProcess::initialize()
     if(plane_to_yaml) {
         y_out<<YAML::BeginSeq;
     }
+    if(sv_to_yaml) {
+        ys_out<<YAML::BeginSeq;
+    }
 }
 
 double WildFirePhysicalProcess::calculateDistance(CellPosition x, CellPosition y) {
@@ -237,9 +240,20 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                     return;
                 }
             }
+            if(sv_to_yaml) {
+                ys_out<<YAML::BeginMap;
+                ys_out<<YAML::Key<<"timestamp";
+                ys_out<<YAML::Value<<simTime().dbl();
+                ys_out<<YAML::Key<<"node";
+                ys_out<<YAML::Value<<phyMsg->getSrcID();
+                ys_out<<YAML::Key<<"sensor_value";
+                ys_out<<YAML::Value<<value;
+                ys_out<<YAML::EndMap;
+            }
             phyMsg->setValue(value);
             // Send reply back to the node who made the request
             send(phyMsg, "toNode", phyMsg->getSrcID());
+
             return;
         }
 
@@ -302,6 +316,14 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
 
 void WildFirePhysicalProcess::finishSpecific()
 {
+    if(sv_to_yaml) {
+        ys_out<<YAML::EndSeq;
+        ofstream sv_file("sensor_values.yaml");
+        sv_file<<ys_out.c_str();
+        sv_file.close();
+
+    }
+
     if(plane_to_yaml) {
         y_out<<YAML::EndSeq;
         ofstream pdr_file("phy_proc.yaml");
@@ -347,6 +369,7 @@ void WildFirePhysicalProcess::readIniFileParameters() {
     sense_distance  = par("sense_distance");
     sense_attn      = par("sense_attn");
     plane_to_yaml   = par("plane_to_yaml");
+    sv_to_yaml      = par("sv_to_yaml");
     step_limit      = par("step_limit");
     yp_coding       = par("yp_coding").stringValue();
     rad_res         = par("rad_res");
