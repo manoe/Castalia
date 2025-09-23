@@ -79,6 +79,8 @@ class WildFirePhysicalProcess: public CastaliaModule {
     double c_w_s;
     double c_w_l;
     double c_w_m;
+    YAML::Emitter ys_out;
+    bool sv_to_yaml;
 
  protected:
 	virtual void initialize();
