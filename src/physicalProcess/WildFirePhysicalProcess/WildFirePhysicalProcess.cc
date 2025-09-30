@@ -160,6 +160,26 @@ double WildFirePhysicalProcess::calculateDistanceDiskModelSensorValue(CellState 
     return 0;
 }
 
+double WildFirePhysicalProcess::calculateLinearDistanceDiskModelSensorValue(CellState **states) {
+    trace()<<"[info] calculateDistanceDiskModelSensorValue()";
+    double min_dist = sense_distance;
+    bool valid = false;
+    for(int i=0 ; i < sense_distance*2+1 ; ++i) {
+        for(int j=0 ; j < sense_distance*2+1 ; ++j) {
+            if(states[i][j] == CellState::BURNING && calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance)) <= sense_distance) {
+                valid = true;
+                if(min_dist > calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance))) {
+                    min_dist = calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance));
+                }
+            }
+        }
+    }
+    if(valid) {
+        return 8.0 * (1 - min_dist/sense_distance);
+    }
+    return 0;
+}
+
 
 double WildFirePhysicalProcess::calculateProbModelSensorValue(CellState **states) {
     trace()<<"[info] calculateProbModelSensorValue()";
@@ -238,6 +258,10 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                     }
                     case sensingModel::PROB_MODEL: {
                         value=calculateProbModelSensorValue(states);
+                        break;
+                    }
+                    case sensingModel::LINEAR_DISTANCE_DISK_MODEL: {
+                        value=calculateLinearDistanceDiskModelSensorValue(states);
                         break;
                     }
                 }
@@ -415,6 +439,9 @@ sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {
     } else if("prob_spatial_sense" == str) {
         trace()<<"[info] PROB_SPATIAL_SENSE selected";
        return sensingModel::PROB_SPATIAL_SENSE; 
+    } else if("linear_distance_disk_model" == str) {
+        trace()<<"[info] LINEAR_DISTANCE_DISK_MODEL selected";
+        return sensingModel::LINEAR_DISTANCE_DISK_MODEL;
     }
     return sensingModel::UNKNOWN;
 }
