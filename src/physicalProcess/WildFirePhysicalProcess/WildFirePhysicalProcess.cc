@@ -175,7 +175,33 @@ double WildFirePhysicalProcess::calculateLinearDistanceDiskModelSensorValue(Cell
         }
     }
     if(valid) {
-        return 8.0 * (1 - min_dist/sense_distance);
+        double value = gamma * 8.0 * (1 - min_dist/sense_distance);
+        if(value > 8.0) {
+            return 8.0;
+        }
+        else {
+            return value;
+        }
+    }
+    return 0;
+}
+
+double WildFirePhysicalProcess::calculateEASModelSensorValue(CellState **states) {
+    trace()<<"[info] calculateDistanceDiskModelSensorValue()";
+    double min_dist = sense_distance;
+    bool valid = false;
+    for(int i=0 ; i < sense_distance*2+1 ; ++i) {
+        for(int j=0 ; j < sense_distance*2+1 ; ++j) {
+            if(states[i][j] == CellState::BURNING && calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance)) <= sense_distance) {
+                valid = true;
+                if(min_dist > calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance))) {
+                    min_dist = calculateDistance(CellPosition(i,j),CellPosition(sense_distance,sense_distance));
+                }
+            }
+        }
+    }
+    if(valid) {
+        return 8.0 * exp( - lambda * min_dist);
     }
     return 0;
 }
@@ -262,6 +288,10 @@ void WildFirePhysicalProcess::handleMessage(cMessage * msg)
                     }
                     case sensingModel::LINEAR_DISTANCE_DISK_MODEL: {
                         value=calculateLinearDistanceDiskModelSensorValue(states);
+                        break;
+                    }
+                    case sensingModel::EAS_MODEL: {
+                        value=calculateEASModelSensorValue(states);
                         break;
                     }
                 }
@@ -442,7 +472,11 @@ sensingModel WildFirePhysicalProcess::strToSensingModel(string str) {
     } else if("linear_distance_disk_model" == str) {
         trace()<<"[info] LINEAR_DISTANCE_DISK_MODEL selected";
         return sensingModel::LINEAR_DISTANCE_DISK_MODEL;
+    } else if("eas_model" == str) {
+        trace()<<"[info] EAS_MODEL selected";
+        return sensingModel::EAS_MODEL;
     }
+
     return sensingModel::UNKNOWN;
 }
 
