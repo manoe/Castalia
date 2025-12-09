@@ -1,0 +1,48 @@
+\documentclass[a4paper]{article}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage[style=ieee]{biblatex}
+\addbibresource{channel.bib}
+
+
+\title{Channel models for terrestrial radio and acoustic underwater links}
+\author{Bálint Áron Üveges}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Castalia's path loss model}
+Castalia utilizes the Log-distance path loss model:
+\begin{equation}
+    PL_{d} = PL_{d0} + 10.0 \cdot \gamma \cdot log_{10} \left( \frac{d}{d_0} \right) +  \mathcal{N}(0,\sigma) + \frac{\mathcal{N}(0,\sigma_{b})}{2}
+\label{eq:log_d_pl}
+\end{equation}
+In \eqref{eq:log_d_pl}, $PL_{d0}$ is the path loss at the reference distance $d_{0}$; $d$ is the length of the path; $\gamma$ is the path loss exponent; $\mathcal{N}$ is the Gaussian-distribution, $\sigma$ is the standard variance of shadow fading; whereas $\sigma_{b}$ is the standard variance of bidirectional path loss jitter.
+
+\section{Underwater acoustic channel path loss model}
+According to \cite{Stojanovic_2007}, the narrowband 
+
+\section{Castalia's parameters, bits and pieces}
+defaultChannel:
+\begin{itemize}
+    \item \texttt{signalDeliveryThreshold} -- threshold in dBm above which, wireless channel module is delivering signal messages to radio modules of individual nodes.
+\end{itemize}
+
+radio:
+\begin{itemize}
+    \item \texttt{carrierFreq} -- The carrier frequency in MHz.
+    \item \texttt{rssiIntegrationTime} -- rssiIntegrationTime = symbolsForRSSI * RXmode->bitsPerSymbol / RXmode->datarate
+    \item \texttt{timeToTxPacket} -- Provided by popAndSendToWirelessChannel(), calculated as: double txTime = ((double)(end->getByteLength() * 8.0f)) / RXmode->datarate; (in seconds)
+    \item \texttt{parameter file} -- Name, dataRate(kbps), modulationType, bitsPerSymbol, bandwidth(MHz), noiseBandwidth(KHz), noiseFloor(dBm), sensitivity(dBm), powerConsumed(mW)
+    \item \texttt{SNR2BER} -- method used to calculate BER based on SNR and the actual modulation.
+\end{itemize}
+
+\section{AquaSim's parameters, bits and pieces}
+
+
+
+\printbibliography
+\end{document}
