@@ -1,14 +1,14 @@
-/****************************************************************************
- *  Copyright: National ICT Australia,  2007 - 2010                         *
- *  Developed at the ATP lab, Networked Systems research theme              *
- *  Author(s): Athanassios Boulis, Yuriy Tselishchev                        *
- *  This file is distributed under the terms in the attached LICENSE file.  *
- *  If you do not find this file, copies can be found by writing to:        *
- *                                                                          *
- *      NICTA, Locked Bag 9013, Alexandria, NSW 1435, Australia             *
- *      Attention:  License Inquiry.                                        *
- *                                                                          *  
- ****************************************************************************/
+    /****************************************************************************
+     *  Copyright: National ICT Australia,  2007 - 2010                         *
+     *  Developed at the ATP lab, Networked Systems research theme              *
+     *  Author(s): Athanassios Boulis, Yuriy Tselishchev                        *
+     *  This file is distributed under the terms in the attached LICENSE file.  *
+     *  If you do not find this file, copies can be found by writing to:        *
+     *                                                                          *
+     *      NICTA, Locked Bag 9013, Alexandria, NSW 1435, Australia             *
+     *      Attention:  License Inquiry.                                        *
+     *                                                                          *  
+     ****************************************************************************/
 
 #ifndef _UNDERWATERCHANNEL_H
 #define _UNDERWATERCHANNEL_H
@@ -18,12 +18,19 @@
 #include "wirelessChannel/defaultChannel/WirelessChannel.h"
 #include "node/mobilityManager/VirtualMobilityManager.h"
 #include "helpStructures/CastaliaModule.h"
+#include "node/communication/radio/Radio.h"
 
 #include "time.h"
 #include <list>
 #include <yaml-cpp/yaml.h>
 
-using namespace std;
+    using namespace std;
+
+class DistPathLossElement : public PathLossElement {
+    public:
+        float dist;
+        DistPathLossElement(int c, float PL, float dist) : PathLossElement(c,PL), dist(dist) {};
+};
 
 class UnderWaterChannel: public CastaliaModule {
  private:
@@ -58,7 +65,7 @@ class UnderWaterChannel: public CastaliaModule {
 	int numOfSpaceCells;
 	int xIndexIncrement, yIndexIncrement, zIndexIncrement;
 
-	list <PathLossElement*>*pathLoss;		// an array of lists (numOfSpaceCels long)
+	list <DistPathLossElement*>*pathLoss;		// an array of lists (numOfSpaceCels long)
 											// holding info on path loss. Element i of the
 											// array is a list elements that describe which
 											// cells are affected (and how) when a
@@ -77,6 +84,11 @@ class UnderWaterChannel: public CastaliaModule {
 	bool temporalModelDefined;
 	channelTemporalModel *temporalModel;
     bool serializePathLossData;
+    double spreading_factor;
+    double carrier_frequency;
+    double shipping_noise;
+    double wind_noise;
+
 
  protected:
 	virtual void initialize(int);
@@ -90,6 +102,8 @@ class UnderWaterChannel: public CastaliaModule {
 	void printRxSignalTable(void);
 	void updatePathLossElement(int, int, float);
 	float calculateProb(float, int);
+    double calcThorp(double);
+    double calcNoise(double frequency);
 
 	int numInitStages() const;
 };

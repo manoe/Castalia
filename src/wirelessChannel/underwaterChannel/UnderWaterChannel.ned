@@ -46,7 +46,13 @@ simple UnderWaterChannel like wirelessChannel.iWirelessChannel {
 												// threshold in dBm above which, wireless channel module
 												// is delivering signal messages to radio modules of 
 												// individual nodes
+    
     bool serializePathLossData = default(false);// Serialize path loss data to yaml file
+
+    double spreading_factor = default(2.0);     // Geometry of the propagation, 1.0 - cylindrical, 2.0 - spherical,
+                                                // 1.5 - practical
+    double shipping_noise = default(0.0);       // Shipping noise, normalized 
+    double wind_noise = default(1.0);           // Wind (actually breaking waves due to wind) noise, m/s
 
  gates:
  	output toNode[];

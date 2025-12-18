@@ -104,6 +104,9 @@ void UnderWaterChannel::initialize(int stage)
 	topo = new cTopology("topo");
 	topo->extractByNedTypeName(cStringTokenizer("node.Node").asVector());
 
+    
+    Radio *radio = check_and_cast<Radio*>(topo->getNode(0)->getModule()->getSubmodule("Communcation")->getSubmodule("Radio"));
+    carrier_frequency=radio->getCarrierFrequency();
 	for (int i = 0; i < numOfNodes; i++) {
 		VirtualMobilityManager *nodeMobilityModule =
 			check_and_cast<VirtualMobilityManager*>
@@ -112,6 +115,8 @@ void UnderWaterChannel::initialize(int stage)
 		nodeLocation[i].cell = i;
 
 		if (!onlyStaticNodes) {
+            throw cRuntimeError("Mobility for underwater channel is not supported\n");
+
 			/******************************************************************
 			 * Compute the cell this node is in and initialize cellOccupation.
 			 * Cavaet in computing the XYZ indices:
@@ -169,7 +174,7 @@ void UnderWaterChannel::initialize(int stage)
 	 * Allocate and initialize the pathLoss array.
 	 * This is the "propagation map" of our space.
 	 **********************************************/
-	pathLoss = new list<PathLossElement*>[numOfSpaceCells];
+	pathLoss = new list<DistPathLossElement*>[numOfSpaceCells];
 	if (pathLoss == NULL)
 		throw cRuntimeError("Could not allocate array pathLoss\n");
 
@@ -190,9 +195,10 @@ void UnderWaterChannel::initialize(int stage)
 	 * speed up the filling of the pathLoss array,
 	 * especially for the mobile case.
 	 *******************************************************/
-	float distanceThreshold = d0 *
-		pow(10.0,(maxTxPower - signalDeliveryThreshold - PLd0 + 3 * sigma) /
-		(10.0 * pathLossExponent));
+	float distanceThreshold = 0;
+   // = d0 *
+//		pow(10.0,(maxTxPower - signalDeliveryThreshold - PLd0 + 3 * sigma) /
+//		(10.0 * pathLossExponent));
 
 	for (int i = 0; i < numOfSpaceCells; i++) {
 		if (onlyStaticNodes) {
@@ -206,7 +212,7 @@ void UnderWaterChannel::initialize(int stage)
 		}
 
 		/* Path loss to yourself is 0.0 */
-		pathLoss[i].push_front(new PathLossElement(i, 0.0));
+		pathLoss[i].push_front(new DistPathLossElement(i, 0.0, 0.0));
 		totalElements++;	//keep track of pathLoss size for reporting purposes
 
 		for (int j = i + 1; j < numOfSpaceCells; j++) {
@@ -239,17 +245,28 @@ void UnderWaterChannel::initialize(int stage)
 				bidirectionalPathLossJitter = 0;
 			}
 			else {
-				PLd = PLd0 + 10.0 * pathLossExponent * log10(dist / d0) + normal(0, sigma);
+                // 
+                double d_km = dist / 1000;
+                double t1 = pow(d_km,spreading_factor);
+                double Af = calcThorp(carrier_frequency);
+                double A  = pow(10.0,(Af/10.0));
+                double t3 = pow(A,d_km);
+
+                PLd = log10(t1 * t3);
+
+                
+
+				//PLd = PLd0 + 10.0 * pathLossExponent * log10(dist / d0) + normal(0, sigma);
 				bidirectionalPathLossJitter = normal(0, bidirectionalSigma) / 2;
 			}
 
 			if (maxTxPower - PLd - bidirectionalPathLossJitter >= signalDeliveryThreshold) {
-				pathLoss[i].push_front(new PathLossElement(j,PLd + bidirectionalPathLossJitter));
+				pathLoss[i].push_front(new DistPathLossElement(j,PLd + bidirectionalPathLossJitter, dist));
 				totalElements++;	//keep track of pathLoss size for reporting purposes
 			}
 
 			if (maxTxPower - PLd + bidirectionalPathLossJitter >= signalDeliveryThreshold) {
-				pathLoss[j].push_front(new PathLossElement(i,PLd - bidirectionalPathLossJitter));
+				pathLoss[j].push_front(new DistPathLossElement(i,PLd - bidirectionalPathLossJitter, dist));
 				totalElements++;	//keep track of pathLoss size for reporting purposes
 			}
 		}
@@ -378,8 +395,8 @@ void UnderWaterChannel::handleMessage(cMessage * msg)
 			 * by cellTx and check if there are nodes there.
 			 * Update the nodesAffectedByTransmitter array
 			 */
-			list < PathLossElement * >::iterator it1;
-			for (it1 = pathLoss[cellTx].begin(); it1 != pathLoss[cellTx].end(); it1++) {
+//			list < PathLossElement * >::iterator it1;
+			for (auto it1 = pathLoss[cellTx].begin(); it1 != pathLoss[cellTx].end(); it1++) {
 				/* If no nodes exist in this cell, move on. */
 				if (cellOccupation[(*it1)->cellID].empty())
 					continue;
@@ -475,14 +492,13 @@ void UnderWaterChannel::finishSpecific()
 
 	/* delete pathLoss */
 	for (int i = 0; i < numOfSpaceCells; i++) {
-		list <PathLossElement*>::iterator it1;
         y_out<<YAML::BeginMap;
         y_out<<YAML::Key<<"node";
         y_out<<YAML::Value<<i;
         y_out<<YAML::Key<<"neighbors";
         y_out<<YAML::Value;
         y_out<<YAML::BeginSeq;
-		for (it1 = pathLoss[i].begin(); it1 != pathLoss[i].end(); it1++) {
+		for (auto it1 = pathLoss[i].begin(); it1 != pathLoss[i].end(); it1++) {
             y_out<<YAML::BeginMap;
             y_out<<YAML::Key<<"node";
             y_out<<YAML::Value<<(*it1)->cellID;
@@ -529,6 +545,7 @@ void UnderWaterChannel::readIniFileParameters(void)
 	bidirectionalSigma = par("bidirectionalSigma");
 	PLd0 = par("PLd0");
 	d0 = par("d0");
+    spreading_factor = par("spreading_factor");
 
 	pathLossMapFile = par("pathLossMapFile");
 	temporalModelParametersFile = par("temporalModelParametersFile");
@@ -596,15 +613,17 @@ void UnderWaterChannel::parsePathLossMap(void)
 //If this pair is already defined in pathloss array, the old value is replaced, otherwise a new pathloss element is created
 void UnderWaterChannel::updatePathLossElement(int src, int dst, float pathloss_db)
 {
+    throw cRuntimeError("Not implemented\n");
+
 	if (src >= numOfSpaceCells || dst >= numOfSpaceCells) return;
-	list <PathLossElement*>::iterator it1;
+	list <DistPathLossElement*>::iterator it1;
 	for (it1 = pathLoss[src].begin(); it1 != pathLoss[src].end(); it1++) {
 		if ((*it1)->cellID == dst) {
 			(*it1)->avgPathLoss = pathloss_db;
 			return;
 		}
 	}
-	pathLoss[src].push_front(new PathLossElement(dst, pathloss_db));
+	pathLoss[src].push_front(new DistPathLossElement(dst, pathloss_db, 0.0));
 }
 
 //wrapper function for atoi(...) call. returns 1 on error, 0 on success
@@ -627,3 +646,31 @@ int UnderWaterChannel::parseFloat(const char *c, float *dst)
 		return 1;
 	return 0;
 }
+
+double UnderWaterChannel::calcThorp(double frequency) {
+  return (0.11 * pow(frequency,2) / (1 + pow(frequency,2) )
+      + 44 * pow(frequency,2) / (4100 + pow(frequency,2) )
+      + 0.000275 * pow(frequency,2) + 0.0003 );
+}
+
+double UnderWaterChannel::calcNoise(double frequency) {
+  double turbulence, wind, ship, thermal;
+  double turbulenceDb, windDb, shipDb, thermalDb;
+
+  turbulenceDb = 17.0 - 30.0 * std::log10 (frequency);
+  turbulence = std::pow (10.0, turbulenceDb * 0.1);
+
+  shipDb = 40.0 + 20.0 * (shipping_noise - 0.5) + 26.0 *
+            std::log10 (frequency) - 60.0 * std::log10 (frequency + 0.03);
+  ship = std::pow (10.0, (shipDb * 0.1));
+
+  windDb = 50.0 + 7.5 * std::pow (wind_noise, 0.5) + 20.0 *
+            std::log10 (frequency) - 40.0 * std::log10 (frequency + 0.4);
+  wind = std::pow (10.0, windDb * 0.1);
+
+  thermalDb = -15 + 20 * std::log10 (frequency);
+  thermal = std::pow (10, thermalDb * 0.1);
+
+  return (10 * std::log10 (turbulence + ship + wind + thermal) );
+}
+

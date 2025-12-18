@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{cleveref}
+\usepackage{textcomp}
 \usepackage{graphicx}
 \usepackage[style=ieee]{biblatex}
 \addbibresource{channel.bib}
@@ -27,6 +28,7 @@ In \eqref{eq:log_d_pl}, $PL_{d0}$ is the path loss at the reference distance $d_
 According to \cite{Stojanovic_2007}, the narrowband 
 
 \section{Castalia's parameters, bits and pieces}
+\subsection{Parameters}
 defaultChannel:
 \begin{itemize}
     \item \texttt{signalDeliveryThreshold} -- threshold in dBm above which, wireless channel module is delivering signal messages to radio modules of individual nodes.
@@ -35,11 +37,31 @@ defaultChannel:
 radio:
 \begin{itemize}
     \item \texttt{carrierFreq} -- The carrier frequency in MHz.
-    \item \texttt{rssiIntegrationTime} -- rssiIntegrationTime = symbolsForRSSI * RXmode->bitsPerSymbol / RXmode->datarate
-    \item \texttt{timeToTxPacket} -- Provided by popAndSendToWirelessChannel(), calculated as: double txTime = ((double)(end->getByteLength() * 8.0f)) / RXmode->datarate; (in seconds)
+    \item \texttt{rssiIntegrationTime} -- rssiIntegrationTime = symbolsForRSSI * RXmode\textrightarrow bitsPerSymbol / RXmode \textrightarrow datarate
+    \item \texttt{timeToTxPacket} -- Provided by popAndSendToWirelessChannel(), calculated as: double txTime = ((double)(end \textrightarrow getByteLength() * 8.0f)) / RXmode \textrightarrow datarate; (in seconds)
     \item \texttt{parameter file} -- Name, dataRate(kbps), modulationType, bitsPerSymbol, bandwidth(MHz), noiseBandwidth(KHz), noiseFloor(dBm), sensitivity(dBm), powerConsumed(mW)
     \item \texttt{SNR2BER} -- method used to calculate BER based on SNR and the actual modulation.
 \end{itemize}
+
+\subsubsection{Packet traversal}
+Castalia's packet path is relatively simple in terms of utilized objects:
+MAC \textrightarrow Radio \textrightarrow Wireless Channel \textrightarrow Radio \textrightarrow MAC.
+
+\subsubsection{MAC}
+Castalia's T-MAC implementation depends on the \texttt{TX\_TIME} function call when determining timeouts. The function is: \texttt{(phyLayerOverhead + x)*1/(1000 * phyDataRate/8.0)}, and is interpreted in seconds.
+
+\subsubsection{Radio}
+The Radio module buffers incoming MAC packets, and schedules itself for sending. Each packet is broken into two parts: a \textit{begin} and an \textit{end} message. The begin message contains the output power in dBm, the frequency, bandwidth, modulation and encoding, whereas the end message contains the actual data and the physical frame overhead (as size?). The begin message is immediately sent to the wireless channel, whereas the end message is scheduled with \texttt{txTime} delay. The delay is calculated as \texttt{(double)(end->getByteLength() * 8.0f)) / RXmode->datarate;}
+
+\subsubsection{Physical Channel}
+Once receiving the \texttt{WC\_SIGNAL\_START}, the physical channel module iterates over all cells, and collects those, which are affected by the sender based on the signal delivery threshold and the received signal strength attenuated by the path loss. A copy of the begin message is also sent with the calculated received signal strength. The \texttt{WC\_SIGNAL\_END} part of the handling iterates over the collected nodes, and sends the end message to each node.
+
+\noindent \textbf{Note:} contrary to AquaSim, in Castalia there is no delay on the wireless channel. However, a feasible solution would be to delay both the begin and the end message based on the distance between the sender and the receiver.
+
+\noindent \textbf{Note 2:} Castalia's major "weakness" is that the pathloss between each node is static for the simulation run. Whereas it is recommended do repeat a simulation scenario multiple times \cite{Ritter_2011}, a more "living" channel model would be more beneficial. A solution could be that the Gaussian noise and the asymmetric noise is recalculated in case of each \texttt{WC\_SIGNAL\_START} message in the physical channel. 
+
+\subsubsection{Radio}
+The Radio module calculates bit errors and iterates through all received signals since the last end signal. Each signal's bit error is additively updated based on BER. If bit errors are not exceeded based on encoding, the packet s forwarded to the MAC layer with \texttt{PROCESSING\_DELAY} set to $0.00001$.
 
 \section{AquaSim's parameters, bits and pieces}
 \subsection{Packet traversal}
