@@ -24,12 +24,19 @@
 #include <list>
 #include <yaml-cpp/yaml.h>
 
+#define SOUND_SPEED_IN_WATER 1500.0
+
     using namespace std;
 
 class DistPathLossElement : public PathLossElement {
     public:
         float dist;
         DistPathLossElement(int c, float PL, float dist) : PathLossElement(c,PL), dist(dist) {};
+};
+
+struct AffectedNode {
+    int id;
+    double dist;
 };
 
 class UnderWaterChannel: public CastaliaModule {
@@ -71,7 +78,7 @@ class UnderWaterChannel: public CastaliaModule {
 											// cells are affected (and how) when a
 											// node in cell i transmits.
 
-	list <int>*nodesAffectedByTransmitter;	// an array of lists (numOfNodes long). The list
+	list <AffectedNode>*nodesAffectedByTransmitter;	// an array of lists (numOfNodes long). The list
 											// at array element i holds the node IDs that are
 											// affected when node i transmits.
 
@@ -104,6 +111,7 @@ class UnderWaterChannel: public CastaliaModule {
 	float calculateProb(float, int);
     double calcThorp(double);
     double calcNoise(double frequency);
+    double calcDelay(double dist);
 
 	int numInitStages() const;
 };

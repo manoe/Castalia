@@ -252,7 +252,7 @@ void UnderWaterChannel::initialize(int stage)
                 double A  = pow(10.0,(Af/10.0));
                 double t3 = pow(A,d_km);
 
-                PLd = log10(t1 * t3);
+                PLd = log10(t1 * t3) + calcNoise(carrier_frequency);
 
                 
 
@@ -285,7 +285,7 @@ void UnderWaterChannel::initialize(int stage)
 	 * This makes the code more compact. We also have temporal variations
 	 * so the nodes that are affected are not necessarily the same.
 	 *********************************************************************/
-	nodesAffectedByTransmitter = new list<int>[numOfNodes];
+	nodesAffectedByTransmitter = new list<AffectedNode>[numOfNodes];
 	if (nodesAffectedByTransmitter == NULL)
 		throw cRuntimeError("Could not allocate array nodesAffectedByTransmitter\n");
 
@@ -437,8 +437,8 @@ void UnderWaterChannel::handleMessage(cMessage * msg)
 					receptioncount++;
 					WirelessChannelSignalBegin *signalMsgCopy = signalMsg->dup();
 					signalMsgCopy->setPower_dBm(currentSignalReceived);
-					send(signalMsgCopy, "toNode", *it2);
-					nodesAffectedByTransmitter[srcAddr].push_front(*it2);
+					sendDelayed(signalMsgCopy, calcDelay((*it1)->dist), "toNode", *it2);
+					nodesAffectedByTransmitter[srcAddr].push_front({*it2,(*it1)->dist});
 				}	//for it2
 			}	//for it1
 
@@ -456,11 +456,11 @@ void UnderWaterChannel::handleMessage(cMessage * msg)
 			/* Go through the list of nodes that were affected
 			 *  by this transmission. *it1 holds the node ID
 			 */
-			list <int>::iterator it1;
-			for (it1 = nodesAffectedByTransmitter[srcAddr].begin();
+
+			for (auto it1 = nodesAffectedByTransmitter[srcAddr].begin();
 					it1 != nodesAffectedByTransmitter[srcAddr].end(); it1++) {
 				WirelessChannelSignalEnd *signalMsgCopy = signalMsg->dup();
-				send(signalMsgCopy, "toNode", *it1);
+				sendDelayed(signalMsgCopy, calcDelay(it1->dist),"toNode", it1->id);
 			}	//for it1
 
 			/* Now that we are done processing the msg we delete the whole list
@@ -674,3 +674,6 @@ double UnderWaterChannel::calcNoise(double frequency) {
   return (10 * std::log10 (turbulence + ship + wind + thermal) );
 }
 
+double UnderWaterChannel::calcDelay(double dist) {
+    return dist / SOUND_SPEED_IN_WATER;
+}
