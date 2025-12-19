@@ -49,6 +49,7 @@ void UnderWaterChannel::initialize(int stage)
 	if (onlyStaticNodes) {
 		numOfSpaceCells = numOfNodes;
 	} else {
+        throw cRuntimeError("Mobility not implemented\n");
 		if (xFieldSize <= 0) {
 			xFieldSize = 1;
 			xCellSize = 1;
